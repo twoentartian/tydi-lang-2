@@ -57,7 +57,7 @@ mod test {
         try_parse(String::from("streamlet"), Rule::ID, true).err().unwrap();
         try_parse(String::from("const"), Rule::ID, true).err().unwrap();
         try_parse(String::from("int"), Rule::ID, true).err().unwrap();
-        try_parse(String::from("str"), Rule::ID, true).err().unwrap();
+        try_parse(String::from("string"), Rule::ID, true).err().unwrap();
         try_parse(String::from("bool"), Rule::ID, true).err().unwrap();
         try_parse(String::from("float"), Rule::ID, true).err().unwrap();
         try_parse(String::from("type"), Rule::ID, true).err().unwrap();
@@ -65,15 +65,12 @@ mod test {
     }
 
     #[test]
-    fn parse_comment_document() {
-        try_parse(String::from("# this is a document #"), Rule::DOCUMENT, true).ok().unwrap();
+    fn parse_comment() {
         try_parse(String::from("abcdef// this is a line comment"), Rule::ID, false).ok().unwrap();
         try_parse(String::from("abcdef/* this is a block comment */"), Rule::ID, false).ok().unwrap();
         try_parse(String::from("abcdef/* this is a block \n comment */"), Rule::ID, false).ok().unwrap();
         try_parse(String::from("abcdef/* this is a block
          comment */"), Rule::ID, false).ok().unwrap();
-
-    
     }
 
     #[test]
@@ -153,6 +150,11 @@ mod test {
         "), Rule::LogicalType, false).ok().unwrap();
         try_parse(String::from("\
         Group x {
+            //empty
+        }
+        "), Rule::LogicalType, false).ok().unwrap();
+        try_parse(String::from("\
+        Group x {
             value: int = 1;
             x : Bit(1);
             y : Stream(Bit(1));
@@ -161,12 +163,63 @@ mod test {
         try_parse(String::from("\
         Union x {
             value: int = 1;
+            string0 = \"123\";
+            x : Bit(1);
+            y : Stream(Bit(1));
+        }
+        "), Rule::LogicalType, false).ok().unwrap();
+        try_parse(String::from("\
+        # this is a document #
+        Union x {
+            value: int = 1;
+            string0 = \"123\";
+            x : Bit(1);
+            y : Stream(Bit(1));
+        }
+        "), Rule::LogicalType, false).ok().unwrap();
+        try_parse(String::from("\
+        # this is a document #
+        Union x {
+            value: int = 1;
+            string0 = \"123\";
             x : Bit(1);
             y : Stream(Bit(1));
         }
         "), Rule::LogicalType, false).ok().unwrap();
     }
 
+    #[test]
+    fn parse_tydi_streamlet() {
+        try_parse(String::from("\
+        package test;
+        null_type = Null;
+        Bit8 = Bit(8);
+
+        #document#
+        Group group0 {
+            bit_1 : Bit(1);
+        }
+
+        streamlet x {
+            
+        }
+
+        "), Rule::TydiFile, false).ok().unwrap();
     
+        try_parse(String::from("\
+        package test;
+        null_type = Null;
+
+        #document#
+        Group group0 {
+            bit_1 : Bit(1);
+        }
+
+        streamlet x<len: int, socket: impl of external_package.streamlet0<x,y>> {
+            len = x;
+            port_in : Stream(Bit(8)) in /clock_domain;
+        }
+        "), Rule::TydiFile, false).ok().unwrap();
+    }
 
 }
