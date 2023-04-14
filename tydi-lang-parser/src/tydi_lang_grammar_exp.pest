@@ -52,9 +52,9 @@ ArrayRange = { "(" ~ Exp ~ "=" ~ Exp ~ "=>" ~ Exp ~ ")" }
 ArraySizeIndicator = { "[" ~ Exp? ~ "]" } //specifying the size of the array is optional
 
 IdentifierExp = { ID }
-FuncExp = { ID ~ "(" ~ (Exp ~ ( "," ~ Exp )*)? ~ ")" }
+FunctionExp = { ID ~ "(" ~ (Exp ~ ( "," ~ Exp )*)? ~ ")" }
 IndexExp = { ID ~ "[" ~ Exp ~ "]" }
-Term_identifier = { FuncExp | IndexExp | IdentifierExp }
+Term_identifier = { FunctionExp | IndexExp | IdentifierExp }
 
 IdentifierWithArgExp = { Term_identifier ~ ("<" ~ Exp ~ ("," ~ Exp)* ~ ">")? }
 UnaryExp = { UnaryOp ~ Term }
@@ -199,10 +199,11 @@ StatementDeclareNet = { Net ~ ";" }
 StatementDeclareIf = { If }
 StatementDeclareFor = { For }
 StatementUsePackage = { "use" ~ ID ~ ";"}
+StatementFunction = { FunctionExp ~ ";" }
 
 Statement = { StatementDeclareVariable | StatementDeclareGroupUnion | 
     StatementDeclareStreamlet | StatementDeclarePort | StatementDeclareImplementation | StatementDeclareInstance | StatementDeclareNet |
-    StatementDeclareIf | StatementDeclareFor | StatementUsePackage }
+    StatementDeclareIf | StatementDeclareFor | StatementUsePackage | StatementFunction }
 
 //// Scope ////
 Scope_WithBracket = _{ "{" ~ Scope_WithoutBracket ~ "}" }

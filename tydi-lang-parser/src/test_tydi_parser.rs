@@ -297,10 +297,16 @@ mod test {
     }
 
     #[test]
-    fn parse_tydi_use_package() {
+    fn parse_tydi_miscellaneous() {
+        //use external package
         try_parse(String::from("\
         package test;
         use external_package;
+        "), Rule::TydiFile, false).ok().unwrap();
+        //function
+        try_parse(String::from("\
+        package test;
+        assert(x==y);
         "), Rule::TydiFile, false).ok().unwrap();
     }
 
