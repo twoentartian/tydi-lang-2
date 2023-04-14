@@ -35,10 +35,11 @@ FloatTypeKeyword = { "float" }
 ClockDomainTypeKeyword = { "clockdomain" }
 LogicalTypeKeyword = { "type" }
 StreamletKeyword = { "streamlet" }
-ImplementationKeyword = {"impl" ~ "of" ~ Exp_AcceptTemplateArg }
+ImplementationKeyword = {"impl" ~ "of" ~ Exp }
 
-BasicTypeKeyword = _{ IntTypeKeyword | StringTypeKeyword | BoolTypeKeyword | FloatTypeKeyword | ClockDomainTypeKeyword }
-AllTypeKeyword = _{ IntTypeKeyword | StringTypeKeyword | BoolTypeKeyword | FloatTypeKeyword | ClockDomainTypeKeyword | LogicalTypeKeyword | StreamletKeyword | ImplementationKeyword }
+BasicTypeKeyword = _{ IntTypeKeyword | StringTypeKeyword | BoolTypeKeyword | FloatTypeKeyword | ClockDomainTypeKeyword | LogicalTypeKeyword }
+BasicTypeKeywordArray = { "[" ~ BasicTypeKeyword ~ "]" }
+AllTypeKeyword = _{ BasicTypeKeywordArray | BasicTypeKeyword | StreamletKeyword | ImplementationKeyword }
 
 IntExp = { INT }
 StringExp = { STRING }
@@ -48,18 +49,21 @@ FloatExp = { FLOAT }
 //// Expression ////
 ArrayExp = { "{" ~ Exp ~ ("," ~ Exp)* ~ "}" }
 ArrayRange = { "(" ~ Exp ~ "=" ~ Exp ~ "=>" ~ Exp ~ ")" }
+ArraySizeIndicator = { "[" ~ Exp? ~ "]" } //specifying the size of the array is optional
 
 IdentifierExp = { ID }
+FuncExp = { ID ~ "(" ~ (Exp ~ ( "," ~ Exp )*)? ~ ")" }
+IndexExp = { ID ~ "[" ~ Exp ~ "]" }
+Term_identifier = { FuncExp | IndexExp | IdentifierExp }
+
+IdentifierWithArgExp = { Term_identifier ~ ("<" ~ Exp ~ ("," ~ Exp)* ~ ">")? }
 UnaryExp = { UnaryOp ~ Term }
 UnaryOp = { OP_UnaryMinus | OP_UnaryNot  }
     OP_UnaryMinus = { "-" }
     OP_UnaryNot = { "!" }
 
-FuncExp = { ID ~ "(" ~ (Exp ~ ( "," ~ Exp )*)? ~ ")" }
-IndexExp = { ID ~ "[" ~ Exp ~ "]" }
-
 Term = { ( "(" ~ Exp ~ ")" ) |
-            FuncExp | IndexExp | IdentifierExp |
+            IdentifierWithArgExp | 
             ArrayRange | ArrayExp | IntExp | StringExp | BoolExp | FloatExp | 
             UnaryExp }
 
@@ -91,10 +95,6 @@ InfixOp = _{
         OP_BitAnd = { "&" }
         OP_BitOr = { "|" }
 
-Term_identifier = { FuncExp | IndexExp | IdentifierExp }
-AccessOp = _{OP_AccessInner | OP_AccessProperty}
-Exp_identifier = { Term_identifier ~ (AccessOp  ~ Term_identifier)* }
-
 
 //// Logical types ////
 LogicalNull = { "Null" }
@@ -113,13 +113,15 @@ LogicalUnion = {
 LogicalStream = { "Stream" ~ "(" ~ LogicalExp ~ StreamProperty* ~ ")" }
 StreamProperty = { "," ~ ID ~ "=" ~ Exp }
 
-LogicalType = { LogicalNull | LogicalBit | LogicalStream | LogicalGroup | LogicalUnion }
+LogicalType_Basic = _{ LogicalNull | LogicalBit | LogicalStream | LogicalGroup | LogicalUnion }
+LogicalType_Array = { LogicalType_Basic ~ ArraySizeIndicator }
+LogicalType = { LogicalType_Array | LogicalType_Basic }
 LogicalExp = _{ LogicalType }
 
 //// Complex types ////
 TypeIndicator_All = { BasicTypeKeyword | LogicalType }
-TypeIndicator_Array = { "[" ~ TypeIndicator_Array ~ "]" }
-TypeIndicator = _{ ( (":"  ~ TypeIndicator_All) | ( ":" ~ TypeIndicator_Array) )? }
+TypeIndicator_Array = { "[" ~ TypeIndicator_All ~ "]" }
+TypeIndicator = _{ ( ":"  ~ (TypeIndicator_All | TypeIndicator_Array) )? }
 ValueInitList = _{ ("=" ~ Exp)? }
 
 //// Template common ////
@@ -127,15 +129,10 @@ TemplateArgs = { ("<" ~ Arg ~ ("," ~ Arg)* ~ ">")? }
 Arg_Common = { ID ~ ":" ~ AllTypeKeyword }
 Arg = { Arg_Common }
 
-ArgExp = { Exp }
-ArgExps = { ("<" ~ ArgExp ~ ("," ~ ArgExp)* ~ ">")? }
-
-Exp_AcceptTemplateArg = { Exp_identifier ~ ArgExps }
-
 //// Streamlet ////
 StreamLet = {
     DOCUMENT ~
-    "streamlet" ~ ID ~ TemplateArgs ~
+    "streamlet" ~ ID ~ TemplateArgs ~ ATTRIBUTE* ~
         Scope_WithBracket
 }
 
@@ -146,17 +143,66 @@ PortDirection = { (PortDirectionDirIn | PortDirectionDirOut) }
 PortTimeDomain = { ("/" ~ Exp)? }
 Port = { 
     DOCUMENT ~ 
-    ID ~ ":" ~ LogicalType ~ PortDirection ~ PortTimeDomain
+    ID ~ ":" ~ LogicalType ~ PortDirection ~ PortTimeDomain ~ ATTRIBUTE*
+}
+
+//// Implementation ////
+Implementation = { 
+    DOCUMENT ~
+    "impl" ~ ID ~ TemplateArgs ~ "of" ~ Exp ~ ATTRIBUTE* ~  //attribute: External
+        Scope_WithBracket
+}
+
+//// Instance ////
+Instance = { 
+    DOCUMENT ~
+    "instance" ~ ID ~ "(" ~ Exp ~ ")" ~ ArraySizeIndicator? ~ ATTRIBUTE*
+}
+
+//// Net ////
+NetName = { Exp? }
+Net = { 
+    DOCUMENT ~ 
+    Exp ~ "=>" ~ Exp ~ NetName ~ ATTRIBUTE* //attribute: NoTypeCheck
+}
+
+//// For ////
+For = { 
+    "for" ~ ID ~ "in" ~ Exp ~ 
+        Scope_WithBracket
+}
+
+//// If ////
+If = { 
+    "if" ~ Exp ~ 
+        Scope_WithBracket ~
+    Elif* ~
+    Else?
+}
+Elif = { 
+    "elif" ~ Exp ~ 
+        Scope_WithBracket
+}
+Else = { 
+    "else" ~ 
+        Scope_WithBracket
 }
 
 //// Statement ////
 StatementDeclareVariable = { ID ~ TypeIndicator ~ ValueInitList ~ ";" }
 StatementDeclareGroupUnion = _{ LogicalGroup | LogicalUnion }
 StatementDeclareStreamlet = { StreamLet }
+StatementDeclareImplementation = { Implementation }
 StatementDeclarePort = { Port ~ ";" }
+StatementDeclareInstance = { Instance ~ ";" }
+StatementDeclareNet = { Net ~ ";" }
+StatementDeclareIf = { If }
+StatementDeclareFor = { For }
+StatementUsePackage = { "use" ~ ID ~ ";"}
 
-Statement = { StatementDeclareVariable | StatementDeclareGroupUnion 
-    | StatementDeclareStreamlet | StatementDeclarePort }
+Statement = { StatementDeclareVariable | StatementDeclareGroupUnion | 
+    StatementDeclareStreamlet | StatementDeclarePort | StatementDeclareImplementation | StatementDeclareInstance | StatementDeclareNet |
+    StatementDeclareIf | StatementDeclareFor | StatementUsePackage }
 
 //// Scope ////
 Scope_WithBracket = _{ "{" ~ Scope_WithoutBracket ~ "}" }
@@ -167,4 +213,3 @@ PackageStatement = { "package" ~ ID ~ ";" }
 TydiFile = { SOI ~ PackageStatement ~ 
     Scope_WithoutBracket ~ 
     EOI }
-

@@ -27,8 +27,6 @@ mod test {
                 pass = true;
             }
         }
-
-
         if pass {
             return Ok(());
         }
@@ -168,57 +166,141 @@ mod test {
             y : Stream(Bit(1));
         }
         "), Rule::LogicalType, false).ok().unwrap();
-        try_parse(String::from("\
-        # this is a document #
-        Union x {
-            value: int = 1;
-            string0 = \"123\";
-            x : Bit(1);
-            y : Stream(Bit(1));
-        }
-        "), Rule::LogicalType, false).ok().unwrap();
-        try_parse(String::from("\
-        # this is a document #
-        Union x {
-            value: int = 1;
-            string0 = \"123\";
-            x : Bit(1);
-            y : Stream(Bit(1));
-        }
-        "), Rule::LogicalType, false).ok().unwrap();
     }
 
     #[test]
     fn parse_tydi_streamlet() {
         try_parse(String::from("\
         package test;
-        null_type = Null;
-        Bit8 = Bit(8);
-
-        #document#
-        Group group0 {
-            bit_1 : Bit(1);
-        }
-
         streamlet x {
             
         }
-
         "), Rule::TydiFile, false).ok().unwrap();
-    
         try_parse(String::from("\
         package test;
-        null_type = Null;
-
-        #document#
-        Group group0 {
-            bit_1 : Bit(1);
-        }
-
         streamlet x<len: int, socket: impl of external_package.streamlet0<x,y>> {
             len = x;
             port_in : Stream(Bit(8)) in /clock_domain;
         }
+        "), Rule::TydiFile, false).ok().unwrap();
+        try_parse(String::from("\
+        package test;
+        streamlet x<len: int, socket: impl of external_package.streamlet0<x,y>> {
+            len = x;
+            port_in : Stream(Bit(8)) in /clock_domain @any_clockDomain @NoTypeCheck;
+        }
+        "), Rule::TydiFile, false).ok().unwrap();
+        try_parse(String::from("\
+        package test;
+        streamlet x<len: int, socket: impl of external_package.streamlet0<x,y>> {
+            len = x;
+            port_in : Stream(Bit(8))[b] in /clock_domain @any_clockDomain @NoTypeCheck;
+            port_out : Stream(Bit(8))[] out /clock_domain @any_clockDomain @NoTypeCheck;
+        }
+        "), Rule::TydiFile, false).ok().unwrap();
+        try_parse(String::from("\
+        package test;
+        streamlet x<len: int, socket: impl of external_package.streamlet0<x,y>> @attribute {
+            len = x;
+            port_in : Stream(Bit(8))[b] in /clock_domain @any_clockDomain @NoTypeCheck;
+            port_out : Stream(Bit(8))[] out /clock_domain @any_clockDomain @NoTypeCheck;
+        }
+        "), Rule::TydiFile, false).ok().unwrap();
+    }
+
+    #[test]
+    fn parse_tydi_external_template() {
+        try_parse(String::from("\
+        package test;
+        streamlet x <len:int, cat: impl of external_package.x<x, external_package.y<getGlobal(1)>>> {
+            
+        }
+        "), Rule::TydiFile, false).ok().unwrap();
+    }
+
+    #[test]
+    fn parse_tydi_implementation() {
+        try_parse(String::from("\
+        package test;
+        impl x_impl of x <1,Bit(1)> {
+
+        }
+        "), Rule::TydiFile, false).ok().unwrap();
+        try_parse(String::from("\
+        package test;
+        impl x_impl of external_package.x <1,Bit(1)> {
+            
+        }
+        "), Rule::TydiFile, false).ok().unwrap();
+        try_parse(String::from("\
+        package test;
+        impl x_impl<x:int, y:type> of external_package.x <1,Bit(1)> @attribute {
+            
+        }
+        "), Rule::TydiFile, false).ok().unwrap();
+        try_parse(String::from("\
+        package test;
+        impl x_impl of y {
+            instance i0(impl0);
+            instance i1(impl0<x,y,1>);
+            instance i2(impl0<x,y,external_package.i>);
+            instance i3(impl0<x,y,external_package.i>) [10];
+        }
+        "), Rule::TydiFile, false).ok().unwrap();
+        try_parse(String::from("\
+        package test;
+        impl x_impl of y {
+            #documentation#
+            instance i0(impl0);
+            instance i1(impl0<x,y,1>);
+            instance i2(impl0<x,y,external_package.i>);
+            i0.out => i1.in;
+            i1.out => i2.in \"net_name\" @NoTypeCheck @SecondAttr;
+        }
+        "), Rule::TydiFile, false).ok().unwrap();
+    }
+
+    #[test]
+    fn parse_tydi_array() {
+        try_parse(String::from("\
+        package test;
+        logicalTypes = {Null, Bit(8)};
+        streamlet x< a0:[int], a1: [type]> {
+            
+        }
+        impl x_impl of y {
+            #documentation#
+            instance i0(impl0);
+            instance i1(impl0<x,y,1>);
+            instance i2(impl0<x,y,external_package.i>) [10];
+            i0.out => i1.in;
+            i1.out => i2.in \"net_name\" @NoTypeCheck @SecondAttr;
+            i2[0].out => i2[1].in;
+        }
+        "), Rule::TydiFile, false).ok().unwrap();
+    }
+
+    #[test]
+    fn parse_tydi_if_for() {
+        try_parse(String::from("\
+        package test;
+        impl x_impl of y {
+            #documentation#
+            instance i2(impl0<x,y>) [10];
+            for i in {0,1,2,3,4} {
+                if (x) {
+                    i2[i].out => i2[i].in;
+                }
+            }
+        }
+        "), Rule::TydiFile, false).ok().unwrap();
+    }
+
+    #[test]
+    fn parse_tydi_use_package() {
+        try_parse(String::from("\
+        package test;
+        use external_package;
         "), Rule::TydiFile, false).ok().unwrap();
     }
 
