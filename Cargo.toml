@@ -1,0 +1,6 @@
+[workspace]
+
+members = [
+    "tydi-lang-complier",
+    "tydi-lang-parser",
+]
