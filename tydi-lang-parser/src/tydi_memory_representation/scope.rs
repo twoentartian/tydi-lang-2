@@ -1,14 +1,15 @@
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 
-use serde::{Deserialize, Serialize};
-use serde_json::{Result, Value};
+use serde::{Serialize, Deserialize};
 
+use crate::name_trait::GetName;
 use crate::deep_clone::DeepClone;
-use crate::tydi_memory_representation::GetName;
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub enum ScopeRelationType {
+    FileScopeRela,
+
     GroupScopeRela,
     UnionScopeRela,
     StreamletScopeRela,
@@ -27,6 +28,8 @@ impl DeepClone for ScopeRelationType {
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub enum ScopeType {
     RootScope,
+
+    FileScope,
 
     GroupScope,
     UnionScope,
@@ -101,6 +104,7 @@ impl Scope {
     fn generate_scope_relationship(&self) -> ScopeRelationType {
         match self.scope_type {
             ScopeType::RootScope => todo!(),
+            ScopeType::FileScope => ScopeRelationType::FileScopeRela,
             ScopeType::GroupScope => ScopeRelationType::GroupScopeRela,
             ScopeType::UnionScope => ScopeRelationType::UnionScopeRela,
             ScopeType::StreamletScope => ScopeRelationType::StreamletScopeRela,
@@ -151,4 +155,7 @@ fn create_serialize_scopes() {
         println!("{json_output}");
         assert_eq!(json_output, r#"{"name":"child_scope_1","scope_type":"IfForScope","scope_relationships":{"child_scope_0":{"name":"child_scope_0","target_scope":"child_scope_0","relationship":"IfForScopeRela"}}}"#)
     }
+
+
 }
+

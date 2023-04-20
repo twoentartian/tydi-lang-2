@@ -1,5 +1,5 @@
-pub mod name_trait;
-pub(in super) use name_trait::*;
+pub mod package;
+pub(in super) use package::*;
 
 pub mod scope;
 pub(in super) use scope::*;
@@ -9,3 +9,4 @@ pub(in super) use var_type::*;
 
 pub mod var;
 pub(in super) use var::*;
+

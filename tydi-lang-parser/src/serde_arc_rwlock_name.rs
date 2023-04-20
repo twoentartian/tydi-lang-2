@@ -3,7 +3,7 @@ use serde::de::Deserializer;
 use serde::ser::Serializer;
 use std::sync::{Arc, RwLock};
 
-use crate::tydi_memory_representation::GetName;
+use crate::name_trait::GetName;
 
 pub fn serialize<S, T>(val: &Arc<RwLock<T>>, s: S) -> Result<S::Ok, S::Error>
         where S: Serializer, T: Serialize + GetName,
