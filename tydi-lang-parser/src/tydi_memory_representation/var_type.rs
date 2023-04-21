@@ -4,9 +4,42 @@ use serde::{Serialize};
 
 use crate::tydi_memory_representation::{Package};
 
+#[derive(Clone, Debug, PartialEq, Serialize)]
+pub enum TypeIndication {
+    Any,
+    Unknown,
+    ComplierBuiltin,
+
+    Int,
+    String,
+    Bool,
+    Float,
+    Clockdomain,
+
+    LogicType,
+}
+
+impl TypeIndication {
+    pub fn infer_from_typed_value(value: TypedValue) -> Self {
+        return match value {
+            TypedValue::UnknwonValue => TypeIndication::Any,
+            TypedValue::PackageReferenceValue(_) => TypeIndication::ComplierBuiltin,
+            TypedValue::IntValue(_) => TypeIndication::Int,
+            TypedValue::StringValue(_) => TypeIndication::String,
+            TypedValue::BoolValue(_) => TypeIndication::Bool,
+            TypedValue::FloatValue(_) => TypeIndication::Float,
+            TypedValue::ClockDomainValue(_) => TypeIndication::Clockdomain,
+            TypedValue::LogicType() => TypeIndication::LogicType,
+        }
+    }
+}
+
 #[derive(Clone, Debug, Serialize)]
 pub enum TypedValue {
     UnknwonValue,
+
+    #[serde(with = "crate::serde_arc_rwlock_name")]
+    PackageReferenceValue(Arc<RwLock<Package>>),
     
     IntValue(i128),
     StringValue(String),
@@ -14,9 +47,7 @@ pub enum TypedValue {
     FloatValue(f64),
     ClockDomainValue(String),
 
-    #[serde(with = "crate::serde_arc_rwlock_name")]
-    PackageReferenceValue(Arc<RwLock<Package>>),
-
+    LogicType(),
 
 }
 

@@ -8,6 +8,7 @@ mod test_tydi_parser;
 
 mod deep_clone;
 mod serde_arc_rwlock_name;
+mod serde_arc_rwlock_inner;
 
 mod name_trait;
 mod tydi_memory_representation;

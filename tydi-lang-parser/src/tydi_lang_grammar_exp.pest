@@ -63,8 +63,8 @@ UnaryOp = { OP_UnaryMinus | OP_UnaryNot  }
     OP_UnaryNot = { "!" }
 
 Term = { ( "(" ~ Exp ~ ")" ) |
-            IdentifierWithArgExp | 
             ArrayRange | ArrayExp | IntExp | StringExp | BoolExp | FloatExp | 
+            IdentifierWithArgExp | 
             UnaryExp }
 
 Exp = { LogicalExp | (Term ~ (InfixOp  ~ Term)*) }
@@ -95,7 +95,6 @@ InfixOp = _{
         OP_BitAnd = { "&" }
         OP_BitOr = { "|" }
 
-
 //// Logical types ////
 LogicalNull = { "Null" }
 LogicalBit = { "Bit" ~ "(" ~ Exp ~ ")" }
@@ -110,7 +109,7 @@ LogicalUnion = {
         Scope_WithBracket
 }
 
-LogicalStream = { "Stream" ~ "(" ~ LogicalExp ~ StreamProperty* ~ ")" }
+LogicalStream = { "Stream" ~ "(" ~ Exp ~ StreamProperty* ~ ")" }
 StreamProperty = { "," ~ ID ~ "=" ~ Exp }
 
 LogicalType_Basic = _{ LogicalNull | LogicalBit | LogicalStream | LogicalGroup | LogicalUnion }
@@ -207,7 +206,7 @@ Statement = { StatementDeclareVariable | StatementDeclareGroupUnion |
 
 //// Scope ////
 Scope_WithBracket = _{ "{" ~ Scope_WithoutBracket ~ "}" }
-Scope_WithoutBracket = _{ Statement* }
+Scope_WithoutBracket = { Statement* }
 
 //// File ////
 PackageStatement = { "package" ~ ID ~ ";" }

@@ -187,7 +187,7 @@ mod test {
         package test;
         streamlet x<len: int, socket: impl of external_package.streamlet0<x,y>> {
             len = x;
-            port_in : Stream(Bit(8)) in /clock_domain @any_clockDomain @NoTypeCheck;
+            port_in : Stream(bit_8) in /clock_domain @any_clockDomain @NoTypeCheck;
         }
         "), Rule::TydiFile, false).ok().unwrap();
         try_parse(String::from("\
