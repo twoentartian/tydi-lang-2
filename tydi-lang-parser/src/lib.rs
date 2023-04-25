@@ -4,13 +4,15 @@ extern crate pest_derive;
 
 mod tydi_parser;
 mod test_tydi_parser;
-
+mod error;
+mod util;
+mod generate_name;
 
 mod deep_clone;
-mod serde_arc_rwlock_name;
-mod serde_arc_rwlock_inner;
+mod serde_serialization;
 
-mod name_trait;
+mod trait_common;
+
 mod tydi_memory_representation;
 
-
+mod tydi_lang_src_to_memory_representation;

@@ -37,9 +37,9 @@ LogicalTypeKeyword = { "type" }
 StreamletKeyword = { "streamlet" }
 ImplementationKeyword = {"impl" ~ "of" ~ Exp }
 
-BasicTypeKeyword = _{ IntTypeKeyword | StringTypeKeyword | BoolTypeKeyword | FloatTypeKeyword | ClockDomainTypeKeyword | LogicalTypeKeyword }
+BasicTypeKeyword = { IntTypeKeyword | StringTypeKeyword | BoolTypeKeyword | FloatTypeKeyword | ClockDomainTypeKeyword | LogicalTypeKeyword }
 BasicTypeKeywordArray = { "[" ~ BasicTypeKeyword ~ "]" }
-AllTypeKeyword = _{ BasicTypeKeywordArray | BasicTypeKeyword | StreamletKeyword | ImplementationKeyword }
+AllTypeKeyword = { BasicTypeKeywordArray | BasicTypeKeyword | StreamletKeyword | ImplementationKeyword }
 
 IntExp = { INT }
 StringExp = { STRING }
@@ -63,7 +63,7 @@ UnaryOp = { OP_UnaryMinus | OP_UnaryNot  }
     OP_UnaryNot = { "!" }
 
 Term = { ( "(" ~ Exp ~ ")" ) |
-            ArrayRange | ArrayExp | IntExp | StringExp | BoolExp | FloatExp | 
+            ArrayRange | ArrayExp | IndexExp | IntExp | StringExp | BoolExp | FloatExp | 
             IdentifierWithArgExp | 
             UnaryExp }
 
@@ -100,27 +100,27 @@ LogicalNull = { "Null" }
 LogicalBit = { "Bit" ~ "(" ~ Exp ~ ")" }
 LogicalGroup = {
     DOCUMENT ~ 
-    "Group" ~ ID ~ 
+    "Group" ~ ID ~ TemplateArgs ~ 
         Scope_WithBracket
 }
 LogicalUnion = {
     DOCUMENT ~ 
-    "Union" ~ ID ~ 
+    "Union" ~ ID ~ TemplateArgs ~ 
         Scope_WithBracket
 }
 
 LogicalStream = { "Stream" ~ "(" ~ Exp ~ StreamProperty* ~ ")" }
 StreamProperty = { "," ~ ID ~ "=" ~ Exp }
 
-LogicalType_Basic = _{ LogicalNull | LogicalBit | LogicalStream | LogicalGroup | LogicalUnion }
+LogicalType_Basic = { LogicalNull | LogicalBit | LogicalStream | LogicalGroup | LogicalUnion }
 LogicalType_Array = { LogicalType_Basic ~ ArraySizeIndicator }
 LogicalType = { LogicalType_Array | LogicalType_Basic }
 LogicalExp = _{ LogicalType }
 
 //// Complex types ////
-TypeIndicator_All = { BasicTypeKeyword | LogicalType }
+TypeIndicator_All = { BasicTypeKeyword | LogicalType }  // LogicalType here is to allow, e.g. Group x { e0 : Bit(8) }
 TypeIndicator_Array = { "[" ~ TypeIndicator_All ~ "]" }
-TypeIndicator = _{ ( ":"  ~ (TypeIndicator_All | TypeIndicator_Array) )? }
+TypeIndicator = { ( ":"  ~ (TypeIndicator_All | TypeIndicator_Array) )? }
 ValueInitList = _{ ("=" ~ Exp)? }
 
 //// Template common ////
@@ -189,7 +189,9 @@ Else = {
 
 //// Statement ////
 StatementDeclareVariable = { ID ~ TypeIndicator ~ ValueInitList ~ ";" }
-StatementDeclareGroupUnion = _{ LogicalGroup | LogicalUnion }
+StatementDeclareType = { ID ~ TypeIndicator ~ ";" }
+StatementDeclareGroup = { LogicalGroup }
+StatementDeclareUnion = { LogicalUnion }
 StatementDeclareStreamlet = { StreamLet }
 StatementDeclareImplementation = { Implementation }
 StatementDeclarePort = { Port ~ ";" }
@@ -200,7 +202,7 @@ StatementDeclareFor = { For }
 StatementUsePackage = { "use" ~ ID ~ ";"}
 StatementFunction = { FunctionExp ~ ";" }
 
-Statement = { StatementDeclareVariable | StatementDeclareGroupUnion | 
+Statement = _{ StatementDeclareType | StatementDeclareVariable | StatementDeclareGroup | StatementDeclareUnion | 
     StatementDeclareStreamlet | StatementDeclarePort | StatementDeclareImplementation | StatementDeclareInstance | StatementDeclareNet |
     StatementDeclareIf | StatementDeclareFor | StatementUsePackage | StatementFunction }
 
@@ -210,6 +212,6 @@ Scope_WithoutBracket = { Statement* }
 
 //// File ////
 PackageStatement = { "package" ~ ID ~ ";" }
-TydiFile = { SOI ~ PackageStatement ~ 
+TydiFile = _{ SOI ~ PackageStatement ~ 
     Scope_WithoutBracket ~ 
     EOI }

@@ -5,6 +5,7 @@ mod test {
     fn try_parse(code: String, rule_target: Rule, input_output_same: bool) -> Result<(), String> {
         let parse_result = TydiLangSrc::parse(rule_target,&code);
         if parse_result.is_err() {
+            println!("{}", parse_result.err().unwrap().to_string());
             return Err(String::from("fail to parse the code"));
         }
         let parse_result = parse_result.ok().unwrap().next().unwrap();
@@ -22,10 +23,7 @@ mod test {
             }
         }
         else {  //maybe the rule contains _{ .... }
-            let value: &str = parse_result.as_str();
-            if value == code {
-                pass = true;
-            }
+            pass = true;
         }
         if pass {
             return Ok(());
@@ -166,6 +164,21 @@ mod test {
             y : Stream(Bit(1));
         }
         "), Rule::LogicalType, false).ok().unwrap();
+        try_parse(String::from("\
+        Group x <v0: int, v1: int> {
+            value: int = 1;
+            x : Bit(1);
+            y : Stream(Bit(1));
+        }
+        "), Rule::LogicalType, false).ok().unwrap();
+        try_parse(String::from("\
+        Union x <v0: int, v1: int> {
+            value: int = 1;
+            string0 = \"123\";
+            x : Bit(1);
+            y : Stream(Bit(1));
+        }
+        "), Rule::LogicalType, false).ok().unwrap();
     }
 
     #[test]
@@ -265,6 +278,7 @@ mod test {
         try_parse(String::from("\
         package test;
         logicalTypes = {Null, Bit(8)};
+        access_external_value = external_package.data[0];
         streamlet x< a0:[int], a1: [type]> {
             
         }

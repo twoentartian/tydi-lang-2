@@ -2,17 +2,21 @@ use std::sync::{Arc, RwLock};
 
 use serde::{Serialize};
 
-use crate::tydi_memory_representation::{Variable, TypeIndication};
+use crate::tydi_memory_representation::{Variable, TypeIndication, CodeLocation, TraitCodeLocationAccess};
 
-use crate::name_trait::GetName;
+use crate::trait_common::{GetName, AccessProperty};
+
+const BITWIDTH_VAR_NAME: &str = "bitwidth";
 
 #[derive(Clone, Debug, Serialize)]
 pub struct LogicBit {
     name: String,
 
-    #[serde(with = "crate::serde_arc_rwlock_inner")]
+    #[serde(with = "crate::serde_serialization::serialize_variable_value_only")]
     bit_width: Arc<RwLock<Variable>>,
 
+    #[serde(skip_serializing)]
+    location_define: CodeLocation,
 }
 
 impl GetName for LogicBit {
@@ -21,16 +25,37 @@ impl GetName for LogicBit {
     }
 }
 
+impl TraitCodeLocationAccess for LogicBit {
+    fn set_code_location(& mut self, loc: CodeLocation) {
+        self.location_define = loc;
+    }
+
+    fn get_code_location(&self) -> CodeLocation {
+        return self.location_define.clone();
+    }
+}
+
+impl AccessProperty for LogicBit {
+    fn access_porperty(&self, property_name: String) -> Option<Arc<RwLock<Variable>>> {
+        if property_name == BITWIDTH_VAR_NAME {
+            return Some(self.bit_width.clone());
+        }
+        return None;
+    }
+}
+
 impl LogicBit {
-    fn new(name: String, exp_bit_width: String) -> Arc<RwLock<LogicBit>> {
-        let mut output = LogicBit {
+    pub fn new(name: String, exp_bit_width: Option<String>) -> Arc<RwLock<LogicBit>> {
+        let output = LogicBit {
             name: name.clone(),
-            bit_width: Variable::new(format!("bitwidth_{name}"), Some(exp_bit_width)),
+            bit_width: Variable::new(format!("{}_{name}", BITWIDTH_VAR_NAME), exp_bit_width),
+            location_define: CodeLocation::new_unknown(),
         };
         {
             let mut output_bit_width_write = output.bit_width.write().unwrap();
-            output_bit_width_write.type_indication = TypeIndication::Int;
+            output_bit_width_write.set_type_indication(TypeIndication::Int);
         }
         return Arc::new(RwLock::new(output));
     }
+
 }
