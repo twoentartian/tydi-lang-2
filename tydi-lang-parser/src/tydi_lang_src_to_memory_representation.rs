@@ -308,7 +308,6 @@ mod test_tydi_lang_src_to_memory_representation {
     fn simple_declare_variable_7() {
         let src = String::from(r#"
         package test;
-        bit_8 = Bit(8);
         #this is a document#
         Group x <x:[int], y:string> {
             bit_8_type0: Bit(8);
