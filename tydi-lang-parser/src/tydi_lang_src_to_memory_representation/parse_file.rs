@@ -32,7 +32,7 @@ pub fn parse_Scope_WithoutBracket(src: Pair<Rule>, scope: Arc<RwLock<Scope>>) ->
                 parse_StatementDeclareGroup(element, scope.clone())?;
             }
             Rule::StatementDeclareUnion => {
-                todo!()
+                parse_StatementDeclareUnion(element, scope.clone())?;
             }
             Rule::StatementDeclarePort => {
                 todo!()

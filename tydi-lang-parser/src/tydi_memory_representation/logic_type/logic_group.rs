@@ -14,7 +14,6 @@ pub struct LogicGroup {
     #[serde(with = "crate::serde_serialization::use_inner_for_arc_rwlock")]
     scope: Arc<RwLock<Scope>>,
 
-    #[serde(skip_serializing)]
     location_define: CodeLocation,
 
     document: Option<String>,

@@ -328,7 +328,45 @@ mod test_tydi_lang_src_to_memory_representation {
 
         let target: Value = serde_json::from_str(&json_output).unwrap();
         {
+            let group_x = &target["package_scope"]["variables"]["x"];
+            assert_eq!(group_x["name"], format!("x"));
+            let group_x_variable = &group_x["value"][0]["LogicGroupType"];
+            assert!(!group_x_variable.is_null());
+            let group_x_variable_bit_8_type0 = &group_x_variable["scope"]["variables"]["bit_8_type0"];
+            assert_eq!(group_x_variable_bit_8_type0["name"], format!("bit_8_type0"));
+        }
+    }
 
+    #[test]
+    fn simple_declare_variable_8() {
+        let src = String::from(r#"
+        package test;
+        bit_8 = Bit(8);
+        #this is a document#
+        Union x <x:[int], y:string> {
+            bit_8_type0: Bit(8);
+            bit_8_type1: Bit(8);
+        }
+        "#);
+        let src_ptr = Some(Arc::new(RwLock::new(src.clone())));
+        let result = tydi_lang_src_to_memory_representation(src);
+        if result.is_err() {
+            let result = result.err().unwrap();
+            print_tydi_lang_error(&result, src_ptr.clone());
+            return;
+        }
+        let result = result.ok().unwrap();
+        let json_output = serde_json::to_string_pretty(&*result.read().unwrap()).ok().unwrap();
+        println!("{json_output}");
+
+        let target: Value = serde_json::from_str(&json_output).unwrap();
+        {
+            let group_x = &target["package_scope"]["variables"]["x"];
+            assert_eq!(group_x["name"], format!("x"));
+            let group_x_variable = &group_x["value"][0]["LogicUnionType"];
+            assert!(!group_x_variable.is_null());
+            let group_x_variable_bit_8_type0 = &group_x_variable["scope"]["variables"]["bit_8_type0"];
+            assert_eq!(group_x_variable_bit_8_type0["name"], format!("bit_8_type0"));
         }
     }
 

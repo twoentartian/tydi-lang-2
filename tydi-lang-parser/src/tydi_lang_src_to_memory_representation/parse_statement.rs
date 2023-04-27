@@ -6,7 +6,7 @@ use crate::tydi_memory_representation::{Scope, Variable, TraitCodeLocationAccess
 use crate::tydi_parser::*;
 use crate::tydi_lang_src_to_memory_representation::parse_type::{parse_TypeIndicator};
 
-use super::parse_logic_type::parse_LogicalGroup;
+use super::parse_logic_type::{parse_LogicalGroup, parse_LogicalUnion};
 
 pub fn parse_StatementDeclareVariable(src: Pair<Rule>, scope: Arc<RwLock<Scope>>) -> Result<(), TydiLangError> {
     let var = Variable::new_place_holder();
@@ -93,6 +93,25 @@ pub fn parse_StatementDeclareGroup(src: Pair<Rule>, scope: Arc<RwLock<Scope>>) -
         match rule {
             Rule::LogicalGroup => {
                 var = parse_LogicalGroup(element, scope.clone())?;
+            }
+            _ => todo!()
+        }
+    }
+    {
+        let mut scope_write = scope.write().unwrap();
+        scope_write.add_var(var)?;
+    }
+
+    return Ok(());
+}
+
+pub fn parse_StatementDeclareUnion(src: Pair<Rule>, scope: Arc<RwLock<Scope>>) -> Result<(), TydiLangError> {
+    let mut var = Variable::new_place_holder();
+    for element in src.clone().into_inner().into_iter() {
+        let rule = element.as_rule();
+        match rule {
+            Rule::LogicalUnion => {
+                var = parse_LogicalUnion(element, scope.clone())?;
             }
             _ => todo!()
         }
