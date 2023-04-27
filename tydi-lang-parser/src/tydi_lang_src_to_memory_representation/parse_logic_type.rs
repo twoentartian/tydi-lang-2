@@ -3,7 +3,7 @@ use std::sync::{Arc, RwLock};
 use crate::error::TydiLangError;
 use crate::trait_common::HasDocument;
 use crate::tydi_lang_src_to_memory_representation::parse_template::parse_TemplateArgs;
-use crate::tydi_memory_representation::{Scope, LogicType, LogicBit, Variable, TypeIndication, TypedValue, TraitCodeLocationAccess, CodeLocation, GetScope, LogicGroup, template_args};
+use crate::tydi_memory_representation::{Scope, LogicType, LogicBit, Variable, TypeIndication, TypedValue, TraitCodeLocationAccess, CodeLocation, GetScope, LogicGroup, template_args, LogicUnion};
 use crate::{tydi_parser::*, generate_name};
 
 use super::parse_file::parse_Scope_WithoutBracket;
@@ -82,4 +82,48 @@ pub fn parse_LogicalGroup(src: Pair<Rule>, scope: Arc<RwLock<Scope>>) -> Result<
     }
 
     return Ok(logic_group_var);
+}
+
+pub fn parse_LogicalUnion(src: Pair<Rule>, scope: Arc<RwLock<Scope>>) -> Result<Arc<RwLock<Variable>>, TydiLangError> {
+    let mut output_logic_union = LogicUnion::new_place_holder();
+    let mut document: Option<String> = None;
+    let mut union_name = generate_name::generate_init_value();
+    let mut template_args = None;
+    for element in src.clone().into_inner().into_iter() {
+        let rule = element.as_rule();
+        match rule {
+            Rule::DOCUMENT_CONTENT => {
+                document = Some(element.as_str().to_string());
+            }
+            Rule::ID => {
+                union_name = element.as_str().to_string();
+            }
+            Rule::TemplateArgs => {
+                template_args = parse_TemplateArgs(element, scope.clone())?;
+            }
+            Rule::Scope_WithoutBracket => {
+                output_logic_union = LogicUnion::new(generate_name::generate_built_in_variable_name_from_span(&src), scope.clone());
+                let output_logic_union_read = output_logic_union.read().unwrap();
+                let output_logic_scope = output_logic_union_read.get_scope();
+                parse_Scope_WithoutBracket(element, output_logic_scope.clone())?;
+            }
+            _ => todo!()
+        }
+    }
+    {
+        let mut output_logic_union_write = output_logic_union.write().unwrap();
+        output_logic_union_write.set_code_location(CodeLocation::new_from_pest_rule(&src));
+        output_logic_union_write.set_document(document);
+        output_logic_union_write.set_template_args(template_args);
+    }
+
+    let logic_union_var = Variable::new(union_name.clone(), None);
+    {
+        let mut logic_union_var_write = logic_union_var.write().unwrap();
+        logic_union_var_write.set_value(vec![TypedValue::LogicTypeValue(Arc::new(RwLock::new(LogicType::LogicUnionType(output_logic_union))))]);
+        logic_union_var_write.set_code_location(CodeLocation::new_from_pest_rule(&src));
+        logic_union_var_write.set_type_indication(TypeIndication::AnyLogicType);
+    }
+
+    return Ok(logic_union_var);
 }
