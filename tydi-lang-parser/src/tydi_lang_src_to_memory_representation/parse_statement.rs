@@ -4,10 +4,9 @@ use crate::error::TydiLangError;
 use crate::trait_common::GetName;
 use crate::tydi_memory_representation::{Scope, Variable, TraitCodeLocationAccess, CodeLocation, TypeIndication};
 use crate::tydi_parser::*;
-use crate::tydi_lang_src_to_memory_representation::parse_type::{parse_TypeIndicator};
+use crate::tydi_lang_src_to_memory_representation::{parse_type, parse_logic_type, parse_streamlet};
 
-use super::parse_logic_type::{parse_LogicalGroup, parse_LogicalUnion};
-
+#[allow(non_snake_case)]
 pub fn parse_StatementDeclareVariable(src: Pair<Rule>, scope: Arc<RwLock<Scope>>) -> Result<(), TydiLangError> {
     let var = Variable::new_place_holder();
     let mut type_indicator = TypeIndication::Any;
@@ -19,12 +18,12 @@ pub fn parse_StatementDeclareVariable(src: Pair<Rule>, scope: Arc<RwLock<Scope>>
                 var.write().unwrap().set_name(element.as_str().to_string());
             }
             Rule::TypeIndicator => {
-                (type_indicator, is_array) = parse_TypeIndicator(element, scope.clone())?;
+                (type_indicator, is_array) = parse_type::parse_TypeIndicator(element, scope.clone())?;
             }
             Rule::Exp => {
                 var.write().unwrap().set_exp(Some(element.as_str().to_string()));
             }
-            _ => todo!()
+            _ => unreachable!()
         }
     }
     {
@@ -41,6 +40,7 @@ pub fn parse_StatementDeclareVariable(src: Pair<Rule>, scope: Arc<RwLock<Scope>>
     return Ok(());
 }
 
+#[allow(non_snake_case)]
 pub fn parse_StatementDeclareType(src: Pair<Rule>, scope: Arc<RwLock<Scope>>) -> Result<(), TydiLangError> {
     let var = Variable::new_place_holder();
     let mut type_indicator = TypeIndication::Any;
@@ -52,9 +52,9 @@ pub fn parse_StatementDeclareType(src: Pair<Rule>, scope: Arc<RwLock<Scope>>) ->
                 var.write().unwrap().set_name(element.as_str().to_string());
             }
             Rule::TypeIndicator => {
-                (type_indicator, is_array) = parse_TypeIndicator(element, scope.clone())?;
+                (type_indicator, is_array) = parse_type::parse_TypeIndicator(element, scope.clone())?;
             }
-            _ => todo!()
+            _ => unreachable!()
         }
     }
     
@@ -86,15 +86,16 @@ pub fn parse_StatementDeclareType(src: Pair<Rule>, scope: Arc<RwLock<Scope>>) ->
     return Ok(());
 }
 
+#[allow(non_snake_case)]
 pub fn parse_StatementDeclareGroup(src: Pair<Rule>, scope: Arc<RwLock<Scope>>) -> Result<(), TydiLangError> {
     let mut var = Variable::new_place_holder();
     for element in src.clone().into_inner().into_iter() {
         let rule = element.as_rule();
         match rule {
             Rule::LogicalGroup => {
-                var = parse_LogicalGroup(element, scope.clone())?;
+                var = parse_logic_type::parse_LogicalGroup(element, scope.clone())?;
             }
-            _ => todo!()
+            _ => unreachable!()
         }
     }
     {
@@ -105,15 +106,16 @@ pub fn parse_StatementDeclareGroup(src: Pair<Rule>, scope: Arc<RwLock<Scope>>) -
     return Ok(());
 }
 
+#[allow(non_snake_case)]
 pub fn parse_StatementDeclareUnion(src: Pair<Rule>, scope: Arc<RwLock<Scope>>) -> Result<(), TydiLangError> {
     let mut var = Variable::new_place_holder();
     for element in src.clone().into_inner().into_iter() {
         let rule = element.as_rule();
         match rule {
             Rule::LogicalUnion => {
-                var = parse_LogicalUnion(element, scope.clone())?;
+                var = parse_logic_type::parse_LogicalUnion(element, scope.clone())?;
             }
-            _ => todo!()
+            _ => unreachable!()
         }
     }
     {
@@ -121,5 +123,19 @@ pub fn parse_StatementDeclareUnion(src: Pair<Rule>, scope: Arc<RwLock<Scope>>) -
         scope_write.add_var(var)?;
     }
 
+    return Ok(());
+}
+
+#[allow(non_snake_case)]
+pub fn parse_StatementDeclareStreamlet(src: Pair<Rule>, scope: Arc<RwLock<Scope>>) -> Result<(), TydiLangError> {
+    for element in src.clone().into_inner().into_iter() {
+        let rule = element.as_rule();
+        match rule {
+            Rule::StreamLet => {
+                parse_streamlet::parse_StreamLet(element, scope.clone())?;
+            }
+            _ => unreachable!()
+        }
+    }
     return Ok(());
 }

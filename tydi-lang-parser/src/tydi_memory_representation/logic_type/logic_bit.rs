@@ -15,7 +15,6 @@ pub struct LogicBit {
     #[serde(with = "crate::serde_serialization::serialize_variable_value_only")]
     bit_width: Arc<RwLock<Variable>>,
 
-    #[serde(skip_serializing)]
     location_define: CodeLocation,
 }
 

@@ -2,12 +2,16 @@ use std::sync::{Arc, RwLock};
 
 use serde::{Serialize};
 
+use crate::generate_name::generate_init_value;
+use crate::{generate_set_pub, generate_get_pub};
 use crate::trait_common::{GetName, GetScope};
 use crate::tydi_memory_representation::{Scope, CodeLocation, TraitCodeLocationAccess};
 
 #[derive(Clone, Debug, Serialize)]
 pub struct Package {
     name: String,
+
+    file_path: String,
 
     #[serde(with = "crate::serde_serialization::use_inner_for_arc_rwlock")]
     package_scope: Arc<RwLock<Scope>>,
@@ -43,6 +47,7 @@ impl Package {
         let package_scope = Scope::new_top_scope(format!("package_{name}"));
         return Arc::new(RwLock::new(Self {
             name: name.clone(),
+            file_path: generate_init_value(),
             package_scope: package_scope,
             location_define: CodeLocation::new_unknown(),
         }));
@@ -52,6 +57,8 @@ impl Package {
         self.name = name.clone();
         self.package_scope.write().unwrap().set_name(format!("package_{}", name.clone()));
     }
-    
+
+    generate_get_pub!(name, String, get_name);
+    generate_set_pub!(file_path, String, set_file_path);
 
 }

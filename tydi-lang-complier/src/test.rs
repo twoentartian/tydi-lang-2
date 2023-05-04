@@ -1,6 +1,6 @@
 #[test]
 fn save_load_project_description(){
-    let mut project_description = crate::project_make::ProjectDescription::generate_default();
+    let mut project_description = crate::project_description::ProjectDescription::generate_default();
     let toml_text = project_description.to_toml();
     println!("{toml_text}");
     let toml_text = toml_text.replace("tydi_src_", "new_src_");

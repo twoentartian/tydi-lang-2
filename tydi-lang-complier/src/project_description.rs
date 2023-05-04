@@ -15,6 +15,7 @@ pub struct ProjectFiles {
 pub struct ProjectDescription {
     pub properties: ProjectProperties,
     pub files: ProjectFiles,
+    pub output_path: String,
 }
 
 impl ProjectDescription {
@@ -22,11 +23,12 @@ impl ProjectDescription {
         return Self {
             properties: ProjectProperties {
                 name: format!("tydi_project_example"),
-                top_level_implementation: format!("implementation_0")
+                top_level_implementation: format!("implementation_0"),
             },
             files: ProjectFiles{
                 tydi_src: vec![format!("./tydi_src_0.td"), format!("./tydi_src_1.td")],
             },
+            output_path: format!("./output"),
         };
     }
 

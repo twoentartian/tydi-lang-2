@@ -5,7 +5,7 @@ use serde::{Serialize, Deserialize};
 
 use crate::error::TydiLangError;
 use crate::{generate_get, generate_name};
-use crate::trait_common::{GetName, NewPlaceHolder};
+use crate::trait_common::{GetName};
 use crate::tydi_memory_representation::{Variable};
 
 use super::TraitCodeLocationAccess;
@@ -121,10 +121,7 @@ impl Scope {
     pub fn add_var(&mut self, var: Arc<RwLock<Variable>>) -> Result<(), TydiLangError> {
         let var_name = var.read().unwrap().get_name();
         if self.variables.contains_key(&var_name) {
-            let error = TydiLangError {
-                message: format!("{var_name} redefined in the same scope"),
-                location: var.read().unwrap().get_code_location(),
-            };
+            let error = TydiLangError::new(format!("{var_name} redefined in the same scope"), var.read().unwrap().get_code_location());
             return Err(error);
         }
         self.variables.insert(var_name, var.clone());

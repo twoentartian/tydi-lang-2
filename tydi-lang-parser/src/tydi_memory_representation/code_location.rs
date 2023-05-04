@@ -6,8 +6,8 @@ use crate::tydi_parser::*;
 
 #[derive(Clone, Debug, Serialize)]
 pub struct CodeLocation {
-    begin: Option<usize>,
-    end: Option<usize>,
+    pub begin: Option<usize>,
+    pub end: Option<usize>,
 }
 
 impl CodeLocation {
@@ -91,10 +91,24 @@ impl CodeLocation {
         }
         let src = src.as_ref().unwrap().read().unwrap();
         if self.begin.is_some() && self.end.is_some() {
-            let code_span = src[self.begin.unwrap()..self.end.unwrap()].to_string();
             let begin_line = CodeLocation::count_lines(&src[0..self.begin.unwrap()].to_string());
             let end_line = CodeLocation::count_lines(&src[0..self.end.unwrap()].to_string());
-            return format!("line = {}~{}:\n{}", begin_line, end_line, code_span);
+            let line_digit = end_line.to_string().len();
+
+            let mut output = String::new();
+            for current_line in begin_line .. end_line+1 {
+                let line_str = current_line.to_string();
+                let space_padding = line_digit - line_str.len();
+                for i in 0..space_padding {
+                    output.push_str(" ");
+                }
+                output.push_str(&current_line.to_string());
+                output.push_str(" | ");
+                let code_of_target_line = CodeLocation::get_line(&*src, current_line+1);
+                output.push_str(&format!("{}", code_of_target_line));
+            }
+
+            return output;
         }
         if self.begin.is_some() {
             let begin_line = CodeLocation::count_lines(&src[0..self.begin.unwrap()].to_string());

@@ -18,7 +18,14 @@ use parse_var::*;
 mod parse_template;
 use parse_template::*;
 
+mod parse_streamlet;
+use parse_streamlet::*;
+
+mod parse_miscellaneous;
+use parse_miscellaneous::*;
+
 use crate::error::TydiLangError;
+use crate::generate_name::generate_init_value;
 use crate::trait_common::GetScope;
 use crate::tydi_parser::*;
 use crate::tydi_memory_representation::{Scope, CodeLocation, Package, TraitCodeLocationAccess};
@@ -35,23 +42,17 @@ pub fn tydi_lang_src_to_memory_representation(src: String) -> Result<Arc<RwLock<
                     pest::error::InputLocation::Span((begin, end)) => CodeLocation::new(begin, end),
                 };
                 let message_from_parser = format!("Expected: {:?}, found: {:?}", positives, negatives);
-                return Err(TydiLangError { 
-                    message: format!("cannot parse the source code, message from parser: {}", message_from_parser), 
-                    location: error_location, 
-                });
+                return Err(TydiLangError::new(format!("cannot parse the source code, message from parser: {}", message_from_parser), error_location));
             },
             pest::error::ErrorVariant::CustomError { message } => {
-                return Err(TydiLangError { 
-                    message: format!("cannot parse the source code, message from parser: {}", message), 
-                    location: CodeLocation::new_unknown(), 
-                });
+                return Err(TydiLangError::new(format!("cannot parse the source code, message: {}", message), CodeLocation::new_unknown()));
             },
         }
     }
 
-    let mut package_name = String::new();
+    let package_name = generate_init_value();
     let parse_result = parse_result.ok().unwrap();
-    let output_package = Package::new(package_name);
+    let output_package = Package::new(package_name.clone());
     for element in parse_result.clone().into_iter() {
         match element.as_rule() {
             Rule::PackageStatement => {
@@ -66,19 +67,26 @@ pub fn tydi_lang_src_to_memory_representation(src: String) -> Result<Arc<RwLock<
             _ => todo!()
         }
     }
-    let loc = CodeLocation::new(0, src.len());
-    output_package.write().unwrap().set_code_location(loc);
+    {
+        let mut output_package_write = output_package.write().unwrap();
+        let loc = CodeLocation::new(0, src.len());
+        output_package_write.set_code_location(loc);
+    }
+
     return Ok(output_package);
 }
+
+
 
 #[cfg(test)]
 mod test_tydi_lang_src_to_memory_representation {
     use super::*;
-    use serde_json::Value;
+    use serde_json::{Value};
 
-    fn print_tydi_lang_error(error: &TydiLangError, src_ptr: Option<Arc<RwLock<String>>>) {
-        println!("{}", error.message);
-        println!("{}", error.location.show(src_ptr));
+    fn get_logic_type<'a>(target: &'a Value, name: & str) -> &'a Value {
+        let logic_type_var_name = target[name]["exp"].as_str().unwrap().to_string();
+        let output = &target[&logic_type_var_name];
+        return output;
     }
 
     #[test]
@@ -90,7 +98,7 @@ mod test_tydi_lang_src_to_memory_representation {
         let result = tydi_lang_src_to_memory_representation(src);
         if result.is_err() {
             let result = result.err().unwrap();
-            print_tydi_lang_error(&result, src_ptr.clone());
+            println!("{}", result.print(src_ptr.clone()));
             return;
         }
         let result = result.ok().unwrap();
@@ -100,7 +108,7 @@ mod test_tydi_lang_src_to_memory_representation {
     }
 
     #[test]
-    fn simple_declare_variable_0() {
+    fn declare_variable_0() {
         let src = String::from(r#"
         package test;
         i = 10;
@@ -109,7 +117,7 @@ mod test_tydi_lang_src_to_memory_representation {
         let result = tydi_lang_src_to_memory_representation(src);
         if result.is_err() {
             let result = result.err().unwrap();
-            print_tydi_lang_error(&result, src_ptr.clone());
+            println!("{}", result.print(src_ptr.clone()));
             return;
         }
         let result = result.ok().unwrap();
@@ -128,7 +136,7 @@ mod test_tydi_lang_src_to_memory_representation {
     }
 
     #[test]
-    fn simple_declare_variable_1() {
+    fn declare_variable_1() {
         let src = String::from(r#"
         package test;
         i:int = 10;
@@ -137,7 +145,7 @@ mod test_tydi_lang_src_to_memory_representation {
         let result = tydi_lang_src_to_memory_representation(src);
         if result.is_err() {
             let result = result.err().unwrap();
-            print_tydi_lang_error(&result, src_ptr.clone());
+            println!("{}", result.print(src_ptr.clone()));
             return;
         }
         let result = result.ok().unwrap();
@@ -156,7 +164,7 @@ mod test_tydi_lang_src_to_memory_representation {
     }
 
     #[test]
-    fn simple_declare_variable_2() {
+    fn declare_variable_2() {
         let src = String::from(r#"
         package test;
         i:[int] = {10, 20, 30};
@@ -165,7 +173,7 @@ mod test_tydi_lang_src_to_memory_representation {
         let result = tydi_lang_src_to_memory_representation(src);
         if result.is_err() {
             let result = result.err().unwrap();
-            print_tydi_lang_error(&result, src_ptr.clone());
+            println!("{}", result.print(src_ptr.clone()));
             return;
         }
         let result = result.ok().unwrap();
@@ -184,7 +192,7 @@ mod test_tydi_lang_src_to_memory_representation {
     }
 
     #[test]
-    fn simple_declare_variable_3() {
+    fn declare_variable_3() {
         let src = String::from(r#"
         package test;
         i:[int] = {10, 20, 30};
@@ -194,7 +202,7 @@ mod test_tydi_lang_src_to_memory_representation {
         let result = tydi_lang_src_to_memory_representation(src);
         if result.is_err() {
             let result = result.err().unwrap();
-            print_tydi_lang_error(&result, src_ptr.clone());
+            println!("{}", result.print(src_ptr.clone()));
             return;
         }
         let result = result.ok().unwrap();
@@ -213,7 +221,7 @@ mod test_tydi_lang_src_to_memory_representation {
     }
 
     #[test]
-    fn simple_declare_variable_4() {
+    fn declare_simple_type() {
         let src = String::from(r#"
         package test;
         type_null: type = Null;
@@ -222,7 +230,7 @@ mod test_tydi_lang_src_to_memory_representation {
         let result = tydi_lang_src_to_memory_representation(src);
         if result.is_err() {
             let result = result.err().unwrap();
-            print_tydi_lang_error(&result, src_ptr.clone());
+            println!("{}", result.print(src_ptr.clone()));
             return;
         }
         let result = result.ok().unwrap();
@@ -241,7 +249,7 @@ mod test_tydi_lang_src_to_memory_representation {
     }
 
     #[test]
-    fn simple_declare_variable_5() {
+    fn declare_type_array() {
         let src = String::from(r#"
         package test;
         type_null: [type] = {Null, Null, Null};
@@ -250,7 +258,7 @@ mod test_tydi_lang_src_to_memory_representation {
         let result = tydi_lang_src_to_memory_representation(src);
         if result.is_err() {
             let result = result.err().unwrap();
-            print_tydi_lang_error(&result, src_ptr.clone());
+            println!("{}", result.print(src_ptr.clone()));
             return;
         }
         let result = result.ok().unwrap();
@@ -269,7 +277,7 @@ mod test_tydi_lang_src_to_memory_representation {
     }
 
     #[test]
-    fn simple_declare_variable_6() {
+    fn declare_bit_0() {
         let src = String::from(r#"
         package test;
         bit_8 = Bit(8);
@@ -280,7 +288,7 @@ mod test_tydi_lang_src_to_memory_representation {
         let result = tydi_lang_src_to_memory_representation(src);
         if result.is_err() {
             let result = result.err().unwrap();
-            print_tydi_lang_error(&result, src_ptr.clone());
+            println!("{}", result.print(src_ptr.clone()));
             return;
         }
         let result = result.ok().unwrap();
@@ -294,6 +302,7 @@ mod test_tydi_lang_src_to_memory_representation {
             let variable_1_name: String = variable_0["exp"].as_str().unwrap().to_string();
             let variable_1 = &target["package_scope"]["variables"][&variable_1_name];
             assert_eq!(variable_1["name"], format!("{variable_1_name}"));
+            assert_eq!(variable_1["evaluated"], format!("PreEvaluatedLogicType"))
         }
         {
             let variable_0 = &target["package_scope"]["variables"]["bit_8_type1"];
@@ -301,11 +310,12 @@ mod test_tydi_lang_src_to_memory_representation {
             let variable_1_name: String = variable_0["exp"].as_str().unwrap().to_string();
             let variable_1 = &target["package_scope"]["variables"][&variable_1_name];
             assert_eq!(variable_1["name"], format!("{variable_1_name}"));
+            assert_eq!(variable_1["evaluated"], format!("PreEvaluatedLogicType"))
         }
     }
 
     #[test]
-    fn simple_declare_variable_7() {
+    fn declare_group_0() {
         let src = String::from(r#"
         package test;
         #this is a document#
@@ -318,7 +328,7 @@ mod test_tydi_lang_src_to_memory_representation {
         let result = tydi_lang_src_to_memory_representation(src);
         if result.is_err() {
             let result = result.err().unwrap();
-            print_tydi_lang_error(&result, src_ptr.clone());
+            println!("{}", result.print(src_ptr.clone()));
             return;
         }
         let result = result.ok().unwrap();
@@ -337,13 +347,13 @@ mod test_tydi_lang_src_to_memory_representation {
     }
 
     #[test]
-    fn simple_declare_variable_8() {
+    fn declare_union_0() {
         let src = String::from(r#"
         package test;
         bit_8 = Bit(8);
         #this is a document#
         Union x <x:[int], y:string> {
-            bit_8_type0: Bit(8);
+            bit_8_type0: Bit(8)[2];
             bit_8_type1: Bit(8);
         }
         "#);
@@ -351,7 +361,7 @@ mod test_tydi_lang_src_to_memory_representation {
         let result = tydi_lang_src_to_memory_representation(src);
         if result.is_err() {
             let result = result.err().unwrap();
-            print_tydi_lang_error(&result, src_ptr.clone());
+            println!("{}", result.print(src_ptr.clone()));
             return;
         }
         let result = result.ok().unwrap();
@@ -366,6 +376,88 @@ mod test_tydi_lang_src_to_memory_representation {
             assert!(!group_x_variable.is_null());
             let group_x_variable_bit_8_type0 = &group_x_variable["scope"]["variables"]["bit_8_type0"];
             assert_eq!(group_x_variable_bit_8_type0["name"], format!("bit_8_type0"));
+            let logic_type = get_logic_type(&group_x_variable["scope"]["variables"], "bit_8_type0");
+            assert_eq!(logic_type["is_array"], true);
+        }
+    }
+
+    #[test]
+    fn declare_stream_0() {
+        let src = String::from(r#"
+        package test;
+
+        bit8 = Bit(8);
+        bit8_stream : Stream(Bit(8), d=2, throughput=2.0, s="Sync");
+        "#);
+        let src_ptr = Some(Arc::new(RwLock::new(src.clone())));
+        let result = tydi_lang_src_to_memory_representation(src);
+        if result.is_err() {
+            let result = result.err().unwrap();
+            println!("{}", result.print(src_ptr.clone()));
+            return;
+        }
+        let result = result.ok().unwrap();
+        let json_output = serde_json::to_string_pretty(&*result.read().unwrap()).ok().unwrap();
+        println!("{json_output}");
+
+        let target: Value = serde_json::from_str(&json_output).unwrap();
+        {
+            let bit8_stream = get_logic_type(&target["package_scope"]["variables"], "bit8_stream");
+            assert_eq!(bit8_stream["exp"], serde_json::Value::Null);
+            assert_eq!(bit8_stream["value"][0]["LogicStreamType"]["dimension"], "2");
+        }
+    }
+
+    #[test]
+    fn declare_package_reference() {
+        let src = String::from(r#"
+        package test;
+
+        use test1;
+        "#);
+        let src_ptr = Some(Arc::new(RwLock::new(src.clone())));
+        let result = tydi_lang_src_to_memory_representation(src);
+        if result.is_err() {
+            let result = result.err().unwrap();
+            println!("{}", result.print(src_ptr.clone()));
+            return;
+        }
+        let result = result.ok().unwrap();
+        let json_output = serde_json::to_string_pretty(&*result.read().unwrap()).ok().unwrap();
+        println!("{json_output}");
+
+        let target: Value = serde_json::from_str(&json_output).unwrap();
+        {
+            assert_eq!(target["package_scope"]["variables"]["test1"]["type_indication"], "PackageReference");
+        }
+    }
+
+    #[test]
+    fn declare_streamlet() {
+        let src = String::from(r#"
+        package test;
+
+        # this is a document #
+        streamlet x <arg0: int, arg1: [type]> @NoTypeCheck {
+            value = 42;
+
+            //port_0: Stream(Bit(8)) in;
+        }
+        "#);
+        let src_ptr = Some(Arc::new(RwLock::new(src.clone())));
+        let result = tydi_lang_src_to_memory_representation(src);
+        if result.is_err() {
+            let result = result.err().unwrap();
+            println!("{}", result.print(src_ptr.clone()));
+            return;
+        }
+        let result = result.ok().unwrap();
+        let json_output = serde_json::to_string_pretty(&*result.read().unwrap()).ok().unwrap();
+        println!("{json_output}");
+
+        let target: Value = serde_json::from_str(&json_output).unwrap();
+        {
+            
         }
     }
 

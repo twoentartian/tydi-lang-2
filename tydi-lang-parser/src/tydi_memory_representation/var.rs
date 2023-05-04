@@ -7,12 +7,16 @@ use crate::tydi_memory_representation::{TypedValue, TypeIndication, CodeLocation
 use crate::trait_common::GetName;
 use crate::{generate_get_pub, generate_access_pub, generate_set_pub, generate_name};
 
+use super::{Streamlet, LogicType};
+
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub enum EvaluationStatus {
     NotEvaluated,
     EvaluationCount(u32),
     Evaluated,
     Predefined,
+
+    PreEvaluatedLogicType,
 }
 
 #[derive(Clone, Debug)]
@@ -22,6 +26,7 @@ pub struct Variable {
     evaluated: EvaluationStatus,
     value: Vec<TypedValue>,     //the variable can be an array
     is_array: bool,
+    array_size: Option<Arc<RwLock<Variable>>>,
     type_indication: TypeIndication,
     is_property_of_scope: bool,
     declare_location: CodeLocation,
@@ -58,6 +63,10 @@ impl Serialize for Variable {
             state.serialize_field("value", &self.value)?;
             state.serialize_field("evaluated", &self.evaluated)?;
             state.serialize_field("is_array", &self.is_array)?;
+            if self.array_size.is_some() {
+                let array_size_var = &self.array_size.as_ref().unwrap();
+                state.serialize_field("array_size", &*array_size_var.read().unwrap())?;
+            }
             state.serialize_field("type_indication", &self.type_indication)?;
             state.serialize_field("is_property_of_scope", &self.is_property_of_scope)?;
             state.serialize_field("declare_location", &self.declare_location)?;
@@ -84,7 +93,23 @@ impl Variable {
             evaluated: EvaluationStatus::NotEvaluated,
             value: vec![],
             is_array: false,
+            array_size: None,
             type_indication: TypeIndication::Any,
+            is_property_of_scope: false,
+            declare_location: CodeLocation::new_unknown(),
+        };
+        return Arc::new(RwLock::new(output));
+    }
+
+    pub fn new_with_type_indication(name: String, exp: Option<String>, type_indication: TypeIndication) -> Arc<RwLock<Self>> {
+        let output = Self {
+            name: name,
+            exp: exp,
+            evaluated: EvaluationStatus::NotEvaluated,
+            value: vec![],
+            is_array: false,
+            array_size: None,
+            type_indication: type_indication,
             is_property_of_scope: false,
             declare_location: CodeLocation::new_unknown(),
         };
@@ -98,6 +123,7 @@ impl Variable {
             evaluated: EvaluationStatus::NotEvaluated,
             value: vec![],
             is_array: false,
+            array_size: None,
             type_indication: TypeIndication::Unknown,
             is_property_of_scope: false,
             declare_location: CodeLocation::new_unknown(),
@@ -105,14 +131,32 @@ impl Variable {
         return Arc::new(RwLock::new(output));
     }
 
-    pub fn new_logic_type(name: String, value: TypedValue) -> Arc<RwLock<Self>> {
+    pub fn new_logic_type(name: String, logic_type: Arc<RwLock<LogicType>>) -> Arc<RwLock<Self>> {
+        let typed_value = TypedValue::LogicTypeValue(logic_type);
+        let output = Self {
+            name: name,
+            exp: None,
+            evaluated: EvaluationStatus::PreEvaluatedLogicType,
+            value: vec![typed_value],
+            is_array: false,
+            array_size: None,
+            type_indication: TypeIndication::AnyLogicType,
+            is_property_of_scope: false,
+            declare_location: CodeLocation::new_unknown(),
+        };
+        return Arc::new(RwLock::new(output));
+    }
+
+    pub fn new_streamlet(name: String, streamlet: Arc<RwLock<Streamlet>>) -> Arc<RwLock<Self>> {
+        let typed_value = TypedValue::Streamlet(streamlet);
         let output = Self {
             name: name,
             exp: None,
             evaluated: EvaluationStatus::NotEvaluated,
-            value: vec![value],
+            value: vec![typed_value],
             is_array: false,
-            type_indication: TypeIndication::AnyLogicType,
+            array_size: None,
+            type_indication: TypeIndication::AnyStreamlet,
             is_property_of_scope: false,
             declare_location: CodeLocation::new_unknown(),
         };
@@ -126,6 +170,7 @@ impl Variable {
             evaluated: EvaluationStatus::Predefined,
             value: vec![value.clone()],
             is_array: false,
+            array_size: None,
             type_indication: TypeIndication::infer_from_typed_value(&value),
             is_property_of_scope: false,
             declare_location: CodeLocation::new_unknown(),
@@ -140,6 +185,7 @@ impl Variable {
             evaluated: EvaluationStatus::Predefined,
             value: vec![],
             is_array: true,
+            array_size: None,
             type_indication: type_indication,
             is_property_of_scope: false,
             declare_location: CodeLocation::new_unknown(),
@@ -169,8 +215,9 @@ impl Variable {
     generate_access_pub!(value, Vec<TypedValue>, get_value, set_value);
     generate_access_pub!(type_indication, TypeIndication, get_type_indication, set_type_indication);
     generate_access_pub!(is_array, bool, get_is_array, set_is_array);
+    generate_access_pub!(array_size, Option<Arc<RwLock<Variable>>>, get_array_size, set_array_size);
     generate_access_pub!(is_property_of_scope, bool, get_is_property_of_scope, set_is_property_of_scope);
-    generate_get_pub!(evaluated, EvaluationStatus, get_evaluated);
+    generate_access_pub!(evaluated, EvaluationStatus, get_evaluated, set_evaluated);
 }
 
 

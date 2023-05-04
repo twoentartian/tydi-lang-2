@@ -13,6 +13,6 @@ mod serde_serialization;
 
 mod trait_common;
 
-mod tydi_memory_representation;
+pub mod tydi_memory_representation;
 
 mod tydi_lang_src_to_memory_representation;

@@ -7,6 +7,7 @@ use crate::tydi_parser::*;
 
 use super::parse_type::parse_AllTypeKeyword;
 
+#[allow(non_snake_case)]
 pub fn parse_TemplateArgs(src: Pair<Rule>, scope: Arc<RwLock<Scope>>) -> Result<Option<BTreeMap<usize, TemplateArg>>, TydiLangError> {
     let mut arg_container: BTreeMap<usize, TemplateArg> = BTreeMap::new();
     let mut index = 0;
@@ -18,7 +19,7 @@ pub fn parse_TemplateArgs(src: Pair<Rule>, scope: Arc<RwLock<Scope>>) -> Result<
                 arg_container.insert(index, arg);
                 index += 1;
             }
-            _ => todo!()
+            _ => unreachable!()
         }
     }
 
@@ -30,6 +31,7 @@ pub fn parse_TemplateArgs(src: Pair<Rule>, scope: Arc<RwLock<Scope>>) -> Result<
     }
 }
 
+#[allow(non_snake_case)]
 pub fn parse_Arg(src: Pair<Rule>, scope: Arc<RwLock<Scope>>) -> Result<TemplateArg, TydiLangError> {
     let mut output = TemplateArg::new_place_holder();
     for element in src.clone().into_inner().into_iter() {
@@ -38,12 +40,13 @@ pub fn parse_Arg(src: Pair<Rule>, scope: Arc<RwLock<Scope>>) -> Result<TemplateA
             Rule::Arg_Common => {
                 output = parse_Arg_Common(element, scope.clone())?;
             }
-            _ => todo!()
+            _ => unreachable!()
         }
     }
     return Ok(output);
 }
 
+#[allow(non_snake_case)]
 pub fn parse_Arg_Common(src: Pair<Rule>, scope: Arc<RwLock<Scope>>) -> Result<TemplateArg, TydiLangError> {
     let mut output_arg = TemplateArg::new_place_holder();
     for element in src.clone().into_inner().into_iter() {
@@ -57,7 +60,7 @@ pub fn parse_Arg_Common(src: Pair<Rule>, scope: Arc<RwLock<Scope>>) -> Result<Te
                 output_arg.set_is_array(is_array);
                 output_arg.set_type_indication(type_indication);
             }
-            _ => todo!()
+            _ => unreachable!()
         }
     }
     output_arg.set_code_location(CodeLocation::new_from_pest_rule(&src));

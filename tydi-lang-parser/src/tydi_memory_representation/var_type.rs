@@ -4,7 +4,7 @@ use serde::{Serialize};
 
 use crate::{tydi_memory_representation::{Package, LogicType}, trait_common::GetName};
 
-use super::Variable;
+use crate::tydi_memory_representation::{Variable, Streamlet};
 
 #[derive(Clone, Debug, Serialize)]
 pub enum TypeIndication {
@@ -18,8 +18,10 @@ pub enum TypeIndication {
     Float,
     Clockdomain,
 
+    // represents any logic types
     AnyLogicType,
 
+    /// region begin: these indications are only for indicator use - x : Bit(8), etc
     LogicNull,
     #[serde(with = "crate::serde_serialization::use_name_for_arc_rwlock")]
     LogicStream(Arc<RwLock<Variable>>),
@@ -29,10 +31,13 @@ pub enum TypeIndication {
     LogicGroup(Arc<RwLock<Variable>>),
     #[serde(with = "crate::serde_serialization::use_name_for_arc_rwlock")]
     LogicUnion(Arc<RwLock<Variable>>),
+    /// region end
 
     AnyStreamlet,
 
     AnyImplementation,
+
+    PackageReference,
 }
 
 impl PartialEq for TypeIndication {
@@ -59,6 +64,8 @@ impl TypeIndication {
             TypedValue::FloatValue(_) => TypeIndication::Float,
             TypedValue::ClockDomainValue(_) => TypeIndication::Clockdomain,
             TypedValue::LogicTypeValue(_) => TypeIndication::AnyLogicType,
+            
+            TypedValue::Streamlet(_) => unreachable!(),
         }
     }
 
@@ -109,6 +116,8 @@ pub enum TypedValue {
     ClockDomainValue(String),
 
     LogicTypeValue(Arc<RwLock<LogicType>>),
+
+    Streamlet(Arc<RwLock<Streamlet>>),
 }
 
 impl Serialize for TypedValue {
@@ -134,6 +143,10 @@ impl Serialize for TypedValue {
             TypedValue::LogicTypeValue(v) => {
                 let v = v.read().unwrap();
                 LogicType::serialize(&*v, serializer)
+            },
+            TypedValue::Streamlet(v) => {
+                let v = v.read().unwrap();
+                Streamlet::serialize(&*v, serializer)
             },
         }
     }

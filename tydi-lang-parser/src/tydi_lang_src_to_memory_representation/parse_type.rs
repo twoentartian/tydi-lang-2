@@ -5,72 +5,62 @@ use crate::tydi_memory_representation::{Scope, TypeIndication, Variable, CodeLoc
 use crate::tydi_lang_src_to_memory_representation::{parse_var::*, parse_logic_type::*};
 use crate::tydi_parser::*;
 
-pub fn parse_TypeIndicator(src: Pair<Rule>, scope: Arc<RwLock<Scope>>) -> Result<(TypeIndication, bool), TydiLangError> {
+#[allow(non_snake_case)]
+pub fn parse_TypeIndicator(src: Pair<Rule>, scope: Arc<RwLock<Scope>>) -> Result<(TypeIndication, bool /*is_array*/), TydiLangError> {
     let mut type_indicator = TypeIndication::Any;
     let mut is_array = false;
-    let mut array_var = None;
     for element in src.clone().into_inner().into_iter() {
         let rule = element.as_rule();
         match rule {
             Rule::TypeIndicator_All => {            // int, type, 
-                (type_indicator, array_var) = parse_TypeIndicator_All(element, scope.clone())?;
-                if array_var.is_some() {
-                    return Err(TydiLangError {
-                        message: format!("unknown syntax"),
-                        location: CodeLocation::new_from_pest_rule(&src),
-                    });
-                }
+                type_indicator = parse_TypeIndicator_All(element, scope.clone())?;
             }
             Rule::TypeIndicator_Array => {          // [int], [type]
                 is_array = true;
                 type_indicator = parse_TypeIndicator_Array(element, scope.clone())?;
             }
-            _ => todo!()
+            _ => unreachable!()
         }
     }
     return Ok((type_indicator, is_array));
 }
 
+#[allow(non_snake_case)]
 pub fn parse_TypeIndicator_Array(src: Pair<Rule>, scope: Arc<RwLock<Scope>>) -> Result<TypeIndication, TydiLangError> {
     let mut type_indicator = TypeIndication::Any;
-    let mut array_var = None;
     for element in src.clone().into_inner().into_iter() {
         let rule = element.as_rule();
         match rule {
             Rule::TypeIndicator_All => {
-                (type_indicator, array_var) = parse_TypeIndicator_All(element, scope.clone())?;
-                if array_var.is_some() {
-                    return Err(TydiLangError {
-                        message: format!("unknown syntax"),
-                        location: CodeLocation::new_from_pest_rule(&src),
-                    });
-                }
+                type_indicator = parse_TypeIndicator_All(element, scope.clone())?;
             }
-            _ => todo!()
+            _ => unreachable!()
         }
     }
     return Ok(type_indicator);
 }
 
+#[allow(non_snake_case)]
 /// return: ( TypeIndication, a var to indicate the array size of logic type: None = single var, Some= array )
-pub fn parse_TypeIndicator_All(src: Pair<Rule>, scope: Arc<RwLock<Scope>>) -> Result<(TypeIndication, Option<Arc<RwLock<Variable>>>), TydiLangError> {
+pub fn parse_TypeIndicator_All(src: Pair<Rule>, scope: Arc<RwLock<Scope>>) -> Result<TypeIndication, TydiLangError> {
     for element in src.clone().into_inner().into_iter() {
         let rule = element.as_rule();
         match rule {
             Rule::BasicTypeKeyword => {
                 let type_indicator = parse_BasicTypeKeyword(element, scope.clone())?;
-                return Ok((type_indicator, None));
+                return Ok(type_indicator);
             }
             Rule::LogicalType => {
-                let (type_indicator, array_size_var) = parse_LogicalType(element, scope.clone())?;
-                return Ok((type_indicator, array_size_var));
+                let type_indicator = parse_LogicalType(element, scope.clone())?;
+                return Ok(type_indicator);
             }
-            _ => todo!()
+            _ => unreachable!()
         }
     }
     todo!();
 }
 
+#[allow(non_snake_case)]
 pub fn parse_BasicTypeKeyword(src: Pair<Rule>, scope: Arc<RwLock<Scope>>) -> Result<TypeIndication, TydiLangError> {
     let mut type_indicator = TypeIndication::Any;
     for element in src.clone().into_inner().into_iter() {
@@ -91,12 +81,13 @@ pub fn parse_BasicTypeKeyword(src: Pair<Rule>, scope: Arc<RwLock<Scope>>) -> Res
             Rule::LogicalTypeKeyword => {
                 type_indicator = TypeIndication::AnyLogicType;
             }
-            _ => todo!()
+            _ => unreachable!()
         }
     }
     return Ok(type_indicator);
 }
 
+#[allow(non_snake_case)]
 pub fn parse_BasicTypeKeywordArray(src: Pair<Rule>, scope: Arc<RwLock<Scope>>) -> Result<TypeIndication, TydiLangError> {
     let mut type_indicator = TypeIndication::Any;
     for element in src.clone().into_inner().into_iter() {
@@ -105,12 +96,13 @@ pub fn parse_BasicTypeKeywordArray(src: Pair<Rule>, scope: Arc<RwLock<Scope>>) -
             Rule::BasicTypeKeyword => {
                 type_indicator = parse_BasicTypeKeyword(element, scope.clone())?;
             }
-            _ => todo!()
+            _ => unreachable!()
         }
     }
     return Ok(type_indicator);
 }
 
+#[allow(non_snake_case)]
 pub fn parse_AllTypeKeyword(src: Pair<Rule>, scope: Arc<RwLock<Scope>>) -> Result<(TypeIndication, bool), TydiLangError> {
     let mut type_indicator = TypeIndication::Any;
     let mut is_array = false;
@@ -130,31 +122,33 @@ pub fn parse_AllTypeKeyword(src: Pair<Rule>, scope: Arc<RwLock<Scope>>) -> Resul
             Rule::ImplementationKeyword => {
                 type_indicator = TypeIndication::AnyImplementation;
             }
-            _ => todo!()
+            _ => unreachable!()
         }
     }
     return Ok((type_indicator, is_array));
 }
 
+#[allow(non_snake_case)]
 ///return: (type_indication, option<array_variable>)
-pub fn parse_LogicalType(src: Pair<Rule>, scope: Arc<RwLock<Scope>>) -> Result<(TypeIndication, Option<Arc<RwLock<Variable>>>), TydiLangError> {
+pub fn parse_LogicalType(src: Pair<Rule>, scope: Arc<RwLock<Scope>>) -> Result<TypeIndication, TydiLangError> {
     for element in src.clone().into_inner().into_iter() {
         let rule = element.as_rule();
         match rule {
             Rule::LogicalType_Array => {
-                let (type_indicator, array_size_var) = parse_LogicalType_Array(element, scope.clone())?;
-                return Ok((type_indicator, array_size_var));
+                let type_indicator = parse_LogicalType_Array(element, scope.clone())?;
+                return Ok(type_indicator);
             }
             Rule::LogicalType_Basic => {
                 let type_indicator = parse_LogicalType_Basic(element, scope.clone())?;
-                return Ok((type_indicator, None));
+                return Ok(type_indicator);
             }
-            _ => todo!()
+            _ => unreachable!()
         }
     }
     todo!()
 }
 
+#[allow(non_snake_case)]
 pub fn parse_LogicalType_Basic(src: Pair<Rule>, scope: Arc<RwLock<Scope>>) -> Result<TypeIndication, TydiLangError> {
     let mut type_indicator = TypeIndication::Any;
     for element in src.clone().into_inner().into_iter() {
@@ -168,32 +162,23 @@ pub fn parse_LogicalType_Basic(src: Pair<Rule>, scope: Arc<RwLock<Scope>>) -> Re
                 type_indicator = TypeIndication::LogicBit(logic_bit_var);
             }
             Rule::LogicalStream => {
-                todo!()
-                // type_indicator = TypeIndication::LogicStream;
-
-
+                let logic_stream_var = parse_LogicalStream(element, scope.clone())?;
+                type_indicator = TypeIndication::LogicStream(logic_stream_var);
             }
             Rule::LogicalGroup => {
-                
-
-                todo!()
-                // type_indicator = TypeIndication::LogicGroup;
-
-
+                return Err(TydiLangError::new(format!("syntax not allowed, declare group as {{x : Group y {{...}} }}"), CodeLocation::new_from_pest_rule(&src)));
             }
             Rule::LogicalUnion => {
-                todo!()
-                // type_indicator = TypeIndication::LogicUnion;
-
-
+                return Err(TydiLangError::new(format!("syntax not allowed, declare union as {{x : Union y {{...}} }}"), CodeLocation::new_from_pest_rule(&src)));
             }
-            _ => todo!()
+            _ => unreachable!()
         }
     }
     return Ok(type_indicator);
 }
 
-pub fn parse_LogicalType_Array(src: Pair<Rule>, scope: Arc<RwLock<Scope>>) -> Result<(TypeIndication, Option<Arc<RwLock<Variable>>>), TydiLangError> {
+#[allow(non_snake_case)]
+pub fn parse_LogicalType_Array(src: Pair<Rule>, scope: Arc<RwLock<Scope>>) -> Result<TypeIndication, TydiLangError> {
     let mut type_indicator = TypeIndication::Any;
     let mut array_size_var_opt = None;
     for element in src.clone().into_inner().into_iter() {
@@ -205,12 +190,30 @@ pub fn parse_LogicalType_Array(src: Pair<Rule>, scope: Arc<RwLock<Scope>>) -> Re
             Rule::ArraySizeIndicator => {
                 array_size_var_opt = parse_ArraySizeIndicator(element, scope.clone())?;
             }
-            _ => todo!()
+            _ => unreachable!()
         }
     }
-    return Ok((type_indicator, array_size_var_opt));
+
+    if array_size_var_opt.is_some() {
+        let type_indicator_var = match &type_indicator {
+            TypeIndication::LogicNull => return Err(TydiLangError::new(format!("Logic Null cannot be an arry"), CodeLocation::new_from_pest_rule(&src))),
+            TypeIndication::LogicStream(_) => return Err(TydiLangError::new(format!("Logic Stream cannot be an arry"), CodeLocation::new_from_pest_rule(&src))),
+            TypeIndication::LogicBit(v) => v,
+            TypeIndication::LogicGroup(v) => v,
+            TypeIndication::LogicUnion(v) => v,
+            _ => unreachable!()
+        };
+        {
+            let mut type_indicator_var_write = type_indicator_var.write().unwrap();
+            type_indicator_var_write.set_array_size(array_size_var_opt);
+            type_indicator_var_write.set_is_array(true);
+        }
+    }   //we need to set the value according to the "array_size" during evaluation
+
+    return Ok(type_indicator);
 }
 
+#[allow(non_snake_case)]
 pub fn parse_ArraySizeIndicator(src: Pair<Rule>, scope: Arc<RwLock<Scope>>) -> Result<Option<Arc<RwLock<Variable>>>, TydiLangError> {
     let mut is_exp_provided = false;
     let mut array_size_var = Variable::new_place_holder();
@@ -221,7 +224,7 @@ pub fn parse_ArraySizeIndicator(src: Pair<Rule>, scope: Arc<RwLock<Scope>>) -> R
                 is_exp_provided = true;
                 array_size_var = create_variable_from_exp(element, scope.clone())?;
             }
-            _ => todo!()
+            _ => unreachable!()
         }
     }
     if is_exp_provided {
