@@ -2,7 +2,6 @@ use std::sync::{Arc, RwLock};
 
 use crate::error::TydiLangError;
 
-use crate::generate_name::generate_init_value;
 use crate::tydi_memory_representation::{Scope, Attribute, CodeLocation};
 use crate::tydi_parser::*;
 

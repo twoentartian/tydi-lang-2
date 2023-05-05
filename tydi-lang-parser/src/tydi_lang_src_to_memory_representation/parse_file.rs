@@ -39,7 +39,7 @@ pub fn parse_Scope_WithoutBracket(src: Pair<Rule>, scope: Arc<RwLock<Scope>>) ->
                 parse_StatementDeclareStreamlet(element, scope.clone())?;
             }
             Rule::StatementDeclarePort => {
-                todo!()
+                parse_StatementDeclarePort(element, scope.clone())?;
             }
             Rule::StatementDeclareImplementation => {
                 todo!()

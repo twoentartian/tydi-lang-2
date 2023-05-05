@@ -145,7 +145,7 @@ pub fn parse_LogicalType(src: Pair<Rule>, scope: Arc<RwLock<Scope>>) -> Result<T
             _ => unreachable!()
         }
     }
-    todo!()
+    unreachable!()
 }
 
 #[allow(non_snake_case)]

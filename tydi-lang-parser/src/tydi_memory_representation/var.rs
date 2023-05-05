@@ -3,11 +3,9 @@ use std::sync::{Arc, RwLock};
 
 use serde::{Serialize, Serializer, Deserialize};
 
-use crate::tydi_memory_representation::{TypedValue, TypeIndication, CodeLocation, TraitCodeLocationAccess};
+use crate::tydi_memory_representation::{TypedValue, TypeIndication, CodeLocation, TraitCodeLocationAccess, Streamlet, LogicType, Port};
 use crate::trait_common::GetName;
 use crate::{generate_get_pub, generate_access_pub, generate_set_pub, generate_name};
-
-use super::{Streamlet, LogicType};
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub enum EvaluationStatus {
@@ -157,6 +155,22 @@ impl Variable {
             is_array: false,
             array_size: None,
             type_indication: TypeIndication::AnyStreamlet,
+            is_property_of_scope: false,
+            declare_location: CodeLocation::new_unknown(),
+        };
+        return Arc::new(RwLock::new(output));
+    }
+
+    pub fn new_port(name: String, port: Arc<RwLock<Port>>) -> Arc<RwLock<Self>> {
+        let typed_value = TypedValue::Port(port);
+        let output = Self {
+            name: name,
+            exp: None,
+            evaluated: EvaluationStatus::NotEvaluated,
+            value: vec![typed_value],
+            is_array: false,
+            array_size: None,
+            type_indication: TypeIndication::AnyPort,
             is_property_of_scope: false,
             declare_location: CodeLocation::new_unknown(),
         };

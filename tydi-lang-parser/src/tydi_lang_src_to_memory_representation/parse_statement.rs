@@ -139,3 +139,21 @@ pub fn parse_StatementDeclareStreamlet(src: Pair<Rule>, scope: Arc<RwLock<Scope>
     }
     return Ok(());
 }
+
+#[allow(non_snake_case)]
+pub fn parse_StatementDeclarePort(src: Pair<Rule>, scope: Arc<RwLock<Scope>>) -> Result<(), TydiLangError> {
+    for element in src.clone().into_inner().into_iter() {
+        let rule = element.as_rule();
+        match rule {
+            Rule::Port => {
+                let port_var = parse_streamlet::parse_Port(element, scope.clone())?;
+                {
+                    let mut scope_write = scope.write().unwrap();
+                    scope_write.add_var(port_var)?;
+                }
+            }
+            _ => unreachable!()
+        }
+    }
+    return Ok(());
+}

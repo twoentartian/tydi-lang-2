@@ -1,10 +1,11 @@
 use std::sync::{Arc, RwLock};
 
 use serde::{Serialize};
+use serde::ser::SerializeStruct;
 
 use crate::{tydi_memory_representation::{Package, LogicType}, trait_common::GetName};
 
-use crate::tydi_memory_representation::{Variable, Streamlet};
+use crate::tydi_memory_representation::{Variable, Streamlet, Port};
 
 #[derive(Clone, Debug, Serialize)]
 pub enum TypeIndication {
@@ -34,6 +35,7 @@ pub enum TypeIndication {
     /// region end
 
     AnyStreamlet,
+    AnyPort,
 
     AnyImplementation,
 
@@ -66,6 +68,7 @@ impl TypeIndication {
             TypedValue::LogicTypeValue(_) => TypeIndication::AnyLogicType,
             
             TypedValue::Streamlet(_) => unreachable!(),
+            TypedValue::Port(_) => unreachable!(),
         }
     }
 
@@ -103,7 +106,7 @@ impl TypeIndication {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, strum::IntoStaticStr)]
 pub enum TypedValue {
     UnknwonValue,
 
@@ -118,37 +121,47 @@ pub enum TypedValue {
     LogicTypeValue(Arc<RwLock<LogicType>>),
 
     Streamlet(Arc<RwLock<Streamlet>>),
+    Port(Arc<RwLock<Port>>),
 }
 
 impl Serialize for TypedValue {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
         where S: serde::Serializer 
     {
+        let mut state = serializer.serialize_struct("TypedValue", 2)?;
+        let enum_type_str: &'static str = self.into();
+        state.serialize_field("type", enum_type_str)?;
         match self {
             TypedValue::UnknwonValue => {
                 let v = format!("???");
-                serializer.serialize_str(&v)
+                state.serialize_field("value", &v)?;
             },
             TypedValue::PackageReferenceValue(package_ref) => {
-                crate::serde_serialization::use_name_for_arc_rwlock::serialize(package_ref, serializer)
+                let package = package_ref.read().unwrap();
+                state.serialize_field("value", &*package)?;
             },
-            TypedValue::IntValue(v) => serializer.serialize_i128(*v),
-            TypedValue::StringValue(v) => serializer.serialize_str(v),
-            TypedValue::BoolValue(v) => serializer.serialize_bool(*v),
-            TypedValue::FloatValue(v) => serializer.serialize_f64(*v),
+            TypedValue::IntValue(v) => state.serialize_field("value", v)?,
+            TypedValue::StringValue(v) => state.serialize_field("value", v)?,
+            TypedValue::BoolValue(v) => state.serialize_field("value", v)?,
+            TypedValue::FloatValue(v) => state.serialize_field("value", v)?,
             TypedValue::ClockDomainValue(v) => {
-                let v = format!("CLOCK_{}", v);
-                serializer.serialize_str(&v)
+                let v = format!("!CLOCK_{}", v);
+                state.serialize_field("value", &v)?;
             },
             TypedValue::LogicTypeValue(v) => {
                 let v = v.read().unwrap();
-                LogicType::serialize(&*v, serializer)
+                state.serialize_field("value", &*v)?;
             },
             TypedValue::Streamlet(v) => {
                 let v = v.read().unwrap();
-                Streamlet::serialize(&*v, serializer)
+                state.serialize_field("value", &*v)?;
             },
-        }
+            TypedValue::Port(v) => {
+                let v = v.read().unwrap();
+                state.serialize_field("value", &*v)?;
+            },
+        };
+        state.end()
     }
 }
 

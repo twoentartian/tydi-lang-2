@@ -19,7 +19,7 @@ impl Project {
     pub fn new(name: String) -> Arc<RwLock<Self>> {
         let output = Project { 
             name: name, 
-            packages: HashMap::new() 
+            packages: HashMap::new(),
         };
         return Arc::new(RwLock::new(output));
     }

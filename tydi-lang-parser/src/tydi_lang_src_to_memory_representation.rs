@@ -339,7 +339,7 @@ mod test_tydi_lang_src_to_memory_representation {
         {
             let group_x = &target["package_scope"]["variables"]["x"];
             assert_eq!(group_x["name"], format!("x"));
-            let group_x_variable = &group_x["value"][0]["LogicGroupType"];
+            let group_x_variable = &group_x["value"][0]["value"]["LogicGroupType"];
             assert!(!group_x_variable.is_null());
             let group_x_variable_bit_8_type0 = &group_x_variable["scope"]["variables"]["bit_8_type0"];
             assert_eq!(group_x_variable_bit_8_type0["name"], format!("bit_8_type0"));
@@ -372,7 +372,7 @@ mod test_tydi_lang_src_to_memory_representation {
         {
             let group_x = &target["package_scope"]["variables"]["x"];
             assert_eq!(group_x["name"], format!("x"));
-            let group_x_variable = &group_x["value"][0]["LogicUnionType"];
+            let group_x_variable = &group_x["value"][0]["value"]["LogicUnionType"];
             assert!(!group_x_variable.is_null());
             let group_x_variable_bit_8_type0 = &group_x_variable["scope"]["variables"]["bit_8_type0"];
             assert_eq!(group_x_variable_bit_8_type0["name"], format!("bit_8_type0"));
@@ -404,7 +404,7 @@ mod test_tydi_lang_src_to_memory_representation {
         {
             let bit8_stream = get_logic_type(&target["package_scope"]["variables"], "bit8_stream");
             assert_eq!(bit8_stream["exp"], serde_json::Value::Null);
-            assert_eq!(bit8_stream["value"][0]["LogicStreamType"]["dimension"], "2");
+            assert_eq!(bit8_stream["value"][0]["value"]["LogicStreamType"]["dimension"], "2");
         }
     }
 
@@ -441,7 +441,12 @@ mod test_tydi_lang_src_to_memory_representation {
         streamlet x <arg0: int, arg1: [type]> @NoTypeCheck {
             value = 42;
 
-            //port_0: Stream(Bit(8)) in;
+            bit_8_stream = Bit(8);
+
+            # this is port_0 #
+            port_0: bit_8_stream in [x] /"100MHz" @NoTypeCheck ;
+            # this is port_1 #
+            port_1: bit_8_stream out;
         }
         "#);
         let src_ptr = Some(Arc::new(RwLock::new(src.clone())));

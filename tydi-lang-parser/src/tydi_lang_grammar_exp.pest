@@ -142,7 +142,7 @@ PortDirection = { (PortDirectionDirIn | PortDirectionDirOut) }
 PortTimeDomain = { ("/" ~ Exp)? }
 Port = { 
     DOCUMENT ~ 
-    ID ~ ":" ~ LogicalType ~ PortDirection ~ PortTimeDomain ~ ATTRIBUTE*
+    ID ~ ":" ~ Exp ~ PortDirection ~ ArraySizeIndicator? ~ PortTimeDomain ~ ATTRIBUTE*
 }
 
 //// Implementation ////

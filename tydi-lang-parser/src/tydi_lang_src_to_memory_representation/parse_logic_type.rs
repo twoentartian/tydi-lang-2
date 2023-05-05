@@ -4,7 +4,7 @@ use crate::error::TydiLangError;
 use crate::generate_name::generate_init_value;
 use crate::trait_common::HasDocument;
 use crate::tydi_lang_src_to_memory_representation::{parse_template::parse_TemplateArgs, parse_file::parse_Scope_WithoutBracket};
-use crate::tydi_memory_representation::{Scope, LogicType, LogicBit, Variable, TypeIndication, TypedValue, TraitCodeLocationAccess, CodeLocation, GetScope, LogicGroup, LogicUnion, LogicStream, LogicStreamProperty, EvaluationStatus};
+use crate::tydi_memory_representation::{Scope, LogicType, LogicBit, Variable, TraitCodeLocationAccess, CodeLocation, GetScope, LogicGroup, LogicUnion, LogicStream, LogicStreamProperty};
 use crate::{tydi_parser::*, generate_name};
 
 #[allow(non_snake_case)]
