@@ -41,3 +41,23 @@ pub use attributes::Attribute;
 pub mod port;
 pub(in crate) use port::*;
 pub use port::{Port, PortDirection};
+
+pub mod implementation;
+pub(in crate) use implementation::*;
+pub use implementation::{Implementation};
+
+pub mod instance;
+pub(in crate) use instance::*;
+pub use instance::{Instance};
+
+pub mod net;
+pub(in crate) use net::*;
+pub use net::{Net};
+
+pub mod function;
+pub(in crate) use function::*;
+pub use function::{FunctionCall};
+
+pub mod if_for;
+pub(in crate) use if_for::*;
+pub use if_for::{If, For};

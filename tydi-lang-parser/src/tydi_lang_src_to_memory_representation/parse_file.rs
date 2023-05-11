@@ -42,13 +42,13 @@ pub fn parse_Scope_WithoutBracket(src: Pair<Rule>, scope: Arc<RwLock<Scope>>) ->
                 parse_StatementDeclarePort(element, scope.clone())?;
             }
             Rule::StatementDeclareImplementation => {
-                todo!()
+                parse_StatementDeclareImplementation(element, scope.clone())?;
             }
             Rule::StatementDeclareInstance => {
-                todo!()
+                parse_StatementDeclareInstance(element, scope.clone())?;
             }
             Rule::StatementDeclareNet => {
-                todo!()
+                parse_StatementDeclareNet(element, scope.clone())?;
             }
             Rule::StatementDeclareIf => {
                 todo!()
@@ -60,7 +60,7 @@ pub fn parse_Scope_WithoutBracket(src: Pair<Rule>, scope: Arc<RwLock<Scope>>) ->
                 parse_StatementUsePackage(element, scope.clone())?;
             }
             Rule::StatementFunction => {
-                todo!()
+                parse_StatementFunction(element, scope.clone())?;
             }
             _ => unreachable!()
         }

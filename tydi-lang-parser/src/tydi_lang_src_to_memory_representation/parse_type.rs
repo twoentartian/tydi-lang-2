@@ -1,9 +1,10 @@
 use std::sync::{Arc, RwLock};
 
 use crate::error::TydiLangError;
-use crate::tydi_memory_representation::{Scope, TypeIndication, Variable, CodeLocation};
-use crate::tydi_lang_src_to_memory_representation::{parse_var::*, parse_logic_type::*};
+use crate::tydi_memory_representation::{Scope, TypeIndication, Variable, CodeLocation, TraitCodeLocationAccess};
+use crate::tydi_lang_src_to_memory_representation::{parse_logic_type::*};
 use crate::tydi_parser::*;
+use crate::generate_name;
 
 #[allow(non_snake_case)]
 pub fn parse_TypeIndicator(src: Pair<Rule>, scope: Arc<RwLock<Scope>>) -> Result<(TypeIndication, bool /*is_array*/), TydiLangError> {
@@ -206,7 +207,6 @@ pub fn parse_LogicalType_Array(src: Pair<Rule>, scope: Arc<RwLock<Scope>>) -> Re
         {
             let mut type_indicator_var_write = type_indicator_var.write().unwrap();
             type_indicator_var_write.set_array_size(array_size_var_opt);
-            type_indicator_var_write.set_is_array(true);
         }
     }   //we need to set the value according to the "array_size" during evaluation
 
@@ -222,7 +222,13 @@ pub fn parse_ArraySizeIndicator(src: Pair<Rule>, scope: Arc<RwLock<Scope>>) -> R
         match rule {
             Rule::Exp => {
                 is_exp_provided = true;
-                array_size_var = create_variable_from_exp(element, scope.clone())?;
+                // array_size_var = create_variable_from_exp(element, scope.clone())?;
+                let name = generate_name::generate_built_in_variable_name_from_span(&element);
+                array_size_var = Variable::new_with_type_indication(name, Some(element.as_str().to_string()), TypeIndication::Int);
+                {
+                    let mut array_size_var_write = array_size_var.write().unwrap();
+                    array_size_var_write.set_code_location(CodeLocation::new_from_pest_rule(&element));
+                }
             }
             _ => unreachable!()
         }

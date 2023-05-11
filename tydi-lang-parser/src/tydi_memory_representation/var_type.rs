@@ -5,7 +5,9 @@ use serde::ser::SerializeStruct;
 
 use crate::{tydi_memory_representation::{Package, LogicType}, trait_common::GetName};
 
-use crate::tydi_memory_representation::{Variable, Streamlet, Port};
+use crate::tydi_memory_representation::{Variable, Streamlet, Port, Implementation, Instance};
+
+use super::Net;
 
 #[derive(Clone, Debug, Serialize)]
 pub enum TypeIndication {
@@ -38,6 +40,8 @@ pub enum TypeIndication {
     AnyPort,
 
     AnyImplementation,
+    AnyInstance,
+    AnyNet,
 
     PackageReference,
 }
@@ -67,8 +71,12 @@ impl TypeIndication {
             TypedValue::ClockDomainValue(_) => TypeIndication::Clockdomain,
             TypedValue::LogicTypeValue(_) => TypeIndication::AnyLogicType,
             
-            TypedValue::Streamlet(_) => unreachable!(),
-            TypedValue::Port(_) => unreachable!(),
+            TypedValue::Streamlet(_) => TypeIndication::AnyStreamlet,
+            TypedValue::Port(_) => TypeIndication::AnyPort,
+
+            TypedValue::Implementation(_) => TypeIndication::AnyImplementation,
+            TypedValue::Instance(_) => TypeIndication::AnyInstance,
+            TypedValue::Net(_) => TypeIndication::AnyNet,
         }
     }
 
@@ -122,6 +130,10 @@ pub enum TypedValue {
 
     Streamlet(Arc<RwLock<Streamlet>>),
     Port(Arc<RwLock<Port>>),
+
+    Implementation(Arc<RwLock<Implementation>>),
+    Instance(Arc<RwLock<Instance>>),
+    Net(Arc<RwLock<Net>>),
 }
 
 impl Serialize for TypedValue {
@@ -160,6 +172,18 @@ impl Serialize for TypedValue {
                 let v = v.read().unwrap();
                 state.serialize_field("value", &*v)?;
             },
+            TypedValue::Implementation(v) => {
+                let v = v.read().unwrap();
+                state.serialize_field("value", &*v);
+            }
+            TypedValue::Instance(v) => {
+                let v = v.read().unwrap();
+                state.serialize_field("value", &*v);
+            }
+            TypedValue::Net(v) => {
+                let v = v.read().unwrap();
+                state.serialize_field("value", &*v);
+            }
         };
         state.end()
     }

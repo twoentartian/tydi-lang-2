@@ -3,9 +3,11 @@ use std::sync::{Arc, RwLock};
 
 use serde::{Serialize, Serializer, Deserialize};
 
-use crate::tydi_memory_representation::{TypedValue, TypeIndication, CodeLocation, TraitCodeLocationAccess, Streamlet, LogicType, Port};
+use crate::tydi_memory_representation::{TypedValue, TypeIndication, CodeLocation, TraitCodeLocationAccess, Streamlet, LogicType, Port, Implementation, Instance};
 use crate::trait_common::GetName;
 use crate::{generate_get_pub, generate_access_pub, generate_set_pub, generate_name};
+
+use super::Net;
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub enum EvaluationStatus {
@@ -177,6 +179,54 @@ impl Variable {
         return Arc::new(RwLock::new(output));
     }
 
+    pub fn new_implementation(name: String, implementation: Arc<RwLock<Implementation>>) -> Arc<RwLock<Self>> {
+        let typed_value = TypedValue::Implementation(implementation);
+        let output = Self {
+            name: name,
+            exp: None,
+            evaluated: EvaluationStatus::NotEvaluated,
+            value: vec![typed_value],
+            is_array: false,
+            array_size: None,
+            type_indication: TypeIndication::AnyImplementation,
+            is_property_of_scope: false,
+            declare_location: CodeLocation::new_unknown(),
+        };
+        return Arc::new(RwLock::new(output));
+    }
+
+    pub fn new_instance(name: String, instance: Arc<RwLock<Instance>>) -> Arc<RwLock<Self>> {
+        let typed_value = TypedValue::Instance(instance);
+        let output = Self {
+            name: name,
+            exp: None,
+            evaluated: EvaluationStatus::NotEvaluated,
+            value: vec![typed_value],
+            is_array: false,
+            array_size: None,
+            type_indication: TypeIndication::AnyInstance,
+            is_property_of_scope: false,
+            declare_location: CodeLocation::new_unknown(),
+        };
+        return Arc::new(RwLock::new(output));
+    }
+
+    pub fn new_net(name: String, net: Arc<RwLock<Net>>) -> Arc<RwLock<Self>> {
+        let typed_value = TypedValue::Net(net);
+        let output = Self {
+            name: name,
+            exp: None,
+            evaluated: EvaluationStatus::NotEvaluated,
+            value: vec![typed_value],
+            is_array: false,
+            array_size: None,
+            type_indication: TypeIndication::AnyNet,
+            is_property_of_scope: false,
+            declare_location: CodeLocation::new_unknown(),
+        };
+        return Arc::new(RwLock::new(output));
+    }
+
     pub fn new_predefined(name: String, value: TypedValue) -> Arc<RwLock<Self>> {
         let output = Self {
             name: name,
@@ -229,7 +279,15 @@ impl Variable {
     generate_access_pub!(value, Vec<TypedValue>, get_value, set_value);
     generate_access_pub!(type_indication, TypeIndication, get_type_indication, set_type_indication);
     generate_access_pub!(is_array, bool, get_is_array, set_is_array);
-    generate_access_pub!(array_size, Option<Arc<RwLock<Variable>>>, get_array_size, set_array_size);
+    // generate_access_pub!(array_size, Option<Arc<RwLock<Variable>>>, get_array_size, set_array_size);
+    generate_get_pub!(array_size, Option<Arc<RwLock<Variable>>>, get_array_size);
+    pub fn set_array_size(&mut self, array_size: Option<Arc<RwLock<Variable>>>) {
+        match &array_size {
+            Some(_) => self.is_array = true,
+            None => self.is_array = false,
+        }
+        self.array_size = array_size;
+    }
     generate_access_pub!(is_property_of_scope, bool, get_is_property_of_scope, set_is_property_of_scope);
     generate_access_pub!(evaluated, EvaluationStatus, get_evaluated, set_evaluated);
 }

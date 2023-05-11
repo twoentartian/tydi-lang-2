@@ -11,7 +11,7 @@ use crate::tydi_parser::*;
 use crate::tydi_lang_src_to_memory_representation::{parse_template, parse_miscellaneous, parse_file};
 
 #[allow(non_snake_case)]
-pub fn parse_StreamLet(src: Pair<Rule>, scope: Arc<RwLock<Scope>>) -> Result<(), TydiLangError> {
+pub fn parse_StreamLet(src: Pair<Rule>, scope: Arc<RwLock<Scope>>) -> Result<Arc<RwLock<Variable>>, TydiLangError> {
     let mut output_streamlet = Streamlet::new_place_holder();
     let mut document = None;
     let mut name = generate_init_value();
@@ -54,12 +54,8 @@ pub fn parse_StreamLet(src: Pair<Rule>, scope: Arc<RwLock<Scope>>) -> Result<(),
         let mut output_streamlet_var_write = output_streamlet_var.write().unwrap();
         output_streamlet_var_write.set_code_location(CodeLocation::new_from_pest_rule(&src));
     }
-    {
-        let mut scope_write = scope.write().unwrap();
-        scope_write.add_var(output_streamlet_var)?;
-    }
 
-    return Ok(());
+    return Ok(output_streamlet_var);
 }
 
 #[allow(non_snake_case)]
@@ -128,11 +124,9 @@ pub fn parse_Port(src: Pair<Rule>, scope: Arc<RwLock<Scope>>) -> Result<Arc<RwLo
         output_port_var_write.set_code_location(CodeLocation::new_from_pest_rule(&src));
         match array_size_indicator {
             Some(array_size_var) => {
-                output_port_var_write.set_is_array(true);
                 output_port_var_write.set_array_size(Some(array_size_var));
             },
             None => {
-                output_port_var_write.set_is_array(false);
                 output_port_var_write.set_array_size(None);
             }
         }

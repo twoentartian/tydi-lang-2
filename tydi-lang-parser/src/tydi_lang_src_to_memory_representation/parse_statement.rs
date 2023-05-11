@@ -4,7 +4,8 @@ use crate::error::TydiLangError;
 use crate::trait_common::GetName;
 use crate::tydi_memory_representation::{Scope, Variable, TraitCodeLocationAccess, CodeLocation, TypeIndication};
 use crate::tydi_parser::*;
-use crate::tydi_lang_src_to_memory_representation::{parse_type, parse_logic_type, parse_streamlet};
+use crate::tydi_lang_src_to_memory_representation::{parse_type, parse_logic_type, parse_streamlet, parse_implementation};
+
 
 #[allow(non_snake_case)]
 pub fn parse_StatementDeclareVariable(src: Pair<Rule>, scope: Arc<RwLock<Scope>>) -> Result<(), TydiLangError> {
@@ -88,41 +89,37 @@ pub fn parse_StatementDeclareType(src: Pair<Rule>, scope: Arc<RwLock<Scope>>) ->
 
 #[allow(non_snake_case)]
 pub fn parse_StatementDeclareGroup(src: Pair<Rule>, scope: Arc<RwLock<Scope>>) -> Result<(), TydiLangError> {
-    let mut var = Variable::new_place_holder();
     for element in src.clone().into_inner().into_iter() {
         let rule = element.as_rule();
         match rule {
             Rule::LogicalGroup => {
-                var = parse_logic_type::parse_LogicalGroup(element, scope.clone())?;
+                let var = parse_logic_type::parse_LogicalGroup(element, scope.clone())?;
+                {
+                    let mut scope_write = scope.write().unwrap();
+                    scope_write.add_var(var)?;
+                }
             }
             _ => unreachable!()
         }
     }
-    {
-        let mut scope_write = scope.write().unwrap();
-        scope_write.add_var(var)?;
-    }
-
     return Ok(());
 }
 
 #[allow(non_snake_case)]
 pub fn parse_StatementDeclareUnion(src: Pair<Rule>, scope: Arc<RwLock<Scope>>) -> Result<(), TydiLangError> {
-    let mut var = Variable::new_place_holder();
     for element in src.clone().into_inner().into_iter() {
         let rule = element.as_rule();
         match rule {
             Rule::LogicalUnion => {
-                var = parse_logic_type::parse_LogicalUnion(element, scope.clone())?;
+                let var = parse_logic_type::parse_LogicalUnion(element, scope.clone())?;
+                {
+                    let mut scope_write = scope.write().unwrap();
+                    scope_write.add_var(var)?;
+                }
             }
             _ => unreachable!()
         }
     }
-    {
-        let mut scope_write = scope.write().unwrap();
-        scope_write.add_var(var)?;
-    }
-
     return Ok(());
 }
 
@@ -132,7 +129,11 @@ pub fn parse_StatementDeclareStreamlet(src: Pair<Rule>, scope: Arc<RwLock<Scope>
         let rule = element.as_rule();
         match rule {
             Rule::StreamLet => {
-                parse_streamlet::parse_StreamLet(element, scope.clone())?;
+                let var = parse_streamlet::parse_StreamLet(element, scope.clone())?;
+                {
+                    let mut scope_write = scope.write().unwrap();
+                    scope_write.add_var(var)?;
+                }
             }
             _ => unreachable!()
         }
@@ -157,3 +158,72 @@ pub fn parse_StatementDeclarePort(src: Pair<Rule>, scope: Arc<RwLock<Scope>>) ->
     }
     return Ok(());
 }
+
+#[allow(non_snake_case)]
+pub fn parse_StatementDeclareImplementation(src: Pair<Rule>, scope: Arc<RwLock<Scope>>) -> Result<(), TydiLangError> {
+    for element in src.clone().into_inner().into_iter() {
+        let rule = element.as_rule();
+        match rule {
+            Rule::Implementation => {
+                let var = parse_implementation::parse_Implementation(element, scope.clone())?;
+                {
+                    let mut scope_write = scope.write().unwrap();
+                    scope_write.add_var(var)?;
+                }
+            }
+            _ => unreachable!()
+        }
+    }
+    return Ok(());
+}
+
+#[allow(non_snake_case)]
+pub fn parse_StatementDeclareInstance(src: Pair<Rule>, scope: Arc<RwLock<Scope>>) -> Result<(), TydiLangError> {
+    for element in src.clone().into_inner().into_iter() {
+        let rule = element.as_rule();
+        match rule {
+            Rule::Instance => {
+                let var = parse_implementation::parse_Instance(element, scope.clone())?;
+                {
+                    let mut scope_write = scope.write().unwrap();
+                    scope_write.add_var(var)?;
+                }
+            }
+            _ => unreachable!()
+        }
+    }
+    return Ok(());
+}
+
+#[allow(non_snake_case)]
+pub fn parse_StatementDeclareNet(src: Pair<Rule>, scope: Arc<RwLock<Scope>>) -> Result<(), TydiLangError> {
+    for element in src.clone().into_inner().into_iter() {
+        let rule = element.as_rule();
+        match rule {
+            Rule::Net => {
+                let var = parse_implementation::parse_Net(element, scope.clone())?;
+                {
+                    let mut scope_write = scope.write().unwrap();
+                    scope_write.add_var(var)?;
+                }
+            }
+            _ => unreachable!()
+        }
+    }
+    return Ok(());
+}
+
+#[allow(non_snake_case)]
+pub fn parse_StatementFunction(src: Pair<Rule>, scope: Arc<RwLock<Scope>>) -> Result<(), TydiLangError> {
+    for element in src.clone().into_inner().into_iter() {
+        let rule = element.as_rule();
+        match rule {
+            Rule::FunctionExp => {
+                todo!();
+            }
+            _ => unreachable!()
+        }
+    }
+    return Ok(());
+}
+

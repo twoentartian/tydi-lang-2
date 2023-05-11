@@ -11,7 +11,7 @@ use crate::tydi_lang_src_to_memory_representation::tydi_lang_src_to_memory_repre
 pub struct Project {
     name: String,
 
-    #[serde(with = "crate::serde_serialization::arc_rwlock_in_map_value")]
+    #[serde(with = "crate::serde_serialization::arc_rwlock_in_hash_map_value")]
     packages: HashMap<String, Arc<RwLock<Package>>>,
 }
 

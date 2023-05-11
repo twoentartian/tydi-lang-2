@@ -24,6 +24,10 @@ use parse_streamlet::*;
 mod parse_miscellaneous;
 use parse_miscellaneous::*;
 
+mod parse_implementation;
+use parse_implementation::*;
+
+
 use crate::error::TydiLangError;
 use crate::generate_name::generate_init_value;
 use crate::trait_common::GetScope;
@@ -448,6 +452,69 @@ mod test_tydi_lang_src_to_memory_representation {
             # this is port_1 #
             port_1: bit_8_stream out;
         }
+        "#);
+        let src_ptr = Some(Arc::new(RwLock::new(src.clone())));
+        let result = tydi_lang_src_to_memory_representation(src);
+        if result.is_err() {
+            let result = result.err().unwrap();
+            println!("{}", result.print(src_ptr.clone()));
+            return;
+        }
+        let result = result.ok().unwrap();
+        let json_output = serde_json::to_string_pretty(&*result.read().unwrap()).ok().unwrap();
+        println!("{json_output}");
+
+        let target: Value = serde_json::from_str(&json_output).unwrap();
+        {
+            
+        }
+    }
+
+    #[test]
+    fn declare_implementation() {
+        let src = String::from(r#"
+        package test;
+
+        // # this is a document #
+        // streamlet x {
+        //     port_0: bit_8_stream in [x] /"100MHz" @NoTypeCheck ;
+        //     port_1: bit_8_stream out;
+        // }
+
+        impl y of x @external {
+            y = 42;
+            instance x(y0<1,2,3>) [2];
+            self.in => x.in "net0" @NoTypeCheck;
+        }
+
+        "#);
+        let src_ptr = Some(Arc::new(RwLock::new(src.clone())));
+        let result = tydi_lang_src_to_memory_representation(src);
+        if result.is_err() {
+            let result = result.err().unwrap();
+            println!("{}", result.print(src_ptr.clone()));
+            return;
+        }
+        let result = result.ok().unwrap();
+        let json_output = serde_json::to_string_pretty(&*result.read().unwrap()).ok().unwrap();
+        println!("{json_output}");
+        std::fs::write("./output.json", &json_output).unwrap();
+
+        let target: Value = serde_json::from_str(&json_output).unwrap();
+        {
+            
+        }
+    }
+
+
+
+    #[test]
+    fn declare_function_0() {
+        let src = String::from(r#"
+        package test;
+
+        function(0, Bit(1));
+
         "#);
         let src_ptr = Some(Arc::new(RwLock::new(src.clone())));
         let result = tydi_lang_src_to_memory_representation(src);

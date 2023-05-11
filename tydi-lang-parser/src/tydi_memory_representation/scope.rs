@@ -58,7 +58,7 @@ pub struct Scope {
     //// HashMap < parent_scope_name , scope_relationship >
     scope_relationships: HashMap<String, ScopeRelationship>,
 
-    #[serde(with = "crate::serde_serialization::arc_rwlock_in_map_value")]
+    #[serde(with = "crate::serde_serialization::arc_rwlock_in_hash_map_value")]
     variables: HashMap<String, Arc<RwLock<Variable>>>
 }
 
