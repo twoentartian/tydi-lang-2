@@ -27,6 +27,9 @@ use parse_miscellaneous::*;
 mod parse_implementation;
 use parse_implementation::*;
 
+mod parse_logic_flow;
+use parse_logic_flow::*;
+
 
 use crate::error::TydiLangError;
 use crate::generate_name::generate_init_value;
@@ -471,7 +474,7 @@ mod test_tydi_lang_src_to_memory_representation {
     }
 
     #[test]
-    fn declare_implementation() {
+    fn declare_implementation_0() {
         let src = String::from(r#"
         package test;
 
@@ -506,9 +509,76 @@ mod test_tydi_lang_src_to_memory_representation {
         }
     }
 
+    #[test]
+    fn declare_implementation_1() {
+        let src = String::from(r#"
+        package test;
 
+        impl y of x @external {
+            if true {
+                instance i0(u);
+            }
+            elif true {
+                instance i1(u);
+            }
+            elif false {
+                instance i2(u);
+            }
+            else {
+                instance i3(u);
+            }
+        }
+        "#);
+        let src_ptr = Some(Arc::new(RwLock::new(src.clone())));
+        let result = tydi_lang_src_to_memory_representation(src);
+        if result.is_err() {
+            let result = result.err().unwrap();
+            println!("{}", result.print(src_ptr.clone()));
+            return;
+        }
+        let result = result.ok().unwrap();
+        let json_output = serde_json::to_string_pretty(&*result.read().unwrap()).ok().unwrap();
+        println!("{json_output}");
+        std::fs::write("./output.json", &json_output).unwrap();
+
+        let target: Value = serde_json::from_str(&json_output).unwrap();
+        {
+            
+        }
+    }
 
     #[test]
+    fn declare_implementation_2() {
+        let src = String::from(r#"
+        package test;
+
+        impl y of x @external {
+            for x in {1,2,3,4,5} {
+                instance i0(u<x>);
+            }
+        }
+        "#);
+        let src_ptr = Some(Arc::new(RwLock::new(src.clone())));
+        let result = tydi_lang_src_to_memory_representation(src);
+        if result.is_err() {
+            let result = result.err().unwrap();
+            println!("{}", result.print(src_ptr.clone()));
+            return;
+        }
+        let result = result.ok().unwrap();
+        let json_output = serde_json::to_string_pretty(&*result.read().unwrap()).ok().unwrap();
+        println!("{json_output}");
+        std::fs::write("./output.json", &json_output).unwrap();
+
+        let target: Value = serde_json::from_str(&json_output).unwrap();
+        {
+            
+        }
+    }
+
+
+
+    // #[test]
     fn declare_function_0() {
         let src = String::from(r#"
         package test;

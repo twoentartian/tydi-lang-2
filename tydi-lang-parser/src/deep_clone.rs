@@ -6,7 +6,7 @@ pub trait DeepClone {
     fn deep_clone(&self) -> Self;
 }
 
-impl<T> DeepClone for Arc<RwLock<T>> where T: DeepClone+Clone {
+impl<T> DeepClone for Arc<RwLock<T>> where T: DeepClone {
     fn deep_clone(&self) -> Self {
         return Arc::new(RwLock::new(self.read().unwrap().deep_clone()));
     }
@@ -37,7 +37,7 @@ impl<T> DeepClone for Option<T> where T: DeepClone {
     }
 }
 
-impl <K,V> DeepClone for HashMap<K,V> where K : Eq + Hash + DeepClone + Clone, V: DeepClone + Clone {
+impl <K,V> DeepClone for HashMap<K,V> where K : Eq + Hash + DeepClone, V: DeepClone {
     fn deep_clone(&self) -> Self {
         let mut output = HashMap::new();
         for (name, rela) in self {

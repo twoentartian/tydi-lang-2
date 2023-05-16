@@ -4,6 +4,7 @@ use serde::{Serialize, Deserialize};
 pub struct ProjectProperties {
     pub name: String,
     pub top_level_implementation: String,
+    pub top_level_implementation_package: String,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -24,6 +25,7 @@ impl ProjectDescription {
             properties: ProjectProperties {
                 name: format!("tydi_project_example"),
                 top_level_implementation: format!("implementation_0"),
+                top_level_implementation_package: format!("package_0"),
             },
             files: ProjectFiles{
                 tydi_src: vec![format!("./tydi_src_0.td"), format!("./tydi_src_1.td")],

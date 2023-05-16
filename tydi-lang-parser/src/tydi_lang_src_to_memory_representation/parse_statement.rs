@@ -6,6 +6,8 @@ use crate::tydi_memory_representation::{Scope, Variable, TraitCodeLocationAccess
 use crate::tydi_parser::*;
 use crate::tydi_lang_src_to_memory_representation::{parse_type, parse_logic_type, parse_streamlet, parse_implementation};
 
+use super::parse_logic_flow::{parse_If, parse_For};
+
 
 #[allow(non_snake_case)]
 pub fn parse_StatementDeclareVariable(src: Pair<Rule>, scope: Arc<RwLock<Scope>>) -> Result<(), TydiLangError> {
@@ -227,3 +229,38 @@ pub fn parse_StatementFunction(src: Pair<Rule>, scope: Arc<RwLock<Scope>>) -> Re
     return Ok(());
 }
 
+#[allow(non_snake_case)]
+pub fn parse_StatementIf(src: Pair<Rule>, scope: Arc<RwLock<Scope>>) -> Result<(), TydiLangError> {
+    for element in src.clone().into_inner().into_iter() {
+        let rule = element.as_rule();
+        match rule {
+            Rule::If => {
+                let var = parse_If(element, scope.clone())?;
+                {
+                    let mut scope_write = scope.write().unwrap();
+                    scope_write.add_var(var)?;
+                }
+            }
+            _ => unreachable!()
+        }
+    }
+    return Ok(());
+}
+
+#[allow(non_snake_case)]
+pub fn parse_StatementFor(src: Pair<Rule>, scope: Arc<RwLock<Scope>>) -> Result<(), TydiLangError> {
+    for element in src.clone().into_inner().into_iter() {
+        let rule = element.as_rule();
+        match rule {
+            Rule::For => {
+                let var = parse_For(element, scope.clone())?;
+                {
+                    let mut scope_write = scope.write().unwrap();
+                    scope_write.add_var(var)?;
+                }
+            }
+            _ => unreachable!()
+        }
+    }
+    return Ok(());
+}

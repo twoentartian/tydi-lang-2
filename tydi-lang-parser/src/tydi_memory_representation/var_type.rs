@@ -5,9 +5,7 @@ use serde::ser::SerializeStruct;
 
 use crate::{tydi_memory_representation::{Package, LogicType}, trait_common::GetName};
 
-use crate::tydi_memory_representation::{Variable, Streamlet, Port, Implementation, Instance};
-
-use super::Net;
+use crate::tydi_memory_representation::{Variable, Streamlet, Port, Implementation, Instance, Net, If, For};
 
 #[derive(Clone, Debug, Serialize)]
 pub enum TypeIndication {
@@ -64,6 +62,7 @@ impl TypeIndication {
         return match value {
             TypedValue::UnknwonValue => TypeIndication::Any,
             TypedValue::PackageReferenceValue(_) => TypeIndication::ComplierBuiltin,
+
             TypedValue::IntValue(_) => TypeIndication::Int,
             TypedValue::StringValue(_) => TypeIndication::String,
             TypedValue::BoolValue(_) => TypeIndication::Bool,
@@ -77,6 +76,9 @@ impl TypeIndication {
             TypedValue::Implementation(_) => TypeIndication::AnyImplementation,
             TypedValue::Instance(_) => TypeIndication::AnyInstance,
             TypedValue::Net(_) => TypeIndication::AnyNet,
+
+            TypedValue::If(_) => TypeIndication::ComplierBuiltin,
+            TypedValue::For(_) => TypeIndication::ComplierBuiltin,
         }
     }
 
@@ -109,6 +111,27 @@ impl TypeIndication {
                 TypedValue::LogicTypeValue(_) => true,
                 _ => false,
             },
+            TypeIndication::AnyStreamlet => match value {
+                TypedValue::Streamlet(_) => true,
+                _ => false,
+            },
+            TypeIndication::AnyPort => match value {
+                TypedValue::Port(_) => true,
+                _ => false,
+            },
+            TypeIndication::AnyImplementation => match value {
+                TypedValue::Implementation(_) => true,
+                _ => false,
+            },
+            TypeIndication::AnyInstance => match value {
+                TypedValue::Instance(_) => true,
+                _ => false,
+            },
+            TypeIndication::AnyNet => match value {
+                TypedValue::Net(_) => true,
+                _ => false,
+            },
+
             _ => todo!()
         }
     }
@@ -134,6 +157,9 @@ pub enum TypedValue {
     Implementation(Arc<RwLock<Implementation>>),
     Instance(Arc<RwLock<Instance>>),
     Net(Arc<RwLock<Net>>),
+
+    If(Arc<RwLock<If>>),
+    For(Arc<RwLock<For>>),
 }
 
 impl Serialize for TypedValue {
@@ -174,16 +200,25 @@ impl Serialize for TypedValue {
             },
             TypedValue::Implementation(v) => {
                 let v = v.read().unwrap();
-                state.serialize_field("value", &*v);
+                state.serialize_field("value", &*v)?;
             }
             TypedValue::Instance(v) => {
                 let v = v.read().unwrap();
-                state.serialize_field("value", &*v);
+                state.serialize_field("value", &*v)?;
             }
             TypedValue::Net(v) => {
                 let v = v.read().unwrap();
-                state.serialize_field("value", &*v);
+                state.serialize_field("value", &*v)?;
             }
+            TypedValue::If(v) => {
+                let v = v.read().unwrap();
+                state.serialize_field("value", &*v)?;
+            }
+            TypedValue::For(v) => {
+                let v = v.read().unwrap();
+                state.serialize_field("value", &*v)?;
+            }
+
         };
         state.end()
     }

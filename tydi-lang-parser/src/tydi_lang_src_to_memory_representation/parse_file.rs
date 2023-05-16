@@ -51,10 +51,10 @@ pub fn parse_Scope_WithoutBracket(src: Pair<Rule>, scope: Arc<RwLock<Scope>>) ->
                 parse_StatementDeclareNet(element, scope.clone())?;
             }
             Rule::StatementDeclareIf => {
-                todo!()
+                parse_StatementIf(element, scope.clone())?;
             }
             Rule::StatementDeclareFor => {
-                todo!()
+                parse_StatementFor(element, scope.clone())?;
             }
             Rule::StatementUsePackage => {
                 parse_StatementUsePackage(element, scope.clone())?;

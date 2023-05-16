@@ -227,6 +227,21 @@ impl Variable {
         return Arc::new(RwLock::new(output));
     }
 
+    pub fn new_builtin(name: String, value: TypedValue) -> Arc<RwLock<Self>> {
+        let output = Self {
+            name: name,
+            exp: None,
+            evaluated: EvaluationStatus::NotEvaluated,
+            value: vec![value.clone()],
+            is_array: false,
+            array_size: None,
+            type_indication: TypeIndication::infer_from_typed_value(&value),
+            is_property_of_scope: false,
+            declare_location: CodeLocation::new_unknown(),
+        };
+        return Arc::new(RwLock::new(output));
+    }
+
     pub fn new_predefined(name: String, value: TypedValue) -> Arc<RwLock<Self>> {
         let output = Self {
             name: name,
