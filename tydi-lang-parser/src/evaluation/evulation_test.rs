@@ -78,7 +78,7 @@ mod test_expression_parser {
         assert!(get_exp_value(format!("1+2*9")) == get_exp_value(format!("19")));
         assert!(get_exp_value(format!("1+2*9")) != get_exp_value(format!("19.0")));
         assert!(get_exp_value(format!("(1+2)*9")) == get_exp_value(format!("27")));
-        assert!(get_exp_value(format!("{{1,2+3, 4.0*9, {{1,2,3}} + 1}}")) == get_exp_value(format!("{{1,5,36.0,{{1,2,3,1}}}}")));
+        assert!(get_exp_value(format!("{{1,2+3, 4.0*9, 0 + {{1,2,3}} + 1}}")) == get_exp_value(format!("{{1,5,36.0,{{0,1,2,3,1}}}}")));
     }
 
 }

@@ -41,7 +41,7 @@ impl TydiProject {
         for single_src in &self.src_files {
             let file_path = single_src.to_str().unwrap().to_string();
             let file_content = std::fs::read_to_string(single_src).expect(&format!("cannot read file {}", single_src.to_string_lossy()));
-            let add_package_result = project_write.parse_package(file_path.clone(), file_content.clone());
+            let add_package_result = project_write.add_package(file_path.clone(), file_content.clone());
             if add_package_result.is_err() {
                 let src_pointer = Arc::new(RwLock::new(file_content.clone()));
                 let err = add_package_result.err().unwrap();
