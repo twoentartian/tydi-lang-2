@@ -137,8 +137,6 @@ pub fn evaluate_expression_pest(exp: Pair<Rule>, scope: Arc<RwLock<Scope>>, eval
     })
     .parse(exp.into_inner());
 
-
-
     return Ok(result);
 }
 
