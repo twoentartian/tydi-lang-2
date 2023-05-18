@@ -35,10 +35,9 @@ use crate::error::TydiLangError;
 use crate::generate_name::generate_init_value;
 use crate::trait_common::GetScope;
 use crate::tydi_parser::*;
-use crate::tydi_memory_representation::{Scope, CodeLocation, Package, TraitCodeLocationAccess};
+use crate::tydi_memory_representation::{CodeLocation, Package, TraitCodeLocationAccess};
 
 pub fn tydi_lang_src_to_memory_representation(src: String) -> Result<Arc<RwLock<Package>>, TydiLangError> {
-    let src_pointer = Arc::new(RwLock::new(src.clone()));
     let parse_result = TydiLangSrc::parse(Rule::TydiFile,&src);
     if parse_result.is_err() {
         let parse_result = parse_result.err().unwrap();
