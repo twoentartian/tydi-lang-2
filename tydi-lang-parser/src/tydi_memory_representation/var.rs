@@ -24,8 +24,7 @@ pub struct Variable {
     name: String,
     exp: Option<String>,
     evaluated: EvaluationStatus,
-    value: Vec<TypedValue>,     //the variable can be an array
-    is_array: bool,
+    value: TypedValue,     //the variable can be an array
     array_size: Option<Arc<RwLock<Variable>>>,
     type_indication: TypeIndication,
     is_property_of_scope: bool,
@@ -44,17 +43,19 @@ impl Serialize for Variable {
     {
         use serde::ser::{SerializeStruct, SerializeSeq};
         if self.evaluated == EvaluationStatus::Evaluated || self.evaluated == EvaluationStatus::Predefined {
-            if self.is_array {
-                let mut seq = serializer.serialize_seq(Some(self.value.len()))?;
-                for value in &self.value {
-                    seq.serialize_element(&value)?;
-                }
-                seq.end()
-            }
-            else {
-                let value = &self.value[0];
-                value.serialize(serializer)
-            }
+            TypedValue::serialize(&self.value, serializer)
+
+            // if self.is_array {
+            //     let mut seq = serializer.serialize_seq(Some(self.value.len()))?;
+            //     for value in &self.value {
+            //         seq.serialize_element(&value)?;
+            //     }
+            //     seq.end()
+            // }
+            // else {
+            //     let value = &self.value[0];
+            //     value.serialize(serializer)
+            // }
         }
         else {
             let mut state = serializer.serialize_struct("Variable", 6)?;
@@ -62,7 +63,6 @@ impl Serialize for Variable {
             state.serialize_field("exp", &self.exp)?;
             state.serialize_field("value", &self.value)?;
             state.serialize_field("evaluated", &self.evaluated)?;
-            state.serialize_field("is_array", &self.is_array)?;
             if self.array_size.is_some() {
                 let array_size_var = &self.array_size.as_ref().unwrap();
                 state.serialize_field("array_size", &*array_size_var.read().unwrap())?;
@@ -91,8 +91,7 @@ impl Variable {
             name: name,
             exp: exp,
             evaluated: EvaluationStatus::NotEvaluated,
-            value: vec![],
-            is_array: false,
+            value: TypedValue::UnknwonValue,
             array_size: None,
             type_indication: TypeIndication::Any,
             is_property_of_scope: false,
@@ -106,8 +105,7 @@ impl Variable {
             name: name,
             exp: exp,
             evaluated: EvaluationStatus::NotEvaluated,
-            value: vec![],
-            is_array: false,
+            value: TypedValue::UnknwonValue,
             array_size: None,
             type_indication: type_indication,
             is_property_of_scope: false,
@@ -121,8 +119,7 @@ impl Variable {
             name: generate_name::generate_init_value(),
             exp: Some(generate_name::generate_init_value()),
             evaluated: EvaluationStatus::NotEvaluated,
-            value: vec![],
-            is_array: false,
+            value: TypedValue::UnknwonValue,
             array_size: None,
             type_indication: TypeIndication::Unknown,
             is_property_of_scope: false,
@@ -137,8 +134,7 @@ impl Variable {
             name: name,
             exp: None,
             evaluated: EvaluationStatus::PreEvaluatedLogicType,
-            value: vec![typed_value],
-            is_array: false,
+            value: typed_value,
             array_size: None,
             type_indication: TypeIndication::AnyLogicType,
             is_property_of_scope: false,
@@ -153,8 +149,7 @@ impl Variable {
             name: name,
             exp: None,
             evaluated: EvaluationStatus::NotEvaluated,
-            value: vec![typed_value],
-            is_array: false,
+            value: typed_value,
             array_size: None,
             type_indication: TypeIndication::AnyStreamlet,
             is_property_of_scope: false,
@@ -169,8 +164,7 @@ impl Variable {
             name: name,
             exp: None,
             evaluated: EvaluationStatus::NotEvaluated,
-            value: vec![typed_value],
-            is_array: false,
+            value: typed_value,
             array_size: None,
             type_indication: TypeIndication::AnyPort,
             is_property_of_scope: false,
@@ -185,8 +179,7 @@ impl Variable {
             name: name,
             exp: None,
             evaluated: EvaluationStatus::NotEvaluated,
-            value: vec![typed_value],
-            is_array: false,
+            value: typed_value,
             array_size: None,
             type_indication: TypeIndication::AnyImplementation,
             is_property_of_scope: false,
@@ -201,8 +194,7 @@ impl Variable {
             name: name,
             exp: None,
             evaluated: EvaluationStatus::NotEvaluated,
-            value: vec![typed_value],
-            is_array: false,
+            value: typed_value,
             array_size: None,
             type_indication: TypeIndication::AnyInstance,
             is_property_of_scope: false,
@@ -217,8 +209,7 @@ impl Variable {
             name: name,
             exp: None,
             evaluated: EvaluationStatus::NotEvaluated,
-            value: vec![typed_value],
-            is_array: false,
+            value: typed_value,
             array_size: None,
             type_indication: TypeIndication::AnyNet,
             is_property_of_scope: false,
@@ -232,8 +223,7 @@ impl Variable {
             name: name,
             exp: None,
             evaluated: EvaluationStatus::NotEvaluated,
-            value: vec![value.clone()],
-            is_array: false,
+            value: value.clone(),
             array_size: None,
             type_indication: TypeIndication::infer_from_typed_value(&value),
             is_property_of_scope: false,
@@ -247,8 +237,7 @@ impl Variable {
             name: name,
             exp: None,
             evaluated: EvaluationStatus::Predefined,
-            value: vec![value.clone()],
-            is_array: false,
+            value: value.clone(),
             array_size: None,
             type_indication: TypeIndication::infer_from_typed_value(&value),
             is_property_of_scope: false,
@@ -262,8 +251,7 @@ impl Variable {
             name: name,
             exp: None,
             evaluated: EvaluationStatus::Predefined,
-            value: vec![],
-            is_array: true,
+            value: TypedValue::Array(vec![]),
             array_size: None,
             type_indication: type_indication,
             is_property_of_scope: false,
@@ -273,36 +261,32 @@ impl Variable {
     }
 
     pub fn add_predefined_element(&mut self, value: TypedValue) -> Result<&mut Self, String> {
-        if !self.is_array {
-            return Err(format!("{} is not an array type", &self.name));
+        match &self.value {
+            TypedValue::Array(_) => (),
+            _ => return Err(format!("{} is not an array type", &self.name)),
         }
         if !self.type_indication.is_compatible_with_typed_value(&value) {
-            return Err(format!("type mismatch, array type: {:?}, element type： {:?}", self.type_indication, value));
+            return Err(format!("type mismatch, array type: {:?}, element type: {:?}", self.type_indication, value));
         }
 
         //change the type indicator?
-        if self.value.len() == 0 {
-            self.type_indication = TypeIndication::infer_from_typed_value(&value);
+        match &mut self.value {
+            TypedValue::Array(values) => {
+                if values.len() == 0 {
+                    self.type_indication = TypeIndication::infer_from_typed_value(&value);
+                }
+                values.push(value);
+            },
+            _ => unreachable!("value must be an array")
         }
-
-        self.value.push(value);
         return Ok(self);
     }
 
     generate_set_pub!(name, String, set_name);
     generate_access_pub!(exp, Option<String>, get_exp, set_exp);
-    generate_access_pub!(value, Vec<TypedValue>, get_value, set_value);
+    generate_access_pub!(value, TypedValue, get_value, set_value);
     generate_access_pub!(type_indication, TypeIndication, get_type_indication, set_type_indication);
-    generate_access_pub!(is_array, bool, get_is_array, set_is_array);
-    // generate_access_pub!(array_size, Option<Arc<RwLock<Variable>>>, get_array_size, set_array_size);
-    generate_get_pub!(array_size, Option<Arc<RwLock<Variable>>>, get_array_size);
-    pub fn set_array_size(&mut self, array_size: Option<Arc<RwLock<Variable>>>) {
-        match &array_size {
-            Some(_) => self.is_array = true,
-            None => self.is_array = false,
-        }
-        self.array_size = array_size;
-    }
+    generate_access_pub!(array_size, Option<Arc<RwLock<Variable>>>, get_array_size, set_array_size);
     generate_access_pub!(is_property_of_scope, bool, get_is_property_of_scope, set_is_property_of_scope);
     generate_access_pub!(evaluated, EvaluationStatus, get_evaluated, set_evaluated);
 }
@@ -317,27 +301,27 @@ mod test_var {
         let value = Variable::new_predefined(format!("value"), TypedValue::BoolValue(true));
         let json_output = serde_json::to_string(&*value.read().unwrap()).ok().unwrap();
         println!("{json_output}");
-        assert_eq!(json_output, r#"true"#);
+        assert_eq!(json_output, r#"{"type":"BoolValue","value":true}"#);
 
         let value = Variable::new_predefined(format!("value"), TypedValue::IntValue(100));
         let json_output = serde_json::to_string(&*value.read().unwrap()).ok().unwrap();
         println!("{json_output}");
-        assert_eq!(json_output, r#"100"#);
+        assert_eq!(json_output, r#"{"type":"IntValue","value":100}"#);
 
         let value = Variable::new_predefined(format!("value"), TypedValue::StringValue(format!("123")));
         let json_output = serde_json::to_string(&*value.read().unwrap()).ok().unwrap();
         println!("{json_output}");
-        assert_eq!(json_output, r#""123""#);
+        assert_eq!(json_output, r#"{"type":"StringValue","value":"123"}"#);
 
         let value = Variable::new_predefined(format!("value"), TypedValue::FloatValue(99.99));
         let json_output = serde_json::to_string(&*value.read().unwrap()).ok().unwrap();
         println!("{json_output}");
-        assert_eq!(json_output, r#"99.99"#);
+        assert_eq!(json_output, r#"{"type":"FloatValue","value":99.99}"#);
 
         let value = Variable::new_predefined(format!("value"), TypedValue::ClockDomainValue(format!("test_clock_domain")));
         let json_output = serde_json::to_string(&*value.read().unwrap()).ok().unwrap();
         println!("{json_output}");
-        assert_eq!(json_output, r#""CLOCK_test_clock_domain""#);
+        assert_eq!(json_output, r#"{"type":"ClockDomainValue","value":"!CLOCK_test_clock_domain"}"#);
     }
 
     #[test]
@@ -351,7 +335,7 @@ mod test_var {
         }
         let json_output = serde_json::to_string(&*value.read().unwrap()).ok().unwrap();
         println!("{json_output}");
-        assert_eq!(json_output, r#"[10,15,20]"#);
+        assert_eq!(json_output, r#"{"type":"Array","value":[{"type":"IntValue","value":10},{"type":"IntValue","value":15},{"type":"IntValue","value":20}]}"#);
 
         //type mismatch
         let value = Variable::new_predefined_empty_array(format!("value"), TypeIndication::Int);
@@ -377,7 +361,7 @@ mod test_var {
         let value = Variable::new(format!("value"), Some(format!("a")));
         let json_output = serde_json::to_string(&*value.read().unwrap()).ok().unwrap();
         println!("{json_output}");
-        assert_eq!(json_output, r#"{"name":"value","exp":"a","is_array":false,"type_indication":"Any"}"#);
+        assert_eq!(json_output, r#"{"name":"value","exp":"a","value":{"type":"UnknwonValue","value":"???"},"evaluated":"NotEvaluated","type_indication":"Any","is_property_of_scope":false,"declare_location":{"begin":null,"end":null}}"#);
     }
 
 }

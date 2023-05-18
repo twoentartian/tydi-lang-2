@@ -42,6 +42,8 @@ pub enum TypeIndication {
     AnyNet,
 
     PackageReference,
+
+    Array(Box<TypeIndication>),
 }
 
 impl PartialEq for TypeIndication {
@@ -79,6 +81,15 @@ impl TypeIndication {
 
             TypedValue::If(_) => TypeIndication::ComplierBuiltin,
             TypedValue::For(_) => TypeIndication::ComplierBuiltin,
+
+            TypedValue::Array(v) => {
+                if v.len() == 0 {
+                    TypeIndication::Array(Box::new(TypeIndication::Any))
+                }
+                else {
+                    TypeIndication::Array(Box::new(Self::infer_from_typed_value(&v[0]))) //maybe we should have TypeIndication::Array?
+                }
+            },
         }
     }
 
@@ -160,6 +171,8 @@ pub enum TypedValue {
 
     If(Arc<RwLock<If>>),
     For(Arc<RwLock<For>>),
+
+    Array(Vec<TypedValue>),
 }
 
 impl Serialize for TypedValue {
@@ -218,6 +231,9 @@ impl Serialize for TypedValue {
                 let v = v.read().unwrap();
                 state.serialize_field("value", &*v)?;
             }
+            TypedValue::Array(v) => {
+                state.serialize_field("value", &*v)?;
+            }
 
         };
         state.end()
@@ -238,6 +254,17 @@ impl std::cmp::PartialEq for TypedValue {
                 let r0_read = r0.read().unwrap();
                 std::ptr::eq(&*l0_read, &*r0_read)
             }, //we compare the pointer address here
+            (Self::Array(v0), Self::Array(v1)) => {
+                if v0.len() != v1.len() {
+                    return false;
+                }
+                for i in 0..v0.len() {
+                    if v0[i] != v1[i] {
+                        return false;
+                    }
+                }
+                return true;
+            },
             _ => core::mem::discriminant(self) == core::mem::discriminant(other),
         }
     }

@@ -138,7 +138,6 @@ mod test_tydi_lang_src_to_memory_representation {
             assert_eq!(variable_i["exp"], format!("10"));
             assert_eq!(variable_i["evaluated"], format!("NotEvaluated"));
             assert_eq!(variable_i["type_indication"], format!("Any"));
-            assert_eq!(variable_i["is_array"], false);
         }
     }
 
@@ -166,7 +165,6 @@ mod test_tydi_lang_src_to_memory_representation {
             assert_eq!(variable_i["exp"], format!("10"));
             assert_eq!(variable_i["evaluated"], format!("NotEvaluated"));
             assert_eq!(variable_i["type_indication"], format!("Int"));
-            assert_eq!(variable_i["is_array"], false);
         }
     }
 
@@ -175,6 +173,7 @@ mod test_tydi_lang_src_to_memory_representation {
         let src = String::from(r#"
         package test;
         i:[int] = {10, 20, 30};
+        i2 = {10, 20, 30};
         "#);
         let src_ptr = Some(Arc::new(RwLock::new(src.clone())));
         let result = tydi_lang_src_to_memory_representation(src);
@@ -193,13 +192,46 @@ mod test_tydi_lang_src_to_memory_representation {
             assert_eq!(variable_i["name"], format!("i"));
             assert_eq!(variable_i["exp"], format!("{{10, 20, 30}}"));
             assert_eq!(variable_i["evaluated"], format!("NotEvaluated"));
-            assert_eq!(variable_i["type_indication"], format!("Int"));
-            assert_eq!(variable_i["is_array"], true);
+            assert_eq!(variable_i["type_indication"]["Array"], format!("Int"));
+        }
+        {
+            let variable_i = &target["package_scope"]["variables"]["i2"];
+            assert_eq!(variable_i["name"], format!("i2"));
+            assert_eq!(variable_i["exp"], format!("{{10, 20, 30}}"));
+            assert_eq!(variable_i["evaluated"], format!("NotEvaluated"));
+            assert_eq!(variable_i["type_indication"], format!("Any"));
         }
     }
 
     #[test]
     fn declare_variable_3() {
+        let src = String::from(r#"
+        package test;
+        i = {10, 20, 30.0};
+        "#);
+        let src_ptr = Some(Arc::new(RwLock::new(src.clone())));
+        let result = tydi_lang_src_to_memory_representation(src);
+        if result.is_err() {
+            let result = result.err().unwrap();
+            println!("{}", result.print(src_ptr.clone()));
+            return;
+        }
+        let result = result.ok().unwrap();
+        let json_output = serde_json::to_string_pretty(&*result.read().unwrap()).ok().unwrap();
+        println!("{json_output}");
+
+        let target: Value = serde_json::from_str(&json_output).unwrap();
+        {
+            let variable_i = &target["package_scope"]["variables"]["i"];
+            assert_eq!(variable_i["name"], format!("i"));
+            assert_eq!(variable_i["exp"], format!("{{10, 20, 30.0}}"));
+            assert_eq!(variable_i["evaluated"], format!("NotEvaluated"));
+            assert_eq!(variable_i["type_indication"], format!("Any"));
+        }
+    }
+
+    #[test]
+    fn declare_variable_4() {
         let src = String::from(r#"
         package test;
         i:[int] = {10, 20, 30};
@@ -218,12 +250,16 @@ mod test_tydi_lang_src_to_memory_representation {
 
         let target: Value = serde_json::from_str(&json_output).unwrap();
         {
+            let variable_i = &target["package_scope"]["variables"]["i"];
+            assert_eq!(variable_i["name"], format!("i"));
+            assert_eq!(variable_i["type_indication"]["Array"], format!("Int"));
+        }
+        {
             let variable_i = &target["package_scope"]["variables"]["i0"];
             assert_eq!(variable_i["name"], format!("i0"));
             assert_eq!(variable_i["exp"], format!("i[0] + func(i)"));
             assert_eq!(variable_i["evaluated"], format!("NotEvaluated"));
             assert_eq!(variable_i["type_indication"], format!("Any"));
-            assert_eq!(variable_i["is_array"], false);
         }
     }
 
@@ -251,7 +287,6 @@ mod test_tydi_lang_src_to_memory_representation {
             assert_eq!(variable_i["exp"], format!("Null"));
             assert_eq!(variable_i["evaluated"], format!("NotEvaluated"));
             assert_eq!(variable_i["type_indication"], format!("AnyLogicType"));
-            assert_eq!(variable_i["is_array"], false);
         }
     }
 
@@ -278,8 +313,7 @@ mod test_tydi_lang_src_to_memory_representation {
             assert_eq!(variable_i["name"], format!("type_null"));
             assert_eq!(variable_i["exp"], format!("{{Null, Null, Null}}"));
             assert_eq!(variable_i["evaluated"], format!("NotEvaluated"));
-            assert_eq!(variable_i["type_indication"], format!("AnyLogicType"));
-            assert_eq!(variable_i["is_array"], true);
+            assert_eq!(variable_i["type_indication"]["Array"], format!("AnyLogicType"));
         }
     }
 
@@ -346,7 +380,7 @@ mod test_tydi_lang_src_to_memory_representation {
         {
             let group_x = &target["package_scope"]["variables"]["x"];
             assert_eq!(group_x["name"], format!("x"));
-            let group_x_variable = &group_x["value"][0]["value"]["LogicGroupType"];
+            let group_x_variable = &group_x["value"]["value"]["LogicGroupType"];
             assert!(!group_x_variable.is_null());
             let group_x_variable_bit_8_type0 = &group_x_variable["scope"]["variables"]["bit_8_type0"];
             assert_eq!(group_x_variable_bit_8_type0["name"], format!("bit_8_type0"));
@@ -379,12 +413,11 @@ mod test_tydi_lang_src_to_memory_representation {
         {
             let group_x = &target["package_scope"]["variables"]["x"];
             assert_eq!(group_x["name"], format!("x"));
-            let group_x_variable = &group_x["value"][0]["value"]["LogicUnionType"];
+            let group_x_variable = &group_x["value"]["value"]["LogicUnionType"];
             assert!(!group_x_variable.is_null());
             let group_x_variable_bit_8_type0 = &group_x_variable["scope"]["variables"]["bit_8_type0"];
             assert_eq!(group_x_variable_bit_8_type0["name"], format!("bit_8_type0"));
             let logic_type = get_logic_type(&group_x_variable["scope"]["variables"], "bit_8_type0");
-            assert_eq!(logic_type["is_array"], true);
         }
     }
 
@@ -411,7 +444,7 @@ mod test_tydi_lang_src_to_memory_representation {
         {
             let bit8_stream = get_logic_type(&target["package_scope"]["variables"], "bit8_stream");
             assert_eq!(bit8_stream["exp"], serde_json::Value::Null);
-            assert_eq!(bit8_stream["value"][0]["value"]["LogicStreamType"]["dimension"], "2");
+            assert_eq!(bit8_stream["value"]["value"]["LogicStreamType"]["dimension"], "2");
         }
     }
 

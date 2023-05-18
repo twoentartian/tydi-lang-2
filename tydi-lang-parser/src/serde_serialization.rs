@@ -151,7 +151,6 @@ pub mod serialize_variable_detail {
         state.serialize_field("name", &val.get_name())?;
         state.serialize_field("exp", &val.get_exp())?;
         state.serialize_field("evaluated", &val.get_evaluated())?;
-        state.serialize_field("is_array", &val.get_is_array())?;
         state.serialize_field("type_indication", &val.get_type_indication())?;
         state.serialize_field("declare_location", &val.get_code_location())?;
         state.end()
@@ -170,25 +169,26 @@ pub mod serialize_variable_value_only {
     use serde::ser::{Serializer, SerializeSeq};
     use std::sync::{Arc, RwLock};
 
-    use crate::tydi_memory_representation::{Variable, EvaluationStatus};
+    use crate::tydi_memory_representation::{Variable, EvaluationStatus, TypedValue};
 
     pub fn serialize<S>(val: &Arc<RwLock<Variable>>, serializer: S) -> Result<S::Ok, S::Error>
             where S: Serializer
     {
         let val = val.read().unwrap();
         if val.get_evaluated() == EvaluationStatus::Evaluated || val.get_evaluated() == EvaluationStatus::Predefined {
-            if val.get_is_array() {
-                let mut seq = serializer.serialize_seq(Some(val.get_value().len()))?;
-                for value in val.get_value() {
-                    seq.serialize_element(&value)?;
-                }
-                seq.end()
-            }
-            else {
-                let value = val.get_value();
-                let value = value.first().unwrap();
-                value.serialize(serializer)
-            }
+            TypedValue::serialize(&val.get_value(), serializer)
+            // if val.get_is_array() {
+            //     let mut seq = serializer.serialize_seq(Some(val.get_value().len()))?;
+            //     for value in val.get_value() {
+            //         seq.serialize_element(&value)?;
+            //     }
+            //     seq.end()
+            // }
+            // else {
+            //     let value = val.get_value();
+            //     let value = value.first().unwrap();
+            //     value.serialize(serializer)
+            // }
         }
         else {
             let exp = val.get_exp();

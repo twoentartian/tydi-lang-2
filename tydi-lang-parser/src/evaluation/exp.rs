@@ -31,6 +31,8 @@ impl Expression {
 
 #[derive(Clone, PartialEq, Debug)]
 pub enum Operator {
+    Unknown,
+
     AccessInner,
     AccessProperty,
 
@@ -55,6 +57,14 @@ pub enum Operator {
     BitXor,
 }
 
+#[derive(Clone, PartialEq, Debug)]
+pub enum UnaryOperator {
+    Unknown,
+
+    OP_UnaryMinus,
+    OP_UnaryNot,
+}
+
 lazy_static::lazy_static! {
     static ref PRATT_PARSER: PrattParser<Rule> = {
         use pest::pratt_parser::{Assoc::*, Op};
@@ -76,7 +86,7 @@ lazy_static::lazy_static! {
     };
 }
 
-fn evaluate_expression_pest(exp: Pairs<Rule>, scope: Arc<RwLock<Scope>>, evaluator: Arc<RwLock<Evaluator>>) -> Result<Expression, TydiLangError> {
+pub fn evaluate_expression_pest(exp: Pair<Rule>, scope: Arc<RwLock<Scope>>, evaluator: Arc<RwLock<Evaluator>>) -> Result<Expression, TydiLangError> {
     let result = PRATT_PARSER
     .map_primary(|primary| match primary.as_rule() {
         Rule::Term => {
@@ -88,7 +98,7 @@ fn evaluate_expression_pest(exp: Pairs<Rule>, scope: Arc<RwLock<Scope>>, evaluat
             return Expression::Term(result);
         },
         Rule::InfixOp => {
-            let result = evaluate_expression_pest(primary.into_inner(), scope.clone(), evaluator.clone());
+            let result = evaluate_expression_pest(primary, scope.clone(), evaluator.clone());
             return result.ok().unwrap()
         },
         rule => todo!("Unknown rule: {:?}", rule),
@@ -125,7 +135,7 @@ fn evaluate_expression_pest(exp: Pairs<Rule>, scope: Arc<RwLock<Scope>>, evaluat
             rhs: Box::new(rhs),
         }
     })
-    .parse(exp);
+    .parse(exp.into_inner());
 
 
 
@@ -136,56 +146,12 @@ pub fn evaluate_expression(exp: String, scope: Arc<RwLock<Scope>>, evaluator: Ar
     let parse_result = TydiLangSrc::parse(Rule::Exp,&exp);
     if parse_result.is_err() {
         unreachable!("because the exp should have already been parsed before, we should never reach here");
-        // let parse_result = parse_result.err().unwrap();
-        // match parse_result.variant {
-        //     pest::error::ErrorVariant::ParsingError { positives, negatives } => {
-        //         let error_location = match parse_result.location {
-        //             pest::error::InputLocation::Pos(begin) => CodeLocation::new_only_begin(begin),
-        //             pest::error::InputLocation::Span((begin, end)) => CodeLocation::new(begin, end),
-        //         };
-        //         let message_from_parser = format!("Expected: {:?}, found: {:?}", positives, negatives);
-        //         return Err(TydiLangError::new(format!("cannot parse the source code, message from parser: {}", message_from_parser), error_location));
-        //     },
-        //     pest::error::ErrorVariant::CustomError { message } => {
-        //         unreachable!("because the exp should have already been parsed before, we should never readh here");
-        //         return Err(TydiLangError::new(format!("cannot parse the source code, message: {}", message), CodeLocation::new_unknown()));
-        //     },
-        // }
     }
     let mut parse_result = parse_result.ok().unwrap();
-    let expresssion = evaluate_expression_pest(parse_result.next().unwrap().into_inner(), scope.clone(), evaluator.clone())?;
+    let expresssion = evaluate_expression_pest(parse_result.next().unwrap(), scope.clone(), evaluator.clone())?;
     return expresssion.evaluate_TypedValue();
 }
 
 
 
-#[cfg(test)]
-mod test_expression_parser {
-    use crate::tydi_memory_representation::Project;
 
-    use super::*;
-
-    fn check_exp(exp: String, val: TypedValue) {
-        let scope = Scope::new_place_holder();
-        let evaluator = Evaluator::new(Project::new(format!("test")));
-        let output = evaluate_expression(exp, scope.clone(), evaluator.clone()).expect("evaluation fail");
-        assert_eq!(output, val);
-    }
-
-    #[test]
-    fn simple_add() {
-        check_exp(format!("1+2+3"), TypedValue::IntValue(6));
-        check_exp(format!("1+2+3.0"), TypedValue::FloatValue(6.0));
-        check_exp(format!("1+2+3-8"), TypedValue::IntValue(-2));
-        check_exp(format!("1+2+3*3-8"), TypedValue::IntValue(4));
-        check_exp(format!("1+2+3*3.0-8"), TypedValue::FloatValue(4.0));
-        check_exp(format!("1/1"), TypedValue::IntValue(1));
-        check_exp(format!("1*1"), TypedValue::IntValue(1));
-        check_exp(format!("10%3"), TypedValue::IntValue(1));
-        check_exp(format!("\"hello, \" + \"world\""), TypedValue::StringValue(format!("hello, world")));
-
-
-    }
-
-
-}

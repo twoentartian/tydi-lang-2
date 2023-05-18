@@ -1,3 +1,5 @@
+mod evulation_test;
+
 pub mod exp;
 pub(in crate) use exp::*;
 
@@ -9,3 +11,4 @@ pub(in crate) use evaluator::*;
 
 pub mod operation;
 pub(in crate) use operation::*;
+

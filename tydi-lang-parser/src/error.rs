@@ -21,7 +21,7 @@ impl TydiLangError {
     }
 
     pub fn print(&self, src_ptr: Option<Arc<RwLock<String>>>) -> String {
-        format!("{}\n{}\n{}\n", self.message, self.location.show(src_ptr), self.stack_trace.to_string())
+        format!("{}\n{}\n{:?}\n", self.message, self.location.show(src_ptr), self.stack_trace)
     }
 
 }

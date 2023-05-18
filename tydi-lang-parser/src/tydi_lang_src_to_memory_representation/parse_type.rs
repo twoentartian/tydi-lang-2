@@ -7,7 +7,7 @@ use crate::tydi_parser::*;
 use crate::generate_name;
 
 #[allow(non_snake_case)]
-pub fn parse_TypeIndicator(src: Pair<Rule>, scope: Arc<RwLock<Scope>>) -> Result<(TypeIndication, bool /*is_array*/), TydiLangError> {
+pub fn parse_TypeIndicator(src: Pair<Rule>, scope: Arc<RwLock<Scope>>) -> Result<TypeIndication, TydiLangError> {
     let mut type_indicator = TypeIndication::Any;
     let mut is_array = false;
     for element in src.clone().into_inner().into_iter() {
@@ -17,13 +17,12 @@ pub fn parse_TypeIndicator(src: Pair<Rule>, scope: Arc<RwLock<Scope>>) -> Result
                 type_indicator = parse_TypeIndicator_All(element, scope.clone())?;
             }
             Rule::TypeIndicator_Array => {          // [int], [type]
-                is_array = true;
-                type_indicator = parse_TypeIndicator_Array(element, scope.clone())?;
+                type_indicator = TypeIndication::Array(Box::new(parse_TypeIndicator_Array(element, scope.clone())?));
             }
             _ => unreachable!()
         }
     }
-    return Ok((type_indicator, is_array));
+    return Ok(type_indicator);
 }
 
 #[allow(non_snake_case)]

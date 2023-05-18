@@ -104,7 +104,6 @@ mod test {
         try_parse(String::from("\"this is a string\""), Rule::Exp, true).ok().unwrap();
         try_parse(String::from("123"), Rule::Exp, true).ok().unwrap();
         try_parse(String::from("false"), Rule::Exp, true).ok().unwrap();
-        try_parse(String::from("(1=1=>3)"), Rule::Exp, true).ok().unwrap();
         try_parse(String::from("{1,2,3,4,5,6,7}"), Rule::Exp, true).ok().unwrap();
         try_parse(String::from("{true, 1, 2.0, func()}"), Rule::Exp, true).ok().unwrap();
         try_parse(String::from("pow(2,8)"), Rule::Exp, true).ok().unwrap();

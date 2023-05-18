@@ -13,7 +13,6 @@ use super::parse_logic_flow::{parse_If, parse_For};
 pub fn parse_StatementDeclareVariable(src: Pair<Rule>, scope: Arc<RwLock<Scope>>) -> Result<(), TydiLangError> {
     let var = Variable::new_place_holder();
     let mut type_indicator = TypeIndication::Any;
-    let mut is_array = false;
     for element in src.clone().into_inner().into_iter() {
         let rule = element.as_rule();
         match rule {
@@ -21,7 +20,7 @@ pub fn parse_StatementDeclareVariable(src: Pair<Rule>, scope: Arc<RwLock<Scope>>
                 var.write().unwrap().set_name(element.as_str().to_string());
             }
             Rule::TypeIndicator => {
-                (type_indicator, is_array) = parse_type::parse_TypeIndicator(element, scope.clone())?;
+                type_indicator = parse_type::parse_TypeIndicator(element, scope.clone())?;
             }
             Rule::Exp => {
                 var.write().unwrap().set_exp(Some(element.as_str().to_string()));
@@ -32,9 +31,7 @@ pub fn parse_StatementDeclareVariable(src: Pair<Rule>, scope: Arc<RwLock<Scope>>
     {
         let mut var_write = var.write().unwrap();
         var_write.set_type_indication(type_indicator.clone());
-        var_write.set_is_array(is_array);
-        let loc = CodeLocation::new_from_pest_rule(&src);
-        var_write.set_code_location(loc);
+        var_write.set_code_location(CodeLocation::new_from_pest_rule(&src));
     }
     {
         let mut scope_write = scope.write().unwrap();
@@ -47,7 +44,6 @@ pub fn parse_StatementDeclareVariable(src: Pair<Rule>, scope: Arc<RwLock<Scope>>
 pub fn parse_StatementDeclareType(src: Pair<Rule>, scope: Arc<RwLock<Scope>>) -> Result<(), TydiLangError> {
     let var = Variable::new_place_holder();
     let mut type_indicator = TypeIndication::Any;
-    let mut is_array = false;
     for element in src.clone().into_inner().into_iter() {
         let rule = element.as_rule();
         match rule {
@@ -55,7 +51,7 @@ pub fn parse_StatementDeclareType(src: Pair<Rule>, scope: Arc<RwLock<Scope>>) ->
                 var.write().unwrap().set_name(element.as_str().to_string());
             }
             Rule::TypeIndicator => {
-                (type_indicator, is_array) = parse_type::parse_TypeIndicator(element, scope.clone())?;
+                type_indicator = parse_type::parse_TypeIndicator(element, scope.clone())?;
             }
             _ => unreachable!()
         }
@@ -65,9 +61,7 @@ pub fn parse_StatementDeclareType(src: Pair<Rule>, scope: Arc<RwLock<Scope>>) ->
         let mut var_write = var.write().unwrap();
         var_write.set_type_indication(type_indicator.clone());
         var_write.set_is_property_of_scope(true);
-        var_write.set_is_array(is_array);
-        let loc = CodeLocation::new_from_pest_rule(&src);
-        var_write.set_code_location(loc);
+        var_write.set_code_location(CodeLocation::new_from_pest_rule(&src));
 
         //if it is a logic type (excluding LogicNull):
         match &type_indicator {
