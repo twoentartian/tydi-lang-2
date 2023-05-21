@@ -8,6 +8,8 @@ use parse_statement::*;
 
 mod parse_type;
 use parse_type::*;
+pub (in crate) use parse_type::parse_LogicalType_Basic;
+
 
 mod parse_logic_type;
 use parse_logic_type::*;
@@ -33,9 +35,8 @@ use parse_logic_flow::*;
 
 use crate::error::TydiLangError;
 use crate::generate_name::generate_init_value;
-use crate::trait_common::GetScope;
 use crate::tydi_parser::*;
-use crate::tydi_memory_representation::{CodeLocation, Package, TraitCodeLocationAccess};
+use crate::tydi_memory_representation::{CodeLocation, Package, TraitCodeLocationAccess, GetScope};
 
 pub fn tydi_lang_src_to_memory_representation(src: String) -> Result<Arc<RwLock<Package>>, TydiLangError> {
     let parse_result = TydiLangSrc::parse(Rule::TydiFile,&src);

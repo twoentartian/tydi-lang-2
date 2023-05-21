@@ -1,4 +1,3 @@
-use core::str;
 use std::sync::{Arc, RwLock};
 
 use serde::{Serialize, Serializer, Deserialize};
@@ -289,6 +288,7 @@ impl Variable {
     generate_access_pub!(array_size, Option<Arc<RwLock<Variable>>>, get_array_size, set_array_size);
     generate_access_pub!(is_property_of_scope, bool, get_is_property_of_scope, set_is_property_of_scope);
     generate_access_pub!(evaluated, EvaluationStatus, get_evaluated, set_evaluated);
+
 }
 
 

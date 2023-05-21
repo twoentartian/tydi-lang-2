@@ -10,9 +10,9 @@ pub mod scope;
 pub(in crate) use scope::*;
 pub use scope::{Scope, ScopeType, ScopeRelationType, ScopeRelationship};
 
-pub mod var_type;
-pub(in crate) use var_type::*;
-pub use var_type::{TypedValue, TypeIndication};
+pub mod typed_value;
+pub(in crate) use typed_value::*;
+pub use typed_value::{TypedValue, TypeIndication};
 
 pub mod var;
 pub(in crate) use var::*;
@@ -61,3 +61,7 @@ pub use function::{FunctionCall};
 pub mod if_for;
 pub(in crate) use if_for::*;
 pub use if_for::{If, For};
+
+pub mod identifier;
+pub(in crate) use identifier::*;
+pub use identifier::{IdentifierType, Identifier};

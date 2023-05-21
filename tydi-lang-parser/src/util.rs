@@ -19,6 +19,16 @@ macro_rules! generate_get_pub {
 }
 
 #[macro_export]
+macro_rules! generate_get_ref_pub {
+    ($id:ident, $t: ty, $id_get_fun:ident) => {
+        #[allow(dead_code)]
+        pub fn $id_get_fun(& self) -> &$t {
+            return &self.$id;
+        }
+    };
+}
+
+#[macro_export]
 macro_rules! generate_access_pub {
     ($id:ident, $t: ty, $id_get_fun:ident, $id_set_func:ident) => {
         generate_set_pub!($id, $t, $id_set_func);
@@ -42,6 +52,16 @@ macro_rules! generate_get {
         #[allow(dead_code)]
         fn $id_get_fun(& self) -> $t {
             return self.$id.clone();
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! generate_get_ref {
+    ($id:ident, $t: ty, $id_get_fun:ident) => {
+        #[allow(dead_code)]
+        fn $id_get_fun(& self) -> &$t {
+            return &self.$id;
         }
     };
 }

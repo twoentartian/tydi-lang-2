@@ -8,7 +8,10 @@ use tydi_lang_parser::tydi_memory_representation::*;
 pub struct TydiProject {
     name: String,
     toplevel_implementation: String,
+    top_level_implementaton_package: String,
+
     src_files: Vec<PathBuf>,
+    output_path: String,
 
     project: Arc<RwLock<Project>>,
 }
@@ -30,7 +33,9 @@ impl TydiProject {
         return Ok(Self {
             name: description.properties.name.clone(),
             toplevel_implementation: description.properties.top_level_implementation.clone(),
+            top_level_implementaton_package: description.properties.top_level_implementation_package.clone(),
             src_files: src_paths,
+            output_path: description.output_path.clone(),
             project: Project::new(description.properties.name.clone()),
         });
     }

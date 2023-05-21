@@ -4,7 +4,7 @@ use crate::error::TydiLangError;
 use crate::tydi_memory_representation::{Scope, TypeIndication, Variable, CodeLocation, TraitCodeLocationAccess};
 use crate::tydi_lang_src_to_memory_representation::{parse_logic_type::*};
 use crate::tydi_parser::*;
-use crate::generate_name;
+use crate::generate_name::{self, generate_built_in_variable_name_from_span};
 
 #[allow(non_snake_case)]
 pub fn parse_TypeIndicator(src: Pair<Rule>, scope: Arc<RwLock<Scope>>) -> Result<TypeIndication, TydiLangError> {
@@ -53,6 +53,11 @@ pub fn parse_TypeIndicator_All(src: Pair<Rule>, scope: Arc<RwLock<Scope>>) -> Re
             Rule::LogicalType => {
                 let type_indicator = parse_LogicalType(element, scope.clone())?;
                 return Ok(type_indicator);
+            }
+            Rule::Exp => {
+                //the exp means it's a logic type in current scope or other scope
+                let exp = element.as_str().to_string();
+                return Ok(TypeIndication::LogicTypeRef(exp));
             }
             _ => unreachable!()
         }
@@ -166,10 +171,10 @@ pub fn parse_LogicalType_Basic(src: Pair<Rule>, scope: Arc<RwLock<Scope>>) -> Re
                 type_indicator = TypeIndication::LogicStream(logic_stream_var);
             }
             Rule::LogicalGroup => {
-                return Err(TydiLangError::new(format!("syntax not allowed, declare group as {{x : Group y {{...}} }}"), CodeLocation::new_from_pest_rule(&src)));
+                return Err(TydiLangError::new(format!("syntax not allowed, declare group as {{x : Group y {{...}} }} or {{x = Group y {{...}} }}"), CodeLocation::new_from_pest_rule(&src)));
             }
             Rule::LogicalUnion => {
-                return Err(TydiLangError::new(format!("syntax not allowed, declare union as {{x : Union y {{...}} }}"), CodeLocation::new_from_pest_rule(&src)));
+                return Err(TydiLangError::new(format!("syntax not allowed, declare union as {{x : Union y {{...}} }} or {{x = Union y {{...}} }}"), CodeLocation::new_from_pest_rule(&src)));
             }
             _ => unreachable!()
         }

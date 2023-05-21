@@ -2,7 +2,9 @@ use std::sync::{RwLock, Arc};
 
 use pest::pratt_parser::PrattParser;
 
-use crate::tydi_memory_representation::{Scope, TypedValue};
+use crate::evaluation::evaluate_LogicalType;
+use crate::tydi_lang_src_to_memory_representation;
+use crate::tydi_memory_representation::{Scope, TypedValue, TypeIndication, LogicType};
 use crate::tydi_parser::*;
 use crate::error::TydiLangError;
 
@@ -20,11 +22,11 @@ pub enum Expression {
 }
 
 impl Expression {
-    pub fn evaluate_TypedValue(&self) -> Result<TypedValue, TydiLangError> {
+    pub fn evaluate_TypedValue(&self, scope: Arc<RwLock<Scope>>, evaluator: Arc<RwLock<Evaluator>>) -> Result<TypedValue, TydiLangError> {
         match self {
             Expression::Error(err) => return Err(err.clone()),
             Expression::Term(v) => return Ok(v.clone()),
-            Expression::BinOp { lhs, op, rhs } => return evaluate_BinaryOperation(lhs, op, rhs),
+            Expression::BinOp { lhs, op, rhs } => return evaluate_BinaryOperation(lhs, op, rhs, scope.clone(), evaluator.clone()),
         }
     }
 }
@@ -101,6 +103,14 @@ pub fn evaluate_expression_pest(exp: Pair<Rule>, scope: Arc<RwLock<Scope>>, eval
             let result = evaluate_expression_pest(primary, scope.clone(), evaluator.clone());
             return result.ok().unwrap()
         },
+        Rule::LogicalType => {
+            let logic_type = evaluate_LogicalType(primary, scope.clone(), evaluator.clone());
+            if logic_type.is_err() {
+                return Expression::Error(logic_type.err().unwrap());
+            }
+            let logic_type = logic_type.ok().unwrap();
+            return Expression::Term(logic_type);
+        }
         rule => todo!("Unknown rule: {:?}", rule),
     })
     .map_infix(|lhs, op, rhs| {
@@ -147,7 +157,7 @@ pub fn evaluate_expression(exp: String, scope: Arc<RwLock<Scope>>, evaluator: Ar
     }
     let mut parse_result = parse_result.ok().unwrap();
     let expresssion = evaluate_expression_pest(parse_result.next().unwrap(), scope.clone(), evaluator.clone())?;
-    return expresssion.evaluate_TypedValue();
+    return expresssion.evaluate_TypedValue(scope.clone(), evaluator.clone());
 }
 
 

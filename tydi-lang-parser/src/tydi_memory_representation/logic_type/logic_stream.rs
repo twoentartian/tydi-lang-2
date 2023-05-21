@@ -192,5 +192,11 @@ impl LogicStream {
     }
 
     generate_get_pub!(stream_type, Arc<RwLock<Variable>>, get_stream_type);
-    
+    generate_get_pub!(dimension, Arc<RwLock<Variable>>, get_dimension);
+    generate_get_pub!(user_type, Arc<RwLock<Variable>>, get_user_type);
+    generate_get_pub!(throughput, Arc<RwLock<Variable>>, get_throughput);
+    generate_get_pub!(synchronicity, Arc<RwLock<Variable>>, get_synchronicity);
+    generate_get_pub!(complexity, Arc<RwLock<Variable>>, get_complexity);
+    generate_get_pub!(direction, Arc<RwLock<Variable>>, get_direction);
+    generate_get_pub!(keep, Arc<RwLock<Variable>>, get_keep);
 }

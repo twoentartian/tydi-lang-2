@@ -4,8 +4,8 @@ use serde::{Serialize};
 
 use crate::generate_name::generate_init_value;
 use crate::{generate_set_pub, generate_get_pub, generate_access_pub};
-use crate::trait_common::{GetName, GetScope};
-use crate::tydi_memory_representation::{Scope, CodeLocation, TraitCodeLocationAccess};
+use crate::trait_common::{GetName};
+use crate::tydi_memory_representation::{Scope, CodeLocation, TraitCodeLocationAccess, GetScope};
 
 #[derive(Clone, Debug, Serialize)]
 pub struct Package {
@@ -18,7 +18,6 @@ pub struct Package {
     #[serde(with = "crate::serde_serialization::use_inner_for_arc_rwlock")]
     package_scope: Arc<RwLock<Scope>>,
 
-    #[serde(skip_serializing)]
     pub location_define: CodeLocation,
 }
 

@@ -2,6 +2,7 @@ use std::sync::{Arc, RwLock};
 
 use serde::{Serialize};
 
+use crate::{generate_access_pub, generate_get_pub, generate_set_pub};
 use crate::tydi_memory_representation::{Variable, TypeIndication, CodeLocation, TraitCodeLocationAccess};
 
 use crate::trait_common::{GetName, AccessProperty};
@@ -56,5 +57,7 @@ impl LogicBit {
         }
         return Arc::new(RwLock::new(output));
     }
+
+    generate_access_pub!(bit_width, Arc<RwLock<Variable>>, get_bit_width, set_bit_width);
 
 }

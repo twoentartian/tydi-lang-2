@@ -6,10 +6,6 @@ pub trait GetName {
     fn get_name(&self) -> String;
 }
 
-pub trait GetScope {
-    fn get_scope(&self) -> Arc<RwLock<Scope>>;
-}
-
 pub trait AccessProperty {
     fn access_porperty(&self, property_name: String) -> Option<Arc<RwLock<Variable>>>;
 }

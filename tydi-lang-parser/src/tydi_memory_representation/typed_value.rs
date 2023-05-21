@@ -7,6 +7,8 @@ use crate::{tydi_memory_representation::{Package, LogicType}, trait_common::GetN
 
 use crate::tydi_memory_representation::{Variable, Streamlet, Port, Implementation, Instance, Net, If, For};
 
+use super::Identifier;
+
 #[derive(Clone, Debug, Serialize)]
 pub enum TypeIndication {
     Any,
@@ -32,6 +34,8 @@ pub enum TypeIndication {
     LogicGroup(Arc<RwLock<Variable>>),
     #[serde(with = "crate::serde_serialization::use_name_for_arc_rwlock")]
     LogicUnion(Arc<RwLock<Variable>>),
+
+    LogicTypeRef(String),
     /// region end
 
     AnyStreamlet,
@@ -90,6 +94,11 @@ impl TypeIndication {
                     TypeIndication::Array(Box::new(Self::infer_from_typed_value(&v[0]))) //maybe we should have TypeIndication::Array?
                 }
             },
+
+            //TypedValue during evaluation phase only
+            TypedValue::RefToVar(_) => unreachable!(),
+            TypedValue::Identifier(_) => unreachable!(),
+            
         }
     }
 
@@ -173,6 +182,10 @@ pub enum TypedValue {
     For(Arc<RwLock<For>>),
 
     Array(Vec<TypedValue>),
+
+    //special TypedValue during evaluation
+    RefToVar(Arc<RwLock<Variable>>),
+    Identifier(Arc<RwLock<Identifier>>),
 }
 
 impl Serialize for TypedValue {
@@ -189,7 +202,7 @@ impl Serialize for TypedValue {
             },
             TypedValue::PackageReferenceValue(package_ref) => {
                 let package = package_ref.read().unwrap();
-                state.serialize_field("value", &*package)?;
+                state.serialize_field("value", &package.get_name())?;
             },
             TypedValue::IntValue(v) => state.serialize_field("value", v)?,
             TypedValue::StringValue(v) => state.serialize_field("value", v)?,
@@ -235,6 +248,11 @@ impl Serialize for TypedValue {
                 state.serialize_field("value", &*v)?;
             }
 
+            //TypedValue during evaluation phase only
+            TypedValue::RefToVar(v) => {
+                state.serialize_field("value", &v.read().unwrap().get_name())?;
+            },
+            TypedValue::Identifier(_) => unreachable!(),
         };
         state.end()
     }

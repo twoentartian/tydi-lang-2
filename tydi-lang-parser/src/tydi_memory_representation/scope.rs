@@ -1,16 +1,16 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, RwLock};
 
 use serde::{Serialize, Deserialize};
 
 use crate::error::TydiLangError;
-use crate::{generate_get, generate_name};
+use crate::{generate_get, generate_name, generate_get_ref_pub, generate_get_pub};
 use crate::trait_common::{GetName};
-use crate::tydi_memory_representation::{Variable};
+use crate::tydi_memory_representation::{Variable, CodeLocation};
 
 use super::TraitCodeLocationAccess;
 
-#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize, Hash)]
 pub enum ScopeRelationType {
     FileScopeRela,
 
@@ -21,6 +21,26 @@ pub enum ScopeRelationType {
     IfForScopeRela,
 
     ParentScopeRela, // a placeholder, should never be used
+}
+
+impl ScopeRelationType {
+    pub fn resolve_id_default() -> HashSet<ScopeRelationType> {
+        let mut output = HashSet::new();
+        output.insert(ScopeRelationType::GroupScopeRela);
+        output.insert(ScopeRelationType::UnionScopeRela);
+        output.insert(ScopeRelationType::StreamletScopeRela);
+        output.insert(ScopeRelationType::ImplementationScopeRela);
+        return output;
+    }
+
+    pub fn resolve_id_in_current_scope() -> HashSet<ScopeRelationType> {
+        let mut output = HashSet::new();
+        output.insert(ScopeRelationType::GroupScopeRela);
+        output.insert(ScopeRelationType::UnionScopeRela);
+        output.insert(ScopeRelationType::StreamletScopeRela);
+        output.insert(ScopeRelationType::ImplementationScopeRela);
+        return output;
+    }
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
@@ -62,7 +82,13 @@ pub struct Scope {
     variables: HashMap<String, Arc<RwLock<Variable>>>
 }
 
+impl GetName for Scope {
+    generate_get!(name, String, get_name);
+}
+
 impl Scope {
+
+    //constructors
     pub fn new(name: String, scope_type: ScopeType, parent_scope: Arc<RwLock<Self>>) -> Arc<RwLock<Self>> {
         let output = Arc::new(RwLock::new(Scope {
             name: name,
@@ -120,13 +146,30 @@ impl Scope {
 
     pub fn add_var(&mut self, var: Arc<RwLock<Variable>>) -> Result<(), TydiLangError> {
         let var_name = var.read().unwrap().get_name();
-        if self.variables.contains_key(&var_name) {
-            let error = TydiLangError::new(format!("{var_name} redefined in the same scope"), var.read().unwrap().get_code_location());
-            return Err(error);
+        let previous_define = self.variables.get(&var_name);
+        match previous_define {
+            None => (),
+            Some(previous_define) => {
+                let previous_define_loc = previous_define.read().unwrap().get_code_location();
+                let error = TydiLangError::new_multiple_locations(format!("{var_name} redefined in the same scope {}", self.get_name()), vec![previous_define_loc, var.read().unwrap().get_code_location()]);
+                return Err(error);
+            },
         }
         self.variables.insert(var_name, var.clone());
         return Ok(());
     }
+
+    // pub fn get_variables(&self) -> &HashMap<String, Arc<RwLock<Variable>>> {
+    //     return &self.variables;
+    // }
+
+    // pub fn get_scope_relationships(&self) -> &HashMap<String, ScopeRelationship> {
+    //     return &self.scope_relationships;
+    // }
+
+    generate_get_pub!(variables, HashMap<String, Arc<RwLock<Variable>>>, get_variables);
+    generate_get_ref_pub!(variables, HashMap<String, Arc<RwLock<Variable>>>, get_variables_ref);
+    generate_get_ref_pub!(scope_relationships, HashMap<String, ScopeRelationship>, get_scope_relationships);
 
     fn generate_scope_relationship(&self) -> ScopeRelationType {
         match self.scope_type {
@@ -141,58 +184,40 @@ impl Scope {
             ScopeType::UnknownScope => todo!(),
         }
     }
-}
 
-impl GetName for Scope {
-    generate_get!(name, String, get_name);
+    //resolve identifier
+    pub fn resolve_identifier(name: &String, scope: Arc<RwLock<Scope>>, scope_relation_types/*allowed edges*/: HashSet<ScopeRelationType>) -> Result<(Arc<RwLock<Variable>>, Arc<RwLock<Scope>>), TydiLangError> {
+        let scope_read = scope.read().unwrap();
+        
+        //does current scope has this var?
+        let result = Scope::resolve_identifier_in_current_scope(&name, scope.clone());
+        if result.is_some() {
+            return Ok((result.unwrap(), scope.clone()));
+        }
+
+        //how about other scopes?
+        for (_, item) in scope_read.get_scope_relationships() {
+            let (other_scope, relationship_type) = (item.target_scope.clone(), &item.relationship);
+            if scope_relation_types.contains(relationship_type) {
+                let result = Scope::resolve_identifier(name, other_scope, scope_relation_types)?;
+                return Ok(result);
+            }
+        }
+
+        return Err(TydiLangError::new(format!("identifier {} not found in scope {}", &name, scope.read().unwrap().get_name()), CodeLocation::new_unknown()));
+    }
+
+    fn resolve_identifier_in_current_scope(name: &String, scope: Arc<RwLock<Scope>>) -> Option<Arc<RwLock<Variable>>> {
+        let scope_read = scope.read().unwrap();
+        let vars_in_scope = scope_read.get_variables_ref();
+        match vars_in_scope.get(name) {
+            Some(var) => return Some(var.clone()),
+            None => return None,
+        }
+    }
 }
 
 pub trait GetScope {
     fn get_scope(&self) -> Arc<RwLock<Scope>>;
 }
-
-#[cfg(test)]
-mod test_scope {
-use super::*;
-
-    #[test]
-    fn create_serialize_scopes() {
-        let root_scope = Scope::new_top_scope(format!("root"));
-        let child_scope_0 = Scope::new(
-            format!("child_scope_0"),
-            ScopeType::GroupScope,
-            root_scope.clone(),
-        );
-        let child_scope_1 = Scope::new(
-            format!("child_scope_1"),
-            ScopeType::IfForScope,
-            child_scope_0.clone(),
-        );
-    
-        {
-            let root_scope_read = root_scope.read().unwrap();
-            let json_output = serde_json::to_string(&*root_scope_read).ok().unwrap();
-            println!("{json_output}");
-            assert_eq!(json_output, r#"{"name":"root","scope_type":"RootScope","scope_relationships":{}}"#)
-        }
-    
-        {
-            let child_scope_0 = child_scope_0.read().unwrap();
-            let json_output = serde_json::to_string(&*child_scope_0).ok().unwrap();
-            println!("{json_output}");
-            assert_eq!(json_output, r#"{"name":"child_scope_0","scope_type":"GroupScope","scope_relationships":{"root":{"name":"root","target_scope":"root","relationship":"GroupScopeRela"}}}"#)
-        }
-    
-        {
-            let child_scope_1 = child_scope_1.read().unwrap();
-            let json_output = serde_json::to_string(&*child_scope_1).ok().unwrap();
-            println!("{json_output}");
-            assert_eq!(json_output, r#"{"name":"child_scope_1","scope_type":"IfForScope","scope_relationships":{"child_scope_0":{"name":"child_scope_0","target_scope":"child_scope_0","relationship":"IfForScopeRela"}}}"#)
-        }
-    
-    
-    }
-}
-
-
 

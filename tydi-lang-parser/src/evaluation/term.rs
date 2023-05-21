@@ -1,9 +1,11 @@
 use std::sync::{Arc, RwLock};
+use std::collections::BTreeMap;
 
+use crate::generate_name::generate_init_value;
 use crate::tydi_parser::*;
 use crate::error::TydiLangError;
 
-use crate::tydi_memory_representation::{Scope, TypedValue, CodeLocation};
+use crate::tydi_memory_representation::{Scope, TypedValue, CodeLocation, Identifier, IdentifierType};
 
 use super::{Evaluator, evaluate_expression_pest, UnaryOperator};
 
@@ -15,7 +17,7 @@ pub fn evaluate_Term(term: Pair<Rule>, scope: Arc<RwLock<Scope>>, evaluator: Arc
         match rule {
             Rule::Exp => {
                 let exp = evaluate_expression_pest(element, scope.clone(), evaluator.clone())?;
-                let exp_typed_value = exp.evaluate_TypedValue()?;
+                let exp_typed_value = exp.evaluate_TypedValue(scope.clone(), evaluator.clone())?;
                 return Ok(exp_typed_value);
             }
             Rule::ArrayExp => {
@@ -43,7 +45,9 @@ pub fn evaluate_Term(term: Pair<Rule>, scope: Arc<RwLock<Scope>>, evaluator: Arc
                 return Ok(TypedValue::FloatValue(value));
             }
             Rule::IdentifierWithArgExp => {
-                todo!()
+                //we cannot directly do evaluation here because a term is only a single id, access / access inner will not work here
+                let value = parse_IdentifierWithArgExp(element, scope.clone(), evaluator.clone())?;
+                return Ok(value);
             }
             Rule::UnaryExp => {
                 let value = evaluate_UnaryExp(element, scope.clone(), evaluator.clone())?;
@@ -133,7 +137,7 @@ pub fn evaluate_ArrayExp(exps: Pair<Rule>, scope: Arc<RwLock<Scope>>, evaluator:
         match rule {
             Rule::Exp => {
                 let element_exp = evaluate_expression_pest(element, scope.clone(), evaluator.clone())?;
-                let element_typed_value = element_exp.evaluate_TypedValue()?;
+                let element_typed_value = element_exp.evaluate_TypedValue(scope.clone(), evaluator.clone())?;
                 output.push(element_typed_value);
             }
             _ => unreachable!()
@@ -194,4 +198,103 @@ pub fn evaluate_UnaryExp(exp: Pair<Rule>, scope: Arc<RwLock<Scope>>, evaluator: 
     }
 
     return Ok(output_typed_value);
+}
+
+#[allow(non_snake_case)]
+pub fn parse_IdentifierWithArgExp(id: Pair<Rule>, scope: Arc<RwLock<Scope>>, evaluator: Arc<RwLock<Evaluator>>) -> Result<TypedValue, TydiLangError> {
+    let mut id_type = IdentifierType::Unknown;
+    let mut id_name = generate_init_value();
+    let mut template_exps = BTreeMap::new();
+    for element in id.clone().into_inner().into_iter() {
+        let rule = element.as_rule();
+        match rule {
+            Rule::Term_identifier => {
+                (id_name, id_type) = parse_Term_identifier(element)?;
+            }
+            Rule::Exp => {
+                template_exps.insert(template_exps.len(), element.as_str().to_string());
+            }
+            _ => unreachable!()
+        }
+    }
+    let output_id = Identifier::new(id_name, id_type, template_exps);
+    let output_typed_value = TypedValue::Identifier(output_id);
+    return Ok(output_typed_value);
+}
+
+#[allow(non_snake_case)]
+pub fn parse_Term_identifier(id: Pair<Rule>) -> Result<(String, IdentifierType), TydiLangError> {
+    let mut id_type = IdentifierType::Unknown;
+    let mut id_name = generate_init_value();
+    for element in id.clone().into_inner().into_iter() {
+        let rule = element.as_rule();
+        match rule {
+            Rule::FunctionExp => {
+                (id_name, id_type) = parse_FunctionExp(element)?;
+            }
+            Rule::IndexExp => {
+                (id_name, id_type) = parse_IndexExp(element)?;
+            }
+            Rule::IdentifierExp => {
+                (id_name, id_type) = parse_IdentifierExp(element)?;
+            }
+            _ => unreachable!()
+        }
+    }
+    return Ok((id_name, id_type));
+}
+
+#[allow(non_snake_case)]
+pub fn parse_FunctionExp(id: Pair<Rule>) -> Result<(String, IdentifierType), TydiLangError> {
+    let mut id_name = generate_init_value();
+    let mut function_exps = BTreeMap::new();
+    for element in id.clone().into_inner().into_iter() {
+        let rule = element.as_rule();
+        match rule {
+            Rule::ID => {
+                id_name = element.as_str().to_string();
+            }
+            Rule::Exp => {
+                function_exps.insert(function_exps.len(), element.as_str().to_string());
+            }
+            _ => unreachable!()
+        }
+    }
+    return Ok((id_name, IdentifierType::FunctionExp(function_exps)));
+}
+
+#[allow(non_snake_case)]
+pub fn parse_IndexExp(id: Pair<Rule>) -> Result<(String, IdentifierType), TydiLangError> {
+    let mut id_name = generate_init_value();
+    let mut index_exp = generate_init_value();
+    for element in id.clone().into_inner().into_iter() {
+        let rule = element.as_rule();
+        match rule {
+            Rule::ID => {
+                id_name = element.as_str().to_string();
+            }
+            Rule::Exp => {
+                index_exp = element.as_str().to_string();
+            }
+            _ => unreachable!()
+        }
+    }
+
+    return Ok((id_name, IdentifierType::IndexExp(index_exp)));
+}
+
+#[allow(non_snake_case)]
+pub fn parse_IdentifierExp(id: Pair<Rule>) -> Result<(String, IdentifierType), TydiLangError> {
+    let mut id_exp = generate_init_value();
+    for element in id.clone().into_inner().into_iter() {
+        let rule = element.as_rule();
+        match rule {
+            Rule::ID => {
+                id_exp = element.as_str().to_string();
+            }
+            _ => unreachable!()
+        }
+    }
+
+    return Ok((id_exp, IdentifierType::IdentifierExp));
 }

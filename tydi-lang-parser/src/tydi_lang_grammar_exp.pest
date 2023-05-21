@@ -115,11 +115,11 @@ StreamProperty = { "," ~ ID ~ "=" ~ Exp }
 
 LogicalType_Basic = { LogicalNull | LogicalBit | LogicalStream | LogicalGroup | LogicalUnion }
 LogicalType_Array = { LogicalType_Basic ~ ArraySizeIndicator }
-LogicalType = { LogicalType_Array | LogicalType_Basic }
+LogicalType = { /*LogicalType_Array |*/ LogicalType_Basic }
 LogicalExp = _{ LogicalType }
 
 //// Complex types ////
-TypeIndicator_All = { BasicTypeKeyword | LogicalType }  // LogicalType here is to allow, e.g. Group x { e0 : Bit(8) }
+TypeIndicator_All = { BasicTypeKeyword | LogicalType | Exp }  // LogicalType here is to allow, e.g. Group x { e0 : Bit(8) }
 TypeIndicator_Array = { "[" ~ TypeIndicator_All ~ "]" }
 TypeIndicator = { ( ":"  ~ (TypeIndicator_All | TypeIndicator_Array) )? }
 ValueInitList = _{ ("=" ~ Exp)? }

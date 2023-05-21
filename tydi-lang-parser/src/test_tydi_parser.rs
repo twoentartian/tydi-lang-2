@@ -206,16 +206,16 @@ mod test {
         package test;
         streamlet x<len: int, socket: impl of external_package.streamlet0<x,y>> {
             len = x;
-            port_in : Stream(Bit(8))[b] in /clock_domain @any_clockDomain @NoTypeCheck;
-            port_out : Stream(Bit(8))[] out /clock_domain @any_clockDomain @NoTypeCheck;
+            port_in : Stream(Bit(8)) in [b] /clock_domain @any_clockDomain @NoTypeCheck;
+            port_out : Stream(Bit(8)) out [b] /clock_domain @any_clockDomain @NoTypeCheck;
         }
         "), Rule::TydiFile, false).ok().unwrap();
         try_parse(String::from("\
         package test;
         streamlet x<len: int, socket: impl of external_package.streamlet0<x,y>> @attribute {
             len = x;
-            port_in : Stream(Bit(8))[b] in /clock_domain @any_clockDomain @NoTypeCheck;
-            port_out : Stream(Bit(8))[] out /clock_domain @any_clockDomain @NoTypeCheck;
+            port_in : Stream(Bit(8)) in [b] /clock_domain @any_clockDomain @NoTypeCheck;
+            port_out : Stream(Bit(8)) out [b] /clock_domain @any_clockDomain @NoTypeCheck;
         }
         "), Rule::TydiFile, false).ok().unwrap();
     }
