@@ -26,6 +26,10 @@ pub fn evaluate_id_in_typed_value(id_in_typed_value: TypedValue, scope: Arc<RwLo
 pub fn evaluate_var(var: Arc<RwLock<Variable>>, scope: Arc<RwLock<Scope>>, evaluator: Arc<RwLock<Evaluator>>) -> Result<TypedValue, TydiLangError> {
     let mut output_value = TypedValue::UnknwonValue;
 
+    let var_name = var.read().unwrap().get_name();
+    evaluator.write().unwrap().increase_deepth();
+    evaluator.write().unwrap().add_evaluation_trace(var_name.clone(), None, super::EvaluationTraceType::StartEvaluation);
+
     let evaluation_status = var.read().unwrap().get_evaluated();
     match evaluation_status {
         EvaluationStatus::NotEvaluated => var.write().unwrap().set_evaluated(EvaluationStatus::EvaluationCount(0)),
@@ -36,8 +40,18 @@ pub fn evaluate_var(var: Arc<RwLock<Variable>>, scope: Arc<RwLock<Scope>>, evalu
                 return Err(TydiLangError::new(format!("var {} has been evaluated for {} times, consider mutual reference", var_read.get_name(), i), var_read.get_code_location()));
             }
         },
-        EvaluationStatus::Evaluated => return Ok(var.read().unwrap().get_value()),
-        EvaluationStatus::Predefined => return Ok(var.read().unwrap().get_value()),
+        EvaluationStatus::Evaluated => {
+            let typed_value = var.read().unwrap().get_value();
+            evaluator.write().unwrap().add_evaluation_trace(var_name.clone(), Some(typed_value), super::EvaluationTraceType::FinishEvaluation);
+            evaluator.write().unwrap().decrease_deepth();
+            return Ok(var.read().unwrap().get_value())
+        },
+        EvaluationStatus::Predefined => {
+            let typed_value = var.read().unwrap().get_value();
+            evaluator.write().unwrap().add_evaluation_trace(var_name.clone(), Some(typed_value), super::EvaluationTraceType::FinishEvaluation);
+            evaluator.write().unwrap().decrease_deepth();
+            return Ok(var.read().unwrap().get_value())
+        },
         EvaluationStatus::PreEvaluatedLogicType => (),
     }
 
@@ -197,5 +211,7 @@ pub fn evaluate_var(var: Arc<RwLock<Variable>>, scope: Arc<RwLock<Scope>>, evalu
         unreachable!()
     }
 
+    evaluator.write().unwrap().add_evaluation_trace(var_name.clone(), Some(output_value.clone()), super::EvaluationTraceType::FinishEvaluation);
+    evaluator.write().unwrap().decrease_deepth();
     return Ok(output_value);
 }

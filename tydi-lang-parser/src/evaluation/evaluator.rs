@@ -28,6 +28,17 @@ impl EvaluationTrace {
         };
         return output;
     }
+
+    pub fn print_line(&self) -> String {
+        let mut output = String::new();
+        for _ in 0..self.deepth {output.push_str(" ");}
+        match &self.evaluated_value {
+            Some(evaluated_value) => output.push_str(&format!("{} --> {} ({:?})\n", &self.evaluated_target_name, evaluated_value.get_brief_info(), self.trace_type)),
+            None => output.push_str(&format!("{} --> ??? ({:?})\n", &self.evaluated_target_name, self.trace_type)),
+        }
+
+        return output;
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -85,6 +96,15 @@ impl Evaluator {
 
     pub fn decrease_deepth(&mut self){
         self.evaluation_record.decrease_deepth();
+    }
+
+    pub fn print_evaluation_record(&self) -> String {
+        let evaluation_record = &self.evaluation_record.traces;
+        let mut output = String::new();
+        for single_trace in evaluation_record {
+            output.push_str(&single_trace.print_line());
+        }
+        return output;
     }
 
     generate_get_pub!(evaluation_record, EvaluationRecord, get_evaluation_record);

@@ -288,6 +288,30 @@ impl std::cmp::PartialEq for TypedValue {
     }
 }
 
+impl TypedValue {
+    pub fn get_brief_info(&self) -> String {
+        match self {
+            TypedValue::UnknwonValue => return String::from("???"),
+            TypedValue::PackageReferenceValue(package_ref) => return format!("Package({})", package_ref.read().unwrap().get_name()),
+            TypedValue::IntValue(v) => return format!("Int({})", v),
+            TypedValue::StringValue(v) => return format!("String({})", v),
+            TypedValue::BoolValue(v) => return format!("Bool({})", v),
+            TypedValue::FloatValue(v) => return format!("Float({})", v),
+            TypedValue::ClockDomainValue(v) => return format!("ClockDomain{})", v),
+            TypedValue::LogicTypeValue(logic_type) => return logic_type.read().unwrap().get_brief_info(),
+            TypedValue::Streamlet(_) => todo!(),
+            TypedValue::Port(_) => todo!(),
+            TypedValue::Implementation(_) => todo!(),
+            TypedValue::Instance(_) => todo!(),
+            TypedValue::Net(_) => todo!(),
+            TypedValue::If(_) => todo!(),
+            TypedValue::For(_) => todo!(),
+            TypedValue::Array(_) => todo!(),
+            TypedValue::RefToVar(v) => return format!("RefToVar({})", v.read().unwrap().get_name()),
+            TypedValue::Identifier(v) => return format!("Identifier({})", v.read().unwrap().get_brief_info()),
+        }
+    }
+}
 
 #[cfg(test)]
 mod test_var_type {

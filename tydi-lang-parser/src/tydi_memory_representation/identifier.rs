@@ -32,5 +32,22 @@ impl Identifier {
         return Arc::new(RwLock::new(output));
     }
 
+    pub fn get_brief_info(&self) -> String {
+        match &self.id_type {
+            IdentifierType::Unknown => {
+                return format!("unknown");
+            },
+            IdentifierType::FunctionExp(arg_exp) => {
+                return format!("{} <{}> ({})", self.id, self.template_args.values().map(|v| v.to_string()).collect::<Vec<_>>().join(","), arg_exp.values().map(|v| v.to_string()).collect::<Vec<_>>().join(","));
+            },
+            IdentifierType::IndexExp(index_exp) => {
+                return format!("{} <{}> [{}]", self.id, self.template_args.values().map(|v| v.to_string()).collect::<Vec<_>>().join(","), index_exp);
+            },
+            IdentifierType::IdentifierExp => {
+                return format!("{} <{}>", self.id, self.template_args.values().map(|v| v.to_string()).collect::<Vec<_>>().join(","));
+            }
+        }
+    }
+
     generate_get_pub!(id, String, get_id);
 }

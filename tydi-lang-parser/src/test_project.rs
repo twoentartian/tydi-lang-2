@@ -333,10 +333,12 @@ fn sample_project_7() {
             panic!("{}", status.err().unwrap().print(Some(src_pack1_ptr)));
         }
     }
-    project.read().unwrap().evaluate_target(format!("stream_rgb"), format!("pack1")).expect("fail to evaluate");
+    let evaluator = project.read().unwrap().evaluate_target(format!("stream_rgb"), format!("pack1")).expect("fail to evaluate");
 
     let json_output = project.read().unwrap().get_pretty_json();
 
     println!("{json_output}");
     std::fs::write("./output.json", &json_output).unwrap();
+
+    println!("{}", evaluator.read().unwrap().print_evaluation_record());
 }

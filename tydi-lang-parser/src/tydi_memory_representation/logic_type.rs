@@ -14,6 +14,8 @@ pub(in crate) use logic_union::*;
 pub mod logic_stream;
 pub(in crate) use logic_stream::*;
 
+use crate::trait_common::GetName;
+
 #[derive(Clone, Debug, Serialize)]
 pub enum LogicType {
     LogicNullType,
@@ -48,6 +50,18 @@ impl PartialEq for LogicType {
                 return Arc::ptr_eq(v0, v1);
             },
             (_, _) => return false,
+        }
+    }
+}
+
+impl LogicType {
+    pub fn get_brief_info(&self) -> String {
+        match self {
+            LogicType::LogicNullType => return format!("Null"),
+            LogicType::LogicBitType(v) => return format!("LogicBit({})", v.read().unwrap().get_name()),
+            LogicType::LogicGroupType(v) => return format!("LogicGroup({})", v.read().unwrap().get_name()),
+            LogicType::LogicUnionType(v) => return format!("LogicUnion({})", v.read().unwrap().get_name()),
+            LogicType::LogicStreamType(v) => return format!("LogicStream({})", v.read().unwrap().get_name()),
         }
     }
 }
