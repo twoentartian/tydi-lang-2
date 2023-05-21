@@ -85,7 +85,19 @@ pub fn perform_AccessInner(lhs: &Box<Expression>, rhs: &Box<Expression>, scope: 
             package_scope
         },
         TypedValue::LogicTypeValue(v) => {
-            todo!()
+            let logic_type = v.read().unwrap();
+            let output_scope = match &*logic_type {
+                crate::tydi_memory_representation::LogicType::LogicNullType => return Err(TydiLangError::new(format!("LogicNull does not have scope"), CodeLocation::new_unknown())),
+                crate::tydi_memory_representation::LogicType::LogicBitType(_) => todo!(),
+                crate::tydi_memory_representation::LogicType::LogicGroupType(v) => {
+                    v.read().unwrap().get_scope()
+                },
+                crate::tydi_memory_representation::LogicType::LogicUnionType(v) => {
+                    v.read().unwrap().get_scope()
+                },
+                crate::tydi_memory_representation::LogicType::LogicStreamType(_) => todo!(),
+            };
+            output_scope
         },
         TypedValue::Streamlet(v) => {
             todo!()

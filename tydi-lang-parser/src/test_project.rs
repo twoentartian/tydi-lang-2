@@ -342,3 +342,56 @@ fn sample_project_7() {
 
     println!("{}", evaluator.read().unwrap().print_evaluation_record());
 }
+
+#[test]
+fn sample_project_access_value_in_group() {
+    let project = Project::new(format!("sample_project"));
+    {
+        let mut project_write = project.write().unwrap();
+
+        let src_pack0 = String::from(r#"
+        package pack0;
+        use pack1;
+
+        Group another_group {
+            six = 6;
+        }
+
+        Group rgb {
+            seven = 7;
+            eight = 8;
+            bit_8 = Bit(eight);
+            r : bit_8;
+            g : bit_8;
+            b : bit_8;
+            a : another_group;
+        }
+
+        "#);
+        let src_pack1 = format!("
+        package pack1;
+        use pack0;
+
+        seven = pack0.rgb.a.six;
+        ");
+
+        let src_pack0_ptr = Arc::new(RwLock::new(src_pack0.clone()));
+        let src_pack1_ptr = Arc::new(RwLock::new(src_pack1.clone()));
+        let status = project_write.add_package(format!("./pack0.td"), src_pack0);
+        if status.is_err() {
+            panic!("{}", status.err().unwrap().print(Some(src_pack0_ptr)));
+        }
+        let status = project_write.add_package(format!("./pack1.td"), src_pack1);
+        if status.is_err() {
+            panic!("{}", status.err().unwrap().print(Some(src_pack1_ptr)));
+        }
+    }
+    let evaluator = project.read().unwrap().evaluate_target(format!("seven"), format!("pack1")).expect("fail to evaluate");
+
+    let json_output = project.read().unwrap().get_pretty_json();
+
+    println!("{json_output}");
+    std::fs::write("./output.json", &json_output).unwrap();
+
+    println!("{}", evaluator.read().unwrap().print_evaluation_record());
+}
