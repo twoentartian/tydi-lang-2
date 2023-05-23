@@ -320,6 +320,7 @@ fn sample_project_7() {
         use pack0;
 
         stream_rgb = Stream(pack0.rgb);
+        stream_rgb2 = Stream(pack0.rgb);
         ");
 
         let src_pack0_ptr = Arc::new(RwLock::new(src_pack0.clone()));
@@ -387,6 +388,52 @@ fn sample_project_access_value_in_group() {
         }
     }
     let evaluator = project.read().unwrap().evaluate_target(format!("seven"), format!("pack1")).expect("fail to evaluate");
+
+    let json_output = project.read().unwrap().get_pretty_json();
+
+    println!("{json_output}");
+    std::fs::write("./output.json", &json_output).unwrap();
+
+    println!("{}", evaluator.read().unwrap().print_evaluation_record());
+}
+
+#[test]
+fn sample_project_strealet() {
+    let project = Project::new(format!("sample_project"));
+    {
+        let mut project_write = project.write().unwrap();
+
+        let src_pack0 = String::from(r#"
+        package pack0;
+
+        bit_8 = Bit(8);
+
+        bit_8_stream = Stream(bit_8);
+
+        "#);
+        let src_pack1 = String::from(r#"
+        package pack1;
+        use pack0;
+
+        #this is just an exmple streamlet#
+        streamlet bit_8_bypass {
+            in_port : pack0.bit_8_stream in;
+            out_port : pack0.bit_8_stream out;
+        }
+        "#);
+
+        let src_pack0_ptr = Arc::new(RwLock::new(src_pack0.clone()));
+        let src_pack1_ptr = Arc::new(RwLock::new(src_pack1.clone()));
+        let status = project_write.add_package(format!("./pack0.td"), src_pack0);
+        if status.is_err() {
+            panic!("{}", status.err().unwrap().print(Some(src_pack0_ptr)));
+        }
+        let status = project_write.add_package(format!("./pack1.td"), src_pack1);
+        if status.is_err() {
+            panic!("{}", status.err().unwrap().print(Some(src_pack1_ptr)));
+        }
+    }
+    let evaluator = project.read().unwrap().evaluate_target(format!("bit_8_bypass"), format!("pack1")).expect("fail to evaluate");
 
     let json_output = project.read().unwrap().get_pretty_json();
 

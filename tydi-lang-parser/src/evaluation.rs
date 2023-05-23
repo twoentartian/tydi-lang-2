@@ -17,3 +17,6 @@ pub(in crate) use evaluate_logic_type::*;
 
 pub mod evaluate_var;
 pub(in crate) use evaluate_var::*;
+
+pub mod evaluate_streamlet;
+pub(in crate) use evaluate_streamlet::*;

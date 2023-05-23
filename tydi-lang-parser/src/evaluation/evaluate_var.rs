@@ -5,7 +5,7 @@ use crate::trait_common::GetName;
 use crate::tydi_memory_representation::{Variable, TypedValue, Scope, EvaluationStatus, TraitCodeLocationAccess, TypeIndication, LogicType, ScopeRelationType};
 use crate::error::TydiLangError;
 
-use super::Evaluator;
+use super::{Evaluator, evaluate_streamlet};
 
 pub fn evaluate_id_in_typed_value(id_in_typed_value: TypedValue, scope: Arc<RwLock<Scope>>, evaluator: Arc<RwLock<Evaluator>>) -> Result<TypedValue, TydiLangError> {
     let mut output_value = id_in_typed_value.clone();
@@ -24,12 +24,11 @@ pub fn evaluate_id_in_typed_value(id_in_typed_value: TypedValue, scope: Arc<RwLo
 }
 
 pub fn evaluate_var(var: Arc<RwLock<Variable>>, scope: Arc<RwLock<Scope>>, evaluator: Arc<RwLock<Evaluator>>) -> Result<TypedValue, TydiLangError> {
+    #[allow(unused_assignments)]
     let mut output_value = TypedValue::UnknwonValue;
-
     let var_name = var.read().unwrap().get_name();
-    evaluator.write().unwrap().increase_deepth();
-    evaluator.write().unwrap().add_evaluation_trace(var_name.clone(), None, super::EvaluationTraceType::StartEvaluation);
 
+    //check evaluation status
     let evaluation_status = var.read().unwrap().get_evaluated();
     match evaluation_status {
         EvaluationStatus::NotEvaluated => var.write().unwrap().set_evaluated(EvaluationStatus::EvaluationCount(0)),
@@ -42,18 +41,18 @@ pub fn evaluate_var(var: Arc<RwLock<Variable>>, scope: Arc<RwLock<Scope>>, evalu
         },
         EvaluationStatus::Evaluated => {
             let typed_value = var.read().unwrap().get_value();
-            evaluator.write().unwrap().add_evaluation_trace(var_name.clone(), Some(typed_value), super::EvaluationTraceType::FinishEvaluation);
-            evaluator.write().unwrap().decrease_deepth();
             return Ok(var.read().unwrap().get_value())
         },
         EvaluationStatus::Predefined => {
             let typed_value = var.read().unwrap().get_value();
-            evaluator.write().unwrap().add_evaluation_trace(var_name.clone(), Some(typed_value), super::EvaluationTraceType::FinishEvaluation);
-            evaluator.write().unwrap().decrease_deepth();
             return Ok(var.read().unwrap().get_value())
         },
         EvaluationStatus::PreEvaluatedLogicType => (),
     }
+
+    //add evaluation trace
+    evaluator.write().unwrap().increase_deepth();
+    evaluator.write().unwrap().add_evaluation_trace(var_name.clone(), None, super::EvaluationTraceType::StartEvaluation);
 
     //if this is a package reference
     let type_indication = var.read().unwrap().get_type_indication();
@@ -165,6 +164,24 @@ pub fn evaluate_var(var: Arc<RwLock<Variable>>, scope: Arc<RwLock<Scope>>, evalu
                 todo!()
             },
         }
+    }
+
+    else if type_indication == TypeIndication::AnyStreamlet {
+        let value_of_the_var = var.read().unwrap().get_value();
+        match &value_of_the_var {
+            TypedValue::Streamlet(target_streamlet) => {
+                output_value = evaluate_streamlet(target_streamlet.clone(), scope.clone(), evaluator.clone())?;
+                //if the output_value is an identifier
+                output_value = evaluate_id_in_typed_value(output_value, scope.clone(), evaluator.clone())?;
+                {
+                    let mut var_write = var.write().unwrap();
+                    var_write.set_value(output_value.clone());
+                    var_write.set_evaluated(EvaluationStatus::Evaluated);
+                }
+            },
+            _ => unreachable!()
+        }
+        
     }
 
     //we don't know what this variable is, so we evaluate it's expression

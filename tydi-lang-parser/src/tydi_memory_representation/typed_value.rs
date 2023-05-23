@@ -299,7 +299,7 @@ impl TypedValue {
             TypedValue::FloatValue(v) => return format!("Float({})", v),
             TypedValue::ClockDomainValue(v) => return format!("ClockDomain{})", v),
             TypedValue::LogicTypeValue(logic_type) => return logic_type.read().unwrap().get_brief_info(),
-            TypedValue::Streamlet(_) => todo!(),
+            TypedValue::Streamlet(streamlet) => return streamlet.read().unwrap().get_brief_info(),
             TypedValue::Port(_) => todo!(),
             TypedValue::Implementation(_) => todo!(),
             TypedValue::Instance(_) => todo!(),

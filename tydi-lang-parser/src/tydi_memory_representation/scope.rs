@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeMap, HashSet};
 use std::sync::{Arc, RwLock};
 
 use serde::{Serialize, Deserialize};
@@ -76,10 +76,10 @@ pub struct Scope {
     self_ref: Option<Arc<RwLock<Scope>>>,
 
     //// HashMap < parent_scope_name , scope_relationship >
-    scope_relationships: HashMap<String, ScopeRelationship>,
+    scope_relationships: BTreeMap<String, ScopeRelationship>,
 
-    #[serde(with = "crate::serde_serialization::arc_rwlock_in_hash_map_value")]
-    variables: HashMap<String, Arc<RwLock<Variable>>>
+    #[serde(with = "crate::serde_serialization::arc_rwlock_in_btree_map_value")]
+    variables: BTreeMap<String, Arc<RwLock<Variable>>>
 }
 
 impl GetName for Scope {
@@ -94,8 +94,8 @@ impl Scope {
             name: name,
             scope_type: scope_type,
             self_ref: None,
-            scope_relationships: HashMap::new(),
-            variables: HashMap::new(),
+            scope_relationships: BTreeMap::new(),
+            variables: BTreeMap::new(),
         }));
 
         {
@@ -117,8 +117,8 @@ impl Scope {
             name: name,
             scope_type: ScopeType::RootScope,
             self_ref: None,
-            scope_relationships: HashMap::new(),
-            variables: HashMap::new(),
+            scope_relationships: BTreeMap::new(),
+            variables: BTreeMap::new(),
         }));
 
         {
@@ -134,8 +134,8 @@ impl Scope {
             name: generate_name::generate_init_value(),
             scope_type: ScopeType::UnknownScope,
             self_ref: None,
-            scope_relationships: HashMap::new(),
-            variables: HashMap::new(),
+            scope_relationships: BTreeMap::new(),
+            variables: BTreeMap::new(),
         };
         return Arc::new(RwLock::new(output));
     }
@@ -167,9 +167,9 @@ impl Scope {
     //     return &self.scope_relationships;
     // }
 
-    generate_get_pub!(variables, HashMap<String, Arc<RwLock<Variable>>>, get_variables);
-    generate_get_ref_pub!(variables, HashMap<String, Arc<RwLock<Variable>>>, get_variables_ref);
-    generate_get_ref_pub!(scope_relationships, HashMap<String, ScopeRelationship>, get_scope_relationships);
+    generate_get_pub!(variables, BTreeMap<String, Arc<RwLock<Variable>>>, get_variables);
+    generate_get_ref_pub!(variables, BTreeMap<String, Arc<RwLock<Variable>>>, get_variables_ref);
+    generate_get_ref_pub!(scope_relationships, BTreeMap<String, ScopeRelationship>, get_scope_relationships);
 
     fn generate_scope_relationship(&self) -> ScopeRelationType {
         match self.scope_type {

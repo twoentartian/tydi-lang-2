@@ -122,6 +122,7 @@ pub fn parse_Port(src: Pair<Rule>, scope: Arc<RwLock<Scope>>) -> Result<Arc<RwLo
     {
         let mut output_port_var_write = output_port_var.write().unwrap();
         output_port_var_write.set_code_location(CodeLocation::new_from_pest_rule(&src));
+        output_port_var_write.set_is_property_of_scope(true);
         match array_size_indicator {
             Some(array_size_var) => {
                 output_port_var_write.set_array_size(Some(array_size_var));

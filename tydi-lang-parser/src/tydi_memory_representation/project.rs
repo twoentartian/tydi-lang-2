@@ -1,5 +1,5 @@
 use std::sync::{Arc, RwLock};
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 
 use serde::{Serialize};
 
@@ -12,8 +12,8 @@ use crate::tydi_memory_representation::{Package, CodeLocation, GetScope, Scope, 
 pub struct Project {
     name: String,
 
-    #[serde(with = "crate::serde_serialization::arc_rwlock_in_hash_map_value")]
-    packages: HashMap<String, Arc<RwLock<Package>>>,
+    #[serde(with = "crate::serde_serialization::arc_rwlock_in_btree_map_value")]
+    packages: BTreeMap<String, Arc<RwLock<Package>>>,
 
     #[serde(skip)]
     self_arc: Option<Arc<RwLock<Project>>>,
@@ -23,7 +23,7 @@ impl Project {
     pub fn new(name: String) -> Arc<RwLock<Self>> {
         let output = Project { 
             name: name, 
-            packages: HashMap::new(),
+            packages: BTreeMap::new(),
             self_arc: None,
         };
         let project_arc = Arc::new(RwLock::new(output));
@@ -65,6 +65,6 @@ impl Project {
         return Ok(evaluator);
     }
 
-    generate_get_pub!(packages, HashMap<String, Arc<RwLock<Package>>>, get_packages);
+    generate_get_pub!(packages, BTreeMap<String, Arc<RwLock<Package>>>, get_packages);
 }
 

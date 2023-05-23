@@ -16,6 +16,16 @@ pub enum PortDirection {
     Unknown,
 }
 
+impl PortDirection {
+    pub fn to_string(&self) -> String {
+        return match self {
+            PortDirection::In => String::from("In"),
+            PortDirection::Out => String::from("Out"),
+            PortDirection::Unknown => String::from("Unknown"),
+        };
+    }
+}
+
 #[derive(Clone, Debug, Serialize)]
 pub struct Port {
     name: String,

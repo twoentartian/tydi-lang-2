@@ -3,7 +3,7 @@ use std::collections::BTreeMap;
 
 use serde::{Serialize};
 
-use crate::tydi_memory_representation::{TemplateArg, CodeLocation, Scope, ScopeType, GetScope, Attribute, TraitCodeLocationAccess};
+use crate::tydi_memory_representation::{TemplateArg, CodeLocation, Scope, ScopeType, GetScope, Attribute, TraitCodeLocationAccess, TypedValue};
 use crate::trait_common::{GetName, HasDocument};
 use crate::{generate_access, generate_get, generate_set, generate_access_pub, generate_get_pub, generate_set_pub, generate_name};
 
@@ -69,6 +69,19 @@ impl Streamlet {
     pub fn set_name(&mut self, name: String) {
         self.name = name.clone();
         self.scope.write().unwrap().set_name(format!("streamlet_{}", name.clone()));
+    }
+
+    pub fn get_brief_info(&self) -> String {
+        let mut ports_strs = vec![];
+        let streamlet_vars = self.scope.read().unwrap().get_variables();
+        for (_, var) in streamlet_vars {
+            if let TypedValue::Port(port) = var.read().unwrap().get_value() {
+                let logic_type = port.read().unwrap().get_logical_type();
+                ports_strs.push(format!("{}:{} {}", var.read().unwrap().get_name(), port.read().unwrap().get_direction().to_string(), logic_type.read().unwrap().get_name()));
+            }
+        }
+
+        return format!("Streamlet({}){{{}}}", &self.name, ports_strs.iter().map(|i| i.to_string()).collect::<Vec<_>>().join(", "));
     }
 
     generate_access_pub!(template_args, Option<BTreeMap<usize, TemplateArg>>, get_template_args, set_template_args);
