@@ -2,12 +2,10 @@ use std::sync::{Arc, RwLock};
 
 use serde::{Serialize, Deserialize};
 
-use crate::tydi_memory_representation::{Variable, Attribute, CodeLocation, TraitCodeLocationAccess};
+use crate::tydi_memory_representation::{Variable, Attribute, CodeLocation, TraitCodeLocationAccess, TypedValue, Streamlet};
 
 use crate::trait_common::{GetName, HasDocument};
 use crate::{generate_access, generate_get, generate_set, generate_name, generate_access_pub, generate_get_pub, generate_set_pub};
-
-use super::TypedValue;
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub enum PortDirection {
@@ -38,6 +36,9 @@ pub struct Port {
     #[serde(with = "crate::serde_serialization::use_inner_for_arc_rwlock")]
     logical_type: Arc<RwLock<Variable>>,
 
+    #[serde(with = "crate::serde_serialization::use_name_for_optional_arc_rwlock")]
+    parent_streamlet: Option<Arc<RwLock<Streamlet>>>,
+
     attributes: Vec<Attribute>,
 
     document: Option<String>,
@@ -66,6 +67,7 @@ impl Port {
             direction: direction,
             time_domain: Self::get_default_time_domain(),
             logical_type: logical_type,
+            parent_streamlet: None,
             attributes: vec![],
             document: None,
             location_define: CodeLocation::new_unknown(),
@@ -79,6 +81,7 @@ impl Port {
             direction: PortDirection::Unknown,
             time_domain: Self::get_default_time_domain(),
             logical_type: Variable::new_place_holder(),
+            parent_streamlet: None,
             attributes: vec![],
             document: None,
             location_define: CodeLocation::new_unknown(),
@@ -92,6 +95,7 @@ impl Port {
 
     generate_access_pub!(time_domain, Arc<RwLock<Variable>>, get_time_domain, set_time_domain);
     generate_access_pub!(logical_type, Arc<RwLock<Variable>>, get_logical_type, set_logical_type);
+    generate_access_pub!(parent_streamlet, Option<Arc<RwLock<Streamlet>>>, get_parent_streamlet, set_parent_streamlet);
     generate_access_pub!(direction, PortDirection, get_direction, set_direction);
     generate_access_pub!(attributes, Vec<Attribute>, get_attributes, set_attributes);
 }

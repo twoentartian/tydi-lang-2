@@ -5,7 +5,7 @@ use crate::trait_common::GetName;
 use crate::tydi_memory_representation::{Variable, TypedValue, Scope, EvaluationStatus, TraitCodeLocationAccess, TypeIndication, LogicType, ScopeRelationType};
 use crate::error::TydiLangError;
 
-use super::{Evaluator, evaluate_streamlet};
+use super::{Evaluator, evaluate_streamlet, evaluate_impl};
 
 pub fn evaluate_id_in_typed_value(id_in_typed_value: TypedValue, scope: Arc<RwLock<Scope>>, evaluator: Arc<RwLock<Evaluator>>) -> Result<TypedValue, TydiLangError> {
     let mut output_value = id_in_typed_value.clone();
@@ -171,6 +171,36 @@ pub fn evaluate_var(var: Arc<RwLock<Variable>>, scope: Arc<RwLock<Scope>>, evalu
         match &value_of_the_var {
             TypedValue::Streamlet(target_streamlet) => {
                 output_value = evaluate_streamlet(target_streamlet.clone(), scope.clone(), evaluator.clone())?;
+            },
+            TypedValue::RefToVar(var) => {
+                output_value = evaluate_var(var.clone(), scope.clone(), evaluator.clone())?;
+            },
+            TypedValue::UnknwonValue => {       //here we should get the expression of the streamlet
+                let streamlet_exp = var.read().unwrap().get_exp();
+                match streamlet_exp {
+                    Some(streamlet_exp) => {
+                        output_value = evaluate_expression(streamlet_exp, scope.clone(), evaluator.clone())?;
+                    },
+                    None => unreachable!(),
+                }
+            },
+            _ => unreachable!()
+        }
+
+        //if the output_value is an identifier
+        output_value = evaluate_id_in_typed_value(output_value, scope.clone(), evaluator.clone())?;
+        {
+            let mut var_write = var.write().unwrap();
+            var_write.set_value(output_value.clone());
+            var_write.set_evaluated(EvaluationStatus::Evaluated);
+        }
+    }
+
+    else if type_indication == TypeIndication::AnyImplementation {
+        let value_of_the_var = var.read().unwrap().get_value();
+        match &value_of_the_var {
+            TypedValue::Implementation(target_impl) => {
+                output_value = evaluate_impl(target_impl.clone(), scope.clone(), evaluator.clone())?;
                 //if the output_value is an identifier
                 output_value = evaluate_id_in_typed_value(output_value, scope.clone(), evaluator.clone())?;
                 {
@@ -181,7 +211,23 @@ pub fn evaluate_var(var: Arc<RwLock<Variable>>, scope: Arc<RwLock<Scope>>, evalu
             },
             _ => unreachable!()
         }
-        
+    }
+
+    else if type_indication == TypeIndication::AnyPort {
+        let net_exp = var.read().unwrap().get_exp();
+        let net_exp = match net_exp {
+            Some(net_exp) => {
+                net_exp
+            }
+            None => unreachable!("the parser side should give us the expression")
+        };
+        output_value = evaluate_expression(net_exp, scope.clone(), evaluator.clone())?;
+        output_value = evaluate_id_in_typed_value(output_value, scope.clone(), evaluator.clone())?;
+        {
+            let mut var_write = var.write().unwrap();
+            var_write.set_value(output_value.clone());
+            var_write.set_evaluated(EvaluationStatus::Evaluated);
+        }
     }
 
     //we don't know what this variable is, so we evaluate it's expression

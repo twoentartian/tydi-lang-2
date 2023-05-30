@@ -2,10 +2,9 @@ use std::sync::{Arc, RwLock};
 
 use serde::{Serialize};
 
-use crate::tydi_memory_representation::{CodeLocation, Attribute, TraitCodeLocationAccess, Variable, TypeIndication};
+use crate::tydi_memory_representation::{CodeLocation, Attribute, TraitCodeLocationAccess, Variable, TypeIndication, Implementation};
 use crate::trait_common::{GetName, HasDocument};
 use crate::{generate_access, generate_get, generate_set, generate_access_pub, generate_get_pub, generate_set_pub, generate_name};
-
 
 #[derive(Clone, Debug, Serialize)]
 pub struct Instance {
@@ -13,6 +12,9 @@ pub struct Instance {
 
     #[serde(with = "crate::serde_serialization::use_inner_for_arc_rwlock")]
     derived_implementation: Arc<RwLock<Variable>>,
+
+    #[serde(with = "crate::serde_serialization::use_name_for_optional_arc_rwlock")]
+    parent_impl: Option<Arc<RwLock<Implementation>>>,
 
     location_define: CodeLocation,
 
@@ -40,6 +42,7 @@ impl Instance {
         let mut output = Self {
             name: name.clone(),
             derived_implementation: Variable::new_place_holder(),
+            parent_impl: None,
             location_define: CodeLocation::new_unknown(),
             document: None,
             attributes: vec![],
@@ -52,6 +55,7 @@ impl Instance {
         let output = Self {
             name: generate_name::generate_init_value(),
             derived_implementation: Variable::new_place_holder(),
+            parent_impl: None,
             location_define: CodeLocation::new_unknown(),
             document: None,
             attributes: vec![],
@@ -62,6 +66,7 @@ impl Instance {
     generate_set_pub!(name, String, set_name);
     generate_access_pub!(attributes, Vec<Attribute>, get_attributes, set_attributes);
     generate_access_pub!(derived_implementation, Arc<RwLock<Variable>>, get_derived_implementation, set_derived_implementation);
+    generate_access_pub!(parent_impl, Option<Arc<RwLock<Implementation>>>, get_parent_impl, set_parent_impl);
 
     pub fn set_derived_implementation_exp(&mut self, derived_implementation_exp: String, code_location: CodeLocation) {
         let streamlet_var = Variable::new(format!("derived_implementation_exp_of_{}", self.name.clone()), Some(derived_implementation_exp));

@@ -60,6 +60,30 @@ pub mod use_name_for_arc_rwlock {
     }
 }
 
+pub mod use_name_for_optional_arc_rwlock {
+    use serde::{Deserialize, Serialize};
+    use serde::de::Deserializer;
+    use serde::ser::Serializer;
+    use std::sync::{Arc, RwLock};
+
+    use crate::trait_common::GetName;
+    
+    pub fn serialize<S, T>(val: &Option<Arc<RwLock<T>>>, s: S) -> Result<S::Ok, S::Error>
+        where S: Serializer, T: Serialize + GetName,
+    {
+        match val {
+            Some(v) => String::serialize(&v.read().unwrap().get_name(), s),
+            None => s.serialize_none(),
+        }
+    }
+    
+    pub fn deserialize<'de, D, T>(d: D) -> Result<Arc<RwLock<T>>, D::Error>
+            where D: Deserializer<'de>, T: Deserialize<'de>,
+    {
+        todo!()
+    }
+}
+
 pub mod arc_rwlock_in_hash_map_value {
     use std::collections::HashMap;
     use serde::{Deserialize, Serialize};

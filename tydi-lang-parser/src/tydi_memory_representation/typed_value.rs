@@ -96,7 +96,7 @@ impl TypeIndication {
             },
 
             //TypedValue during evaluation phase only
-            TypedValue::RefToVar(_) => unreachable!(),
+            TypedValue::RefToVar(var) => Self::infer_from_typed_value(&var.read().unwrap().get_value()),
             TypedValue::Identifier(_) => unreachable!(),
             
         }
@@ -300,8 +300,8 @@ impl TypedValue {
             TypedValue::ClockDomainValue(v) => return format!("ClockDomain{})", v),
             TypedValue::LogicTypeValue(logic_type) => return logic_type.read().unwrap().get_brief_info(),
             TypedValue::Streamlet(streamlet) => return streamlet.read().unwrap().get_brief_info(),
-            TypedValue::Port(_) => todo!(),
-            TypedValue::Implementation(_) => todo!(),
+            TypedValue::Port(port) => return port.read().unwrap().get_name(),
+            TypedValue::Implementation(implementation) => return implementation.read().unwrap().get_brief_info(),
             TypedValue::Instance(_) => todo!(),
             TypedValue::Net(_) => todo!(),
             TypedValue::If(_) => todo!(),

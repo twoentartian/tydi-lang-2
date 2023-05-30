@@ -73,6 +73,10 @@ impl Implementation {
         return Arc::new(RwLock::new(output));
     }
 
+    pub fn get_brief_info(&self) -> String {
+        let derived_streamlet_name = self.get_derived_streamlet().read().unwrap().get_name();
+        return format!("Impl({})({})", &self.name, derived_streamlet_name);
+    }
 
     pub fn set_name(&mut self, name: String) {
         self.name = name.clone();

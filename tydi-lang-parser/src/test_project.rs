@@ -398,7 +398,7 @@ fn sample_project_access_value_in_group() {
 }
 
 #[test]
-fn sample_project_strealet() {
+fn sample_project_streamlet() {
     let project = Project::new(format!("sample_project"));
     {
         let mut project_write = project.write().unwrap();
@@ -434,6 +434,186 @@ fn sample_project_strealet() {
         }
     }
     let evaluator = project.read().unwrap().evaluate_target(format!("bit_8_bypass"), format!("pack1")).expect("fail to evaluate");
+
+    let json_output = project.read().unwrap().get_pretty_json();
+
+    println!("{json_output}");
+    std::fs::write("./output.json", &json_output).unwrap();
+
+    println!("{}", evaluator.read().unwrap().print_evaluation_record());
+}
+
+#[test]
+fn sample_project_nested_stream() {
+    let project = Project::new(format!("sample_project"));
+    {
+        let mut project_write = project.write().unwrap();
+
+        let src_pack0 = String::from(r#"
+        package pack0;
+
+        char_8 = Bit(8);
+
+        char_string_stream = Stream(char_8, d=1);
+
+        timestamp = Bit(60);
+
+        Group char_string_timestamp {
+            string: char_string_stream;
+            time_stamp: timestamp;
+        }
+
+        char_string_timestamp_stream = Stream(char_string_timestamp);
+
+        "#);
+        let src_pack1 = String::from(r#"
+        package pack1;
+        use pack0;
+
+        #this is just an exmple streamlet#
+        streamlet bypass {
+            in_port : pack0.char_string_timestamp_stream in;
+            out_port : pack0.char_string_timestamp_stream out;
+        }
+        "#);
+
+        let src_pack0_ptr = Arc::new(RwLock::new(src_pack0.clone()));
+        let src_pack1_ptr = Arc::new(RwLock::new(src_pack1.clone()));
+        let status = project_write.add_package(format!("./pack0.td"), src_pack0);
+        if status.is_err() {
+            panic!("{}", status.err().unwrap().print(Some(src_pack0_ptr)));
+        }
+        let status = project_write.add_package(format!("./pack1.td"), src_pack1);
+        if status.is_err() {
+            panic!("{}", status.err().unwrap().print(Some(src_pack1_ptr)));
+        }
+    }
+    let evaluator = project.read().unwrap().evaluate_target(format!("bypass"), format!("pack1")).expect("fail to evaluate");
+
+    let json_output = project.read().unwrap().get_pretty_json();
+
+    println!("{json_output}");
+    std::fs::write("./output.json", &json_output).unwrap();
+
+    println!("{}", evaluator.read().unwrap().print_evaluation_record());
+}
+
+#[test]
+fn sample_project_simple_impl_1() {
+    let project = Project::new(format!("sample_project"));
+    {
+        let mut project_write = project.write().unwrap();
+
+        let src_pack0 = String::from(r#"
+        package pack0;
+
+        char_8 = Bit(8);
+
+        char_string_stream = Stream(char_8, d=1);
+
+        timestamp = Bit(60);
+
+        Group char_string_timestamp {
+            string: char_string_stream;
+            time_stamp: timestamp;
+        }
+
+        char_string_timestamp_stream = Stream(char_string_timestamp);
+
+        "#);
+        let src_pack1 = String::from(r#"
+        package pack1;
+        use pack0;
+
+        #this is just an exmple streamlet#
+        streamlet bypass {
+            in_port : pack0.char_string_timestamp_stream in;
+            out_port : pack0.char_string_timestamp_stream out;
+        }
+
+        impl bypass_i of bypass {
+            self.in_port => self.out_port;
+        }
+        "#);
+
+        let src_pack0_ptr = Arc::new(RwLock::new(src_pack0.clone()));
+        let src_pack1_ptr = Arc::new(RwLock::new(src_pack1.clone()));
+        let status = project_write.add_package(format!("./pack0.td"), src_pack0);
+        if status.is_err() {
+            panic!("{}", status.err().unwrap().print(Some(src_pack0_ptr)));
+        }
+        let status = project_write.add_package(format!("./pack1.td"), src_pack1);
+        if status.is_err() {
+            panic!("{}", status.err().unwrap().print(Some(src_pack1_ptr)));
+        }
+    }
+    let evaluator = project.read().unwrap().evaluate_target(format!("bypass_i"), format!("pack1")).expect("fail to evaluate");
+
+    let json_output = project.read().unwrap().get_pretty_json();
+
+    println!("{json_output}");
+    std::fs::write("./output.json", &json_output).unwrap();
+
+    println!("{}", evaluator.read().unwrap().print_evaluation_record());
+}
+
+
+#[test]
+fn sample_project_simple_impl_2() {
+    let project = Project::new(format!("sample_project"));
+    {
+        let mut project_write = project.write().unwrap();
+
+        let src_pack0 = String::from(r#"
+        package pack0;
+
+        char_8 = Bit(8);
+
+        char_string_stream = Stream(char_8, d=1);
+
+        timestamp = Bit(60);
+
+        Group char_string_timestamp {
+            string: char_string_stream;
+            time_stamp: timestamp;
+        }
+
+        char_string_timestamp_stream = Stream(char_string_timestamp);
+
+        "#);
+        let src_pack1 = String::from(r#"
+        package pack1;
+        use pack0;
+
+        #this is just an exmple streamlet#
+        streamlet bypass {
+            in_port : pack0.char_string_timestamp_stream in;
+            out_port : pack0.char_string_timestamp_stream out;
+        }
+
+        impl bypass_i of bypass {
+            self.in_port => self.out_port;
+        }
+
+        impl bypass_i2 of bypass {
+            instance nested_self(bypass_i);
+            self.in_port => nested_self.in_port;
+            nested_self.out_port => self.out_port;
+        }
+        "#);
+
+        let src_pack0_ptr = Arc::new(RwLock::new(src_pack0.clone()));
+        let src_pack1_ptr = Arc::new(RwLock::new(src_pack1.clone()));
+        let status = project_write.add_package(format!("./pack0.td"), src_pack0);
+        if status.is_err() {
+            panic!("{}", status.err().unwrap().print(Some(src_pack0_ptr)));
+        }
+        let status = project_write.add_package(format!("./pack1.td"), src_pack1);
+        if status.is_err() {
+            panic!("{}", status.err().unwrap().print(Some(src_pack1_ptr)));
+        }
+    }
+    let evaluator = project.read().unwrap().evaluate_target(format!("bypass_i"), format!("pack1")).expect("fail to evaluate");
 
     let json_output = project.read().unwrap().get_pretty_json();
 

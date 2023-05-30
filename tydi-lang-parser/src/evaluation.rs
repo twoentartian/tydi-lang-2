@@ -20,3 +20,6 @@ pub(in crate) use evaluate_var::*;
 
 pub mod evaluate_streamlet;
 pub(in crate) use evaluate_streamlet::*;
+
+pub mod evaluate_impl;
+pub(in crate) use evaluate_impl::*;

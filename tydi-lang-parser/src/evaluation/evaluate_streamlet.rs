@@ -24,6 +24,10 @@ pub fn evaluate_streamlet(target: Arc<RwLock<Streamlet>>, scope: Arc<RwLock<Scop
             TypedValue::Port(port) => port.clone(),
             _ => unreachable!("something wrong on the parser side, the value should be a port")
         };
+        {
+            let mut port_write = port.write().unwrap();
+            port_write.set_parent_streamlet(Some(target.clone()));
+        }
         let output_value = evaluate_port(port.clone(), streamlet_scope.clone(), evaluator.clone())?;
         {
             let mut var_write = var.write().unwrap();

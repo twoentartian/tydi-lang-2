@@ -1,6 +1,6 @@
 use std::sync::{Arc, RwLock};
 
-use crate::{tydi_memory_representation::{TypedValue, CodeLocation, Scope, ScopeRelationType, GetScope}};
+use crate::{tydi_memory_representation::{TypedValue, CodeLocation, Scope, ScopeRelationType, GetScope, streamlet}};
 use crate::{error::TydiLangError, trait_common::GetName};
 
 use super::{Expression, Operator, Evaluator, evaluate_var, evaluate_id_in_typed_value};
@@ -88,19 +88,20 @@ pub fn perform_AccessInner(lhs: &Box<Expression>, rhs: &Box<Expression>, scope: 
             let logic_type = v.read().unwrap();
             let output_scope = match &*logic_type {
                 crate::tydi_memory_representation::LogicType::LogicNullType => return Err(TydiLangError::new(format!("LogicNull does not have scope"), CodeLocation::new_unknown())),
-                crate::tydi_memory_representation::LogicType::LogicBitType(_) => todo!(),
+                crate::tydi_memory_representation::LogicType::LogicBitType(_) => unreachable!(),
                 crate::tydi_memory_representation::LogicType::LogicGroupType(v) => {
                     v.read().unwrap().get_scope()
                 },
                 crate::tydi_memory_representation::LogicType::LogicUnionType(v) => {
                     v.read().unwrap().get_scope()
                 },
-                crate::tydi_memory_representation::LogicType::LogicStreamType(_) => todo!(),
+                crate::tydi_memory_representation::LogicType::LogicStreamType(_) => unreachable!(),
             };
             output_scope
         },
         TypedValue::Streamlet(v) => {
-            todo!()
+            let streamlet_scope = v.read().unwrap().get_scope();
+            streamlet_scope
         },
         TypedValue::Implementation(v) => {
             todo!()
