@@ -1,6 +1,6 @@
-use std::sync::{Arc, RwLock};
+use std::{sync::{Arc, RwLock}, clone};
 
-use crate::{tydi_memory_representation::{TypedValue, CodeLocation, Scope, ScopeRelationType, GetScope, streamlet}};
+use crate::{tydi_memory_representation::{TypedValue, CodeLocation, Scope, ScopeRelationType, GetScope, streamlet, EvaluationStatus}, trait_common::AccessProperty};
 use crate::{error::TydiLangError, trait_common::GetName};
 
 use super::{Expression, Operator, Evaluator, evaluate_var, evaluate_id_in_typed_value};
@@ -75,42 +75,8 @@ pub fn evaluate_BinaryOperation(lhs: &Box<Expression>, op: &Operator, rhs: &Box<
 #[allow(non_snake_case)]
 pub fn perform_AccessInner(lhs: &Box<Expression>, rhs: &Box<Expression>, scope: Arc<RwLock<Scope>>, evaluator: Arc<RwLock<Evaluator>>) -> Result<TypedValue, TydiLangError> {
     let lhs_value = lhs.evaluate_TypedValue(scope.clone(), evaluator.clone())?;
-    let lhs_value = evaluate_id_in_typed_value(lhs_value, scope.clone(), evaluator.clone())?;
+    let mut lhs_value = evaluate_id_in_typed_value(lhs_value, scope.clone(), evaluator.clone())?;
     let rhs_value = rhs.evaluate_TypedValue(scope.clone(), evaluator.clone())?;
-    // let rhs_value = evaluate_id_in_typed_value(rhs_value, scope.clone(), evaluator.clone())?;    //we don't try to evaluate the id of rhs_value since its scope is unknown
-
-    let scope_of_rhs_var = match &lhs_value {
-        TypedValue::PackageReferenceValue(package_ref) => {
-            let package_scope = package_ref.read().unwrap().get_scope();
-            package_scope
-        },
-        TypedValue::LogicTypeValue(v) => {
-            let logic_type = v.read().unwrap();
-            let output_scope = match &*logic_type {
-                crate::tydi_memory_representation::LogicType::LogicNullType => return Err(TydiLangError::new(format!("LogicNull does not have scope"), CodeLocation::new_unknown())),
-                crate::tydi_memory_representation::LogicType::LogicBitType(_) => unreachable!(),
-                crate::tydi_memory_representation::LogicType::LogicGroupType(v) => {
-                    v.read().unwrap().get_scope()
-                },
-                crate::tydi_memory_representation::LogicType::LogicUnionType(v) => {
-                    v.read().unwrap().get_scope()
-                },
-                crate::tydi_memory_representation::LogicType::LogicStreamType(_) => unreachable!(),
-            };
-            output_scope
-        },
-        TypedValue::Streamlet(v) => {
-            let streamlet_scope = v.read().unwrap().get_scope();
-            streamlet_scope
-        },
-        TypedValue::Implementation(v) => {
-            todo!()
-        }
-        TypedValue::RefToVar(_) => unreachable!(),
-        TypedValue::Identifier(_) => unreachable!(),
-        _ => unreachable!()
-    };
-    
     //get rhs var name
     let rhs_var_name = match rhs_value {
         TypedValue::Identifier(id) => {
@@ -118,8 +84,77 @@ pub fn perform_AccessInner(lhs: &Box<Expression>, rhs: &Box<Expression>, scope: 
         }
         _ => unreachable!()
     };
+    
+    // let rhs_value = evaluate_id_in_typed_value(rhs_value, scope.clone(), evaluator.clone())?;    //we don't try to evaluate the id of rhs_value since its scope is unknown
 
-    let (rhs_var, rhs_var_scope) = Scope::resolve_identifier(&rhs_var_name, scope_of_rhs_var.clone(), ScopeRelationType::resolve_id_default())?;
+    //if the lhs value is a reference
+    if let TypedValue::RefToVar(inner_var) = lhs_value.clone() {
+        assert!(inner_var.read().unwrap().get_evaluated().is_value_known());
+        lhs_value = inner_var.read().unwrap().get_value();
+    }
+
+    let (scope_of_rhs_var, resolve_var_scope_edge) = match &lhs_value {
+        TypedValue::PackageReferenceValue(package_ref) => {
+            let package_scope = package_ref.read().unwrap().get_scope();
+            (package_scope, ScopeRelationType::resolve_id_default())
+        },
+        TypedValue::LogicTypeValue(v) => {
+            let logic_type = v.read().unwrap();
+            let output_scope = match &*logic_type {
+                crate::tydi_memory_representation::LogicType::LogicNullType => return Err(TydiLangError::new(format!("LogicNull does not have scope"), CodeLocation::new_unknown())),
+                crate::tydi_memory_representation::LogicType::LogicBitType(bit) => {
+                    let var = bit.read().unwrap().access_porperty(&rhs_var_name);
+                    if var.is_none() {
+                        return Err(TydiLangError::new(format!("LogicBit doesn't have property {}, available: {:?}", &rhs_var_name, crate::tydi_memory_representation::logic_bit::AVAILABLE_PROPERTIES), CodeLocation::new_unknown()));
+                    }
+                    let var = var.unwrap();
+
+                    assert!(var.read().unwrap().get_evaluated().is_value_known());
+                    return Ok(var.read().unwrap().get_value());
+                },
+                crate::tydi_memory_representation::LogicType::LogicGroupType(v) => {
+                    v.read().unwrap().get_scope()
+                },
+                crate::tydi_memory_representation::LogicType::LogicUnionType(v) => {
+                    v.read().unwrap().get_scope()
+                },
+                crate::tydi_memory_representation::LogicType::LogicStreamType(stream) => {
+                    let var = stream.read().unwrap().access_porperty(&rhs_var_name);
+                    if var.is_none() {
+                        return Err(TydiLangError::new(format!("LogicStream doesn't have property {}, available: {:?}", &rhs_var_name, crate::tydi_memory_representation::logic_stream::AVAILABLE_PROPERTIES), CodeLocation::new_unknown()));
+                    }
+                    let var = var.unwrap();
+                    assert!(var.read().unwrap().get_evaluated().is_value_known());
+                    return Ok(var.read().unwrap().get_value());
+                },
+            };
+            (output_scope, ScopeRelationType::resolve_id_default())
+        },
+        TypedValue::Streamlet(v) => {
+            let streamlet_scope = v.read().unwrap().get_scope();
+            (streamlet_scope, ScopeRelationType::resolve_id_default())
+        },
+        TypedValue::Implementation(v) => {
+            todo!()
+        },
+        TypedValue::Instance(inst) => {
+            let derived_impl_var = inst.read().unwrap().get_derived_impl_var();
+            evaluate_var(derived_impl_var.clone(), scope.clone(), evaluator.clone())?;
+            let derived_impl_var_value = derived_impl_var.read().unwrap().get_value();
+            match derived_impl_var_value {
+                TypedValue::Implementation(derived_impl) => {
+                    let derived_impl_scope = derived_impl.read().unwrap().get_scope();
+                    (derived_impl_scope, ScopeRelationType::resolve_id_in_parent_streamlet())
+                }
+                _ => unreachable!("we should get an implementation here")
+            }
+        },
+        TypedValue::RefToVar(_) => unreachable!(),
+        TypedValue::Identifier(_) => unreachable!(),
+        _ => unreachable!()
+    };
+
+    let (rhs_var, rhs_var_scope) = Scope::resolve_identifier(&rhs_var_name, scope_of_rhs_var.clone(), resolve_var_scope_edge)?;
     let rhs_typed_value = evaluate_var(rhs_var.clone(), rhs_var_scope.clone(), evaluator.clone())?;
     return Ok(rhs_typed_value);
 }

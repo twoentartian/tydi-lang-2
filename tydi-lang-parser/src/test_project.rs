@@ -345,6 +345,49 @@ fn sample_project_7() {
 }
 
 #[test]
+fn sample_project_8() {
+    let project = Project::new(format!("sample_project"));
+    {
+        let mut project_write = project.write().unwrap();
+
+        let src_pack0 = String::from(r#"
+        package pack0;
+        
+        bit8 = Bit(8);
+        bit8_stream = Stream(bit8);
+        "#);
+        let src_pack1 = format!("
+        package pack1;
+        use pack0;
+        zero = 0;
+        eight = pack0.bit8.width;           //8
+        complexity = pack0.bit8_stream.c;   //1
+        throughtput = pack0.bit8_stream.t;  //1.0
+        result = eight + complexity + throughtput;
+        ");
+
+        let src_pack0_ptr = Arc::new(RwLock::new(src_pack0.clone()));
+        let src_pack1_ptr = Arc::new(RwLock::new(src_pack1.clone()));
+        let status = project_write.add_package(format!("./pack0.td"), src_pack0);
+        if status.is_err() {
+            panic!("{}", status.err().unwrap().print(Some(src_pack0_ptr)));
+        }
+        let status = project_write.add_package(format!("./pack1.td"), src_pack1);
+        if status.is_err() {
+            panic!("{}", status.err().unwrap().print(Some(src_pack1_ptr)));
+        }
+    }
+    let evaluator = project.read().unwrap().evaluate_target(format!("result"), format!("pack1")).expect("fail to evaluate");
+
+    let json_output = project.read().unwrap().get_pretty_json();
+
+    println!("{json_output}");
+    std::fs::write("./output.json", &json_output).unwrap();
+
+    println!("{}", evaluator.read().unwrap().print_evaluation_record());
+}
+
+#[test]
 fn sample_project_access_value_in_group() {
     let project = Project::new(format!("sample_project"));
     {
@@ -585,7 +628,7 @@ fn sample_project_simple_impl_2() {
         package pack1;
         use pack0;
 
-        #this is just an exmple streamlet#
+        #this is just an example streamlet#
         streamlet bypass {
             in_port : pack0.char_string_timestamp_stream in;
             out_port : pack0.char_string_timestamp_stream out;
@@ -613,7 +656,7 @@ fn sample_project_simple_impl_2() {
             panic!("{}", status.err().unwrap().print(Some(src_pack1_ptr)));
         }
     }
-    let evaluator = project.read().unwrap().evaluate_target(format!("bypass_i"), format!("pack1")).expect("fail to evaluate");
+    let evaluator = project.read().unwrap().evaluate_target(format!("bypass_i2"), format!("pack1")).expect("fail to evaluate");
 
     let json_output = project.read().unwrap().get_pretty_json();
 

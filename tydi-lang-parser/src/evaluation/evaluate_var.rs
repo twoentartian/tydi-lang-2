@@ -5,7 +5,7 @@ use crate::trait_common::GetName;
 use crate::tydi_memory_representation::{Variable, TypedValue, Scope, EvaluationStatus, TraitCodeLocationAccess, TypeIndication, LogicType, ScopeRelationType};
 use crate::error::TydiLangError;
 
-use super::{Evaluator, evaluate_streamlet, evaluate_impl};
+use super::{Evaluator, evaluate_streamlet, evaluate_impl, evaluate_instance};
 
 pub fn evaluate_id_in_typed_value(id_in_typed_value: TypedValue, scope: Arc<RwLock<Scope>>, evaluator: Arc<RwLock<Evaluator>>) -> Result<TypedValue, TydiLangError> {
     let mut output_value = id_in_typed_value.clone();
@@ -41,11 +41,11 @@ pub fn evaluate_var(var: Arc<RwLock<Variable>>, scope: Arc<RwLock<Scope>>, evalu
         },
         EvaluationStatus::Evaluated => {
             let typed_value = var.read().unwrap().get_value();
-            return Ok(var.read().unwrap().get_value())
+            return Ok(typed_value)
         },
         EvaluationStatus::Predefined => {
             let typed_value = var.read().unwrap().get_value();
-            return Ok(var.read().unwrap().get_value())
+            return Ok(typed_value)
         },
         EvaluationStatus::PreEvaluatedLogicType => (),
     }
@@ -54,9 +54,21 @@ pub fn evaluate_var(var: Arc<RwLock<Variable>>, scope: Arc<RwLock<Scope>>, evalu
     evaluator.write().unwrap().increase_deepth();
     evaluator.write().unwrap().add_evaluation_trace(var_name.clone(), None, super::EvaluationTraceType::StartEvaluation);
 
-    //if this is a package reference
+
+    let typed_value = var.read().unwrap().get_value();
     let type_indication = var.read().unwrap().get_type_indication();
-    if type_indication == TypeIndication::PackageReference {
+
+    //if this is a ref to another var
+    if let TypedValue::RefToVar(inner_var) = typed_value {
+        output_value = evaluate_var(inner_var.clone(), scope.clone(), evaluator.clone())?;
+        {
+            let mut var_write = var.write().unwrap();
+            var_write.set_evaluated(EvaluationStatus::Evaluated);
+        }
+    }
+
+    //if this is a package reference
+    else if type_indication == TypeIndication::PackageReference {
         let project = evaluator.read().unwrap().get_project();
         let packages = project.read().unwrap().get_packages();
         let target_package_name = var.read().unwrap().get_exp().unwrap();
@@ -172,9 +184,6 @@ pub fn evaluate_var(var: Arc<RwLock<Variable>>, scope: Arc<RwLock<Scope>>, evalu
             TypedValue::Streamlet(target_streamlet) => {
                 output_value = evaluate_streamlet(target_streamlet.clone(), scope.clone(), evaluator.clone())?;
             },
-            TypedValue::RefToVar(var) => {
-                output_value = evaluate_var(var.clone(), scope.clone(), evaluator.clone())?;
-            },
             TypedValue::UnknwonValue => {       //here we should get the expression of the streamlet
                 let streamlet_exp = var.read().unwrap().get_exp();
                 match streamlet_exp {
@@ -209,6 +218,41 @@ pub fn evaluate_var(var: Arc<RwLock<Variable>>, scope: Arc<RwLock<Scope>>, evalu
                     var_write.set_evaluated(EvaluationStatus::Evaluated);
                 }
             },
+            TypedValue::UnknwonValue => {       //here we should get the expression of the implementation
+                let impl_exp = var.read().unwrap().get_exp();
+                match impl_exp {
+                    Some(impl_exp) => {
+                        output_value = evaluate_expression(impl_exp, scope.clone(), evaluator.clone())?;
+                    },
+                    None => unreachable!(),
+                }
+            },
+            _ => unreachable!()
+        }
+
+        //if the output_value is an identifier
+        output_value = evaluate_id_in_typed_value(output_value, scope.clone(), evaluator.clone())?;
+        {
+            let mut var_write = var.write().unwrap();
+            var_write.set_value(output_value.clone());
+            var_write.set_evaluated(EvaluationStatus::Evaluated);
+        }
+    }
+
+    else if type_indication == TypeIndication::AnyInstance {
+        let value_of_the_var = var.read().unwrap().get_value();
+        match &value_of_the_var {
+            TypedValue::Instance(target_inst) => {
+                output_value = evaluate_instance(target_inst.clone(), scope.clone(), evaluator.clone())?;
+                //if the output_value is an identifier
+                output_value = evaluate_id_in_typed_value(output_value, scope.clone(), evaluator.clone())?;
+                {
+                    let mut var_write = var.write().unwrap();
+                    var_write.set_value(output_value.clone());
+                    var_write.set_evaluated(EvaluationStatus::Evaluated);
+                }
+            },
+
             _ => unreachable!()
         }
     }
@@ -271,7 +315,7 @@ pub fn evaluate_var(var: Arc<RwLock<Variable>>, scope: Arc<RwLock<Scope>>, evalu
     }
 
     else {
-        unreachable!()
+        todo!()
     }
 
     evaluator.write().unwrap().add_evaluation_trace(var_name.clone(), Some(output_value.clone()), super::EvaluationTraceType::FinishEvaluation);

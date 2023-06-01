@@ -18,6 +18,15 @@ pub enum EvaluationStatus {
     PreEvaluatedLogicType,
 }
 
+impl EvaluationStatus {
+    pub fn is_value_known(&self) -> bool {
+        if *self == EvaluationStatus::Evaluated || *self == EvaluationStatus::Predefined {
+            return true;
+        }
+        return false;
+    }
+}
+
 #[derive(Clone, Debug)]
 pub struct Variable {
     name: String,

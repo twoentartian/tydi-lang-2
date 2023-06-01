@@ -3,10 +3,9 @@ use std::collections::BTreeMap;
 
 use serde::{Serialize};
 
-use crate::tydi_memory_representation::{TemplateArg, CodeLocation, Scope, ScopeType, GetScope, Attribute, TraitCodeLocationAccess, Variable, TypeIndication};
+use crate::tydi_memory_representation::{Streamlet, TemplateArg, CodeLocation, Scope, ScopeType, GetScope, Attribute, TraitCodeLocationAccess, Variable, TypeIndication};
 use crate::trait_common::{GetName, HasDocument};
 use crate::{generate_access, generate_get, generate_set, generate_access_pub, generate_get_pub, generate_set_pub, generate_name};
-
 
 #[derive(Clone, Debug, Serialize)]
 pub struct Implementation {
@@ -15,8 +14,11 @@ pub struct Implementation {
     #[serde(with = "crate::serde_serialization::use_inner_for_arc_rwlock")]
     scope: Arc<RwLock<Scope>>,
 
-    #[serde(with = "crate::serde_serialization::use_inner_for_arc_rwlock")]
-    derived_streamlet: Arc<RwLock<Variable>>,
+    #[serde(with = "crate::serde_serialization::use_name_for_arc_rwlock")]
+    derived_streamlet_var: Arc<RwLock<Variable>>,
+
+    #[serde(with = "crate::serde_serialization::use_name_for_optional_arc_rwlock")]
+    derived_streamlet: Option<Arc<RwLock<Streamlet>>>,
 
     location_define: CodeLocation,
 
@@ -50,7 +52,8 @@ impl Implementation {
         let mut output = Self {
             name: name.clone(),
             scope: Scope::new(format!("implementation_{}", name.clone()), ScopeType::ImplementationScope, parent_scope.clone()),
-            derived_streamlet: Variable::new_place_holder(),
+            derived_streamlet_var: Variable::new_place_holder(),
+            derived_streamlet: None,
             location_define: CodeLocation::new_unknown(),
             document: None,
             template_args: None,
@@ -64,7 +67,8 @@ impl Implementation {
         let output = Self {
             name: generate_name::generate_init_value(),
             scope: Scope::new_place_holder(),
-            derived_streamlet: Variable::new_place_holder(),
+            derived_streamlet_var: Variable::new_place_holder(),
+            derived_streamlet: None,
             location_define: CodeLocation::new_unknown(),
             document: None,
             template_args: None,
@@ -74,7 +78,7 @@ impl Implementation {
     }
 
     pub fn get_brief_info(&self) -> String {
-        let derived_streamlet_name = self.get_derived_streamlet().read().unwrap().get_name();
+        let derived_streamlet_name = self.get_derived_streamlet_var().read().unwrap().get_name();
         return format!("Impl({})({})", &self.name, derived_streamlet_name);
     }
 
@@ -85,7 +89,8 @@ impl Implementation {
 
     generate_access_pub!(template_args, Option<BTreeMap<usize, TemplateArg>>, get_template_args, set_template_args);
     generate_access_pub!(attributes, Vec<Attribute>, get_attributes, set_attributes);
-    generate_access_pub!(derived_streamlet, Arc<RwLock<Variable>>, get_derived_streamlet, set_derived_streamlet);
+    generate_access_pub!(derived_streamlet_var, Arc<RwLock<Variable>>, get_derived_streamlet_var, set_derived_streamlet_var);
+    generate_access_pub!(derived_streamlet, Option<Arc<RwLock<Streamlet>>>, get_derived_streamlet, set_derived_streamlet);
 
     pub fn set_derived_streamlet_exp(&mut self, streamlet_exp: String, code_location: CodeLocation) {
         let streamlet_var = Variable::new(format!("streamlet_exp_of_{}", self.name.clone()), Some(streamlet_exp));
@@ -94,6 +99,6 @@ impl Implementation {
             streamlet_var_write.set_type_indication(TypeIndication::AnyStreamlet);
             streamlet_var_write.set_code_location(code_location);
         }
-        self.derived_streamlet = streamlet_var;
+        self.derived_streamlet_var = streamlet_var;
     }
 }

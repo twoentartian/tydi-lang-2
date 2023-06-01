@@ -7,7 +7,9 @@ use crate::tydi_memory_representation::{Variable, TypeIndication, CodeLocation, 
 
 use crate::trait_common::{GetName, AccessProperty};
 
-const BITWIDTH_VAR_NAME: &str = "bitwidth";
+const BITWIDTH_VAR_NAME: &str = "width";
+
+pub const AVAILABLE_PROPERTIES: [&'static str; 1] = [BITWIDTH_VAR_NAME];
 
 #[derive(Clone, Debug, Serialize)]
 pub struct LogicBit {
@@ -36,7 +38,7 @@ impl TraitCodeLocationAccess for LogicBit {
 }
 
 impl AccessProperty for LogicBit {
-    fn access_porperty(&self, property_name: String) -> Option<Arc<RwLock<Variable>>> {
+    fn access_porperty(&self, property_name: &String) -> Option<Arc<RwLock<Variable>>> {
         if property_name == BITWIDTH_VAR_NAME {
             return Some(self.bit_width.clone());
         }

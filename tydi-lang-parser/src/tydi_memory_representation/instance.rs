@@ -6,15 +6,24 @@ use crate::tydi_memory_representation::{CodeLocation, Attribute, TraitCodeLocati
 use crate::trait_common::{GetName, HasDocument};
 use crate::{generate_access, generate_get, generate_set, generate_access_pub, generate_get_pub, generate_set_pub, generate_name};
 
+#[derive(Clone, Debug, Serialize, PartialEq)]
+pub enum InstanceType {
+    Unknown,
+    SelfInst,
+    ExternalInst,
+}
+
 #[derive(Clone, Debug, Serialize)]
 pub struct Instance {
     name: String,
 
-    #[serde(with = "crate::serde_serialization::use_inner_for_arc_rwlock")]
-    derived_implementation: Arc<RwLock<Variable>>,
+    #[serde(with = "crate::serde_serialization::use_name_for_arc_rwlock")]
+    derived_impl_var: Arc<RwLock<Variable>>,
 
     #[serde(with = "crate::serde_serialization::use_name_for_optional_arc_rwlock")]
-    parent_impl: Option<Arc<RwLock<Implementation>>>,
+    derived_impl: Option<Arc<RwLock<Implementation>>>,
+
+    inst_type: InstanceType,
 
     location_define: CodeLocation,
 
@@ -41,8 +50,9 @@ impl Instance {
     pub fn new(name: String, derived_implementation_exp: String) -> Arc<RwLock<Self>> {
         let mut output = Self {
             name: name.clone(),
-            derived_implementation: Variable::new_place_holder(),
-            parent_impl: None,
+            derived_impl_var: Variable::new_place_holder(),
+            derived_impl: None,
+            inst_type: InstanceType::Unknown,
             location_define: CodeLocation::new_unknown(),
             document: None,
             attributes: vec![],
@@ -54,8 +64,9 @@ impl Instance {
     pub fn new_place_holder() -> Arc<RwLock<Self>> {
         let output = Self {
             name: generate_name::generate_init_value(),
-            derived_implementation: Variable::new_place_holder(),
-            parent_impl: None,
+            derived_impl_var: Variable::new_place_holder(),
+            derived_impl: None,
+            inst_type: InstanceType::Unknown,
             location_define: CodeLocation::new_unknown(),
             document: None,
             attributes: vec![],
@@ -65,8 +76,9 @@ impl Instance {
 
     generate_set_pub!(name, String, set_name);
     generate_access_pub!(attributes, Vec<Attribute>, get_attributes, set_attributes);
-    generate_access_pub!(derived_implementation, Arc<RwLock<Variable>>, get_derived_implementation, set_derived_implementation);
-    generate_access_pub!(parent_impl, Option<Arc<RwLock<Implementation>>>, get_parent_impl, set_parent_impl);
+    generate_access_pub!(derived_impl_var, Arc<RwLock<Variable>>, get_derived_impl_var, set_derived_impl_var);
+    generate_access_pub!(derived_impl, Option<Arc<RwLock<Implementation>>>, get_derived_impl, set_derived_impl);
+    generate_access_pub!(inst_type, InstanceType, get_inst_type, set_inst_type);
 
     pub fn set_derived_implementation_exp(&mut self, derived_implementation_exp: String, code_location: CodeLocation) {
         let streamlet_var = Variable::new(format!("derived_implementation_exp_of_{}", self.name.clone()), Some(derived_implementation_exp));
@@ -75,7 +87,7 @@ impl Instance {
             streamlet_var_write.set_code_location(code_location);
             streamlet_var_write.set_type_indication(TypeIndication::AnyImplementation);
         }
-        self.derived_implementation = streamlet_var;
+        self.derived_impl_var = streamlet_var;
     }
 
 }

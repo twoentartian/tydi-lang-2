@@ -7,28 +7,17 @@ use crate::trait_common::{GetName, HasDocument};
 use crate::{generate_access, generate_get, generate_set, generate_access_pub, generate_get_pub, generate_set_pub};
 
 #[derive(Clone, Debug, Serialize)]
-pub enum NetComponentType {
-    Unknown,
-    SelfComponent,
-    #[serde(with = "crate::serde_serialization::use_inner_for_arc_rwlock")]
-    Instance(Arc<RwLock<Instance>>),
-}
-
-
-#[derive(Clone, Debug, Serialize)]
 pub struct Net {
     name: String,
 
-    #[serde(with = "crate::serde_serialization::use_inner_for_arc_rwlock")]
+    #[serde(skip)]
     source: Arc<RwLock<Variable>>,
-    source_component: NetComponentType,
     #[serde(with = "crate::serde_serialization::use_inner_for_optional_arc_rwlock")]
     source_port: Option<Arc<RwLock<Port>>>,
 
 
-    #[serde(with = "crate::serde_serialization::use_inner_for_arc_rwlock")]
+    #[serde(skip)]
     sink: Arc<RwLock<Variable>>,
-    sink_component: NetComponentType,
     #[serde(with = "crate::serde_serialization::use_inner_for_optional_arc_rwlock")]
     sink_port: Option<Arc<RwLock<Port>>>,
 
@@ -65,11 +54,9 @@ impl Net {
             name: name,
 
             source: Variable::new_place_holder(),
-            source_component: NetComponentType::Unknown,
             source_port: None,
             
             sink: Variable::new_place_holder(),
-            sink_component: NetComponentType::Unknown,
             sink_port: None,
 
             net_name: None,

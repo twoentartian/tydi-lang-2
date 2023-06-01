@@ -20,6 +20,8 @@ pub enum ScopeRelationType {
     ImplementationScopeRela,
     IfForScopeRela,
 
+    ImplToStreamletRela,
+
     ParentScopeRela, // a placeholder, should never be used
 }
 
@@ -35,10 +37,12 @@ impl ScopeRelationType {
 
     pub fn resolve_id_in_current_scope() -> HashSet<ScopeRelationType> {
         let mut output = HashSet::new();
-        output.insert(ScopeRelationType::GroupScopeRela);
-        output.insert(ScopeRelationType::UnionScopeRela);
-        output.insert(ScopeRelationType::StreamletScopeRela);
-        output.insert(ScopeRelationType::ImplementationScopeRela);
+        return output;
+    }
+
+    pub fn resolve_id_in_parent_streamlet() -> HashSet<ScopeRelationType> {
+        let mut output = HashSet::new();
+        output.insert(ScopeRelationType::ImplToStreamletRela);
         return output;
     }
 }
@@ -156,6 +160,17 @@ impl Scope {
             },
         }
         self.variables.insert(var_name, var.clone());
+        return Ok(());
+    }
+
+    pub fn add_scope_relationship(&mut self, target_scope: Arc<RwLock<Scope>>, relationship_type: ScopeRelationType) -> Result<(), TydiLangError> {
+        let name = target_scope.read().unwrap().get_name();
+        let rela_target = ScopeRelationship {
+            name: name.clone(),
+            target_scope: target_scope.clone(),
+            relationship: relationship_type,
+        };
+        self.scope_relationships.insert(name.clone(), rela_target);
         return Ok(());
     }
 

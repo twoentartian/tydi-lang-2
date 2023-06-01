@@ -2,10 +2,33 @@ use std::sync::{Arc, RwLock};
 
 use serde::{Serialize};
 
-use crate::{generate_access_pub, generate_get_pub};
+use crate::{generate_get_pub};
 use crate::tydi_memory_representation::{TypeIndication, CodeLocation, TraitCodeLocationAccess, Variable, TypedValue, LogicType};
 
 use crate::trait_common::{GetName, AccessProperty};
+
+const DIMENSION_VAR_NAME: &str = "dimension";
+const DIMENSION_VAR_NAME_ABBR: &str = "d";
+const USERTYPE_VAR_NAME: &str = "user_type";
+const USERTYPE_VAR_NAME_ABBR: &str = "u";
+const THROUGHPUT_VAR_NAME: &str = "throughput";
+const THROUGHPUT_VAR_NAME_ABBR: &str = "t";
+const SYNCHORICITY_VAR_NAME: &str = "synchronicity";
+const SYNCHORICITY_VAR_NAME_ABBR: &str = "s";
+const COMPLEXITY_VAR_NAME: &str = "complexity";
+const COMPLEXITY_VAR_NAME_ABBR: &str = "c";
+const DIRECTION_VAR_NAME: &str = "direction";
+const DIRECTION_VAR_NAME_ABBR: &str = "r";
+const KEEP_VAR_NAME: &str = "keep";
+const KEEP_VAR_NAME_ABBR: &str = "x";
+
+pub const AVAILABLE_PROPERTIES: [&'static str; 14] = [DIMENSION_VAR_NAME, DIMENSION_VAR_NAME_ABBR,
+USERTYPE_VAR_NAME, USERTYPE_VAR_NAME_ABBR,
+THROUGHPUT_VAR_NAME, THROUGHPUT_VAR_NAME_ABBR,
+SYNCHORICITY_VAR_NAME, SYNCHORICITY_VAR_NAME_ABBR,
+COMPLEXITY_VAR_NAME, COMPLEXITY_VAR_NAME_ABBR,
+DIRECTION_VAR_NAME, DIRECTION_VAR_NAME_ABBR,
+KEEP_VAR_NAME, KEEP_VAR_NAME_ABBR];
 
 pub enum LogicStreamProperty {
     #[allow(non_camel_case_types)]
@@ -28,25 +51,25 @@ impl std::convert::TryFrom<String> for LogicStreamProperty {
     type Error = ();
 
     fn try_from(value: String) -> Result<Self, Self::Error> {
-        if value == "dimension" || value == "d" {
+        if value == DIMENSION_VAR_NAME || value == DIMENSION_VAR_NAME_ABBR {
             return Ok(LogicStreamProperty::dimension);
         }
-        if value == "user_type" || value == "u" {
+        if value == USERTYPE_VAR_NAME || value == USERTYPE_VAR_NAME_ABBR {
             return Ok(LogicStreamProperty::user_type);
         }
-        if value == "throughput" || value == "t" {
+        if value == THROUGHPUT_VAR_NAME || value == THROUGHPUT_VAR_NAME_ABBR {
             return Ok(LogicStreamProperty::throughput);
         }
-        if value == "synchronicity" || value == "s" {
+        if value == SYNCHORICITY_VAR_NAME || value == SYNCHORICITY_VAR_NAME_ABBR {
             return Ok(LogicStreamProperty::synchronicity);
         }
-        if value == "complexity" || value == "c" {
+        if value == COMPLEXITY_VAR_NAME || value == COMPLEXITY_VAR_NAME_ABBR {
             return Ok(LogicStreamProperty::complexity);
         }
-        if value == "direction" || value == "r" {
+        if value == DIRECTION_VAR_NAME || value == DIRECTION_VAR_NAME_ABBR {
             return Ok(LogicStreamProperty::direction);
         }
-        if value == "keep" || value == "x" {
+        if value == KEEP_VAR_NAME || value == KEEP_VAR_NAME_ABBR {
             return Ok(LogicStreamProperty::keep);
         }
         return Err(());
@@ -80,13 +103,13 @@ impl LogicStreamProperty {
 
     pub fn get_full_name(&self) -> &str {
         match self {
-            LogicStreamProperty::dimension => return "dimension",
-            LogicStreamProperty::user_type => return "user_type",
-            LogicStreamProperty::throughput => return "throughput",
-            LogicStreamProperty::synchronicity => return "synchronicity",
-            LogicStreamProperty::complexity => return "complexity",
-            LogicStreamProperty::direction => return "direction",
-            LogicStreamProperty::keep => return "keep",
+            LogicStreamProperty::dimension => return DIMENSION_VAR_NAME,
+            LogicStreamProperty::user_type => return USERTYPE_VAR_NAME,
+            LogicStreamProperty::throughput => return THROUGHPUT_VAR_NAME,
+            LogicStreamProperty::synchronicity => return SYNCHORICITY_VAR_NAME,
+            LogicStreamProperty::complexity => return COMPLEXITY_VAR_NAME,
+            LogicStreamProperty::direction => return DIRECTION_VAR_NAME,
+            LogicStreamProperty::keep => return KEEP_VAR_NAME,
         }
     }
 }
@@ -141,8 +164,8 @@ impl TraitCodeLocationAccess for LogicStream {
 }
 
 impl AccessProperty for LogicStream {
-    fn access_porperty(&self, property_name: String) -> Option<Arc<RwLock<Variable>>> {
-        let property_type_result = LogicStreamProperty::try_from(property_name);
+    fn access_porperty(&self, property_name: &String) -> Option<Arc<RwLock<Variable>>> {
+        let property_type_result = LogicStreamProperty::try_from(String::from(property_name));
         if property_type_result.is_err() {
             return None;
         }
@@ -164,13 +187,13 @@ impl LogicStream {
             name: name.clone(),
             stream_type: stream_type_var,
             location_define: CodeLocation::new_unknown(),
-            dimension: Variable::new_predefined(format!("{}_{name}", "dimension"), TypedValue::IntValue(1)),
-            user_type: Variable::new_predefined(format!("{}_{name}", "user_type"), TypedValue::LogicTypeValue(Arc::new(RwLock::new(LogicType::LogicNullType)))),
-            throughput: Variable::new_predefined(format!("{}_{name}", "throughput"), TypedValue::FloatValue(1.0)),
-            synchronicity: Variable::new_predefined(format!("{}_{name}", "synchronicity"), TypedValue::StringValue(format!("Sync"))),
-            complexity: Variable::new_predefined(format!("{}_{name}", "dimension"), TypedValue::IntValue(1)),
-            direction: Variable::new_predefined(format!("{}_{name}", "synchronicity"), TypedValue::StringValue(format!("Forward"))),
-            keep: Variable::new_predefined(format!("{}_{name}", "synchronicity"), TypedValue::BoolValue(false)),
+            dimension: Variable::new_predefined(format!("{}_{name}", DIMENSION_VAR_NAME), TypedValue::IntValue(1)),
+            user_type: Variable::new_predefined(format!("{}_{name}", USERTYPE_VAR_NAME), TypedValue::LogicTypeValue(Arc::new(RwLock::new(LogicType::LogicNullType)))),
+            throughput: Variable::new_predefined(format!("{}_{name}", THROUGHPUT_VAR_NAME), TypedValue::FloatValue(1.0)),
+            synchronicity: Variable::new_predefined(format!("{}_{name}", SYNCHORICITY_VAR_NAME), TypedValue::StringValue(format!("Sync"))),
+            complexity: Variable::new_predefined(format!("{}_{name}", COMPLEXITY_VAR_NAME), TypedValue::IntValue(1)),
+            direction: Variable::new_predefined(format!("{}_{name}", DIRECTION_VAR_NAME), TypedValue::StringValue(format!("Forward"))),
+            keep: Variable::new_predefined(format!("{}_{name}", KEEP_VAR_NAME), TypedValue::BoolValue(false)),
         };
 
         return Arc::new(RwLock::new(output));

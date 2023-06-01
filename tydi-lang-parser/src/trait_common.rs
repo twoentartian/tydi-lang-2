@@ -7,7 +7,7 @@ pub trait GetName {
 }
 
 pub trait AccessProperty {
-    fn access_porperty(&self, property_name: String) -> Option<Arc<RwLock<Variable>>>;
+    fn access_porperty(&self, property_name: &String) -> Option<Arc<RwLock<Variable>>>;
 }
 
 pub trait HasDocument {

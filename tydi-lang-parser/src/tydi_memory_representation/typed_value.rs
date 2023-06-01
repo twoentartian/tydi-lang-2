@@ -302,7 +302,14 @@ impl TypedValue {
             TypedValue::Streamlet(streamlet) => return streamlet.read().unwrap().get_brief_info(),
             TypedValue::Port(port) => return port.read().unwrap().get_name(),
             TypedValue::Implementation(implementation) => return implementation.read().unwrap().get_brief_info(),
-            TypedValue::Instance(_) => todo!(),
+            TypedValue::Instance(inst) => {
+                let parent_impl = inst.read().unwrap().get_derived_impl();
+                let parent_impl_name = match parent_impl {
+                    Some(parent_impl) => parent_impl.read().unwrap().get_name(),
+                    None => format!("???"),
+                };
+                return format!("Instance {}({})", inst.read().unwrap().get_name(), parent_impl_name);
+            },
             TypedValue::Net(_) => todo!(),
             TypedValue::If(_) => todo!(),
             TypedValue::For(_) => todo!(),
