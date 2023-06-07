@@ -3,6 +3,7 @@ use std::sync::{Arc, RwLock};
 use serde::{Serialize};
 use serde::ser::SerializeStruct;
 
+use crate::deep_clone::DeepClone;
 use crate::{tydi_memory_representation::{Package, LogicType}, trait_common::GetName};
 
 use crate::tydi_memory_representation::{Variable, Streamlet, Port, Implementation, Instance, Net, If, For};
@@ -48,6 +49,36 @@ pub enum TypeIndication {
     PackageReference,
 
     Array(Box<TypeIndication>),
+}
+
+impl DeepClone for TypeIndication {
+    fn deep_clone(&self) -> Self {
+        let output = match self {
+            TypeIndication::Any => self.clone(),
+            TypeIndication::Unknown => self.clone(),
+            TypeIndication::ComplierBuiltin => self.clone(),
+            TypeIndication::Int => self.clone(),
+            TypeIndication::String => self.clone(),
+            TypeIndication::Bool => self.clone(),
+            TypeIndication::Float => self.clone(),
+            TypeIndication::Clockdomain => self.clone(),
+            TypeIndication::AnyLogicType => self.clone(),
+            TypeIndication::LogicNull => self.clone(),
+            TypeIndication::LogicStream(v) => TypeIndication::LogicStream(v.deep_clone()),
+            TypeIndication::LogicBit(v) => TypeIndication::LogicBit(v.deep_clone()),
+            TypeIndication::LogicGroup(v) => TypeIndication::LogicGroup(v.deep_clone()),
+            TypeIndication::LogicUnion(v) => TypeIndication::LogicUnion(v.deep_clone()),
+            TypeIndication::LogicTypeRef(v) => TypeIndication::LogicTypeRef(v.deep_clone()),
+            TypeIndication::AnyStreamlet => self.clone(),
+            TypeIndication::AnyPort => self.clone(),
+            TypeIndication::AnyImplementation => self.clone(),
+            TypeIndication::AnyInstance => self.clone(),
+            TypeIndication::AnyNet => self.clone(),
+            TypeIndication::PackageReference => self.clone(),
+            TypeIndication::Array(v) => TypeIndication::Array(Box::new(v.deep_clone())),
+        };
+        return output;
+    }
 }
 
 impl std::string::ToString for TypeIndication {
@@ -215,6 +246,35 @@ pub enum TypedValue {
     //special TypedValue during evaluation
     RefToVar(Arc<RwLock<Variable>>),
     Identifier(Arc<RwLock<Identifier>>),
+}
+
+impl DeepClone for TypedValue {
+    fn deep_clone(&self) -> Self {
+        let output = match self {
+            // basic type starts
+            TypedValue::UnknwonValue => self.clone(),
+            TypedValue::PackageReferenceValue(_) => self.clone(),
+            TypedValue::IntValue(_) => self.clone(),
+            TypedValue::StringValue(_) => self.clone(),
+            TypedValue::BoolValue(_) => self.clone(),
+            TypedValue::FloatValue(_) => self.clone(),
+            TypedValue::ClockDomainValue(_) => self.clone(),
+            // basic type ends
+
+            TypedValue::LogicTypeValue(v) => TypedValue::LogicTypeValue(v.deep_clone()),
+            TypedValue::Streamlet(v) => TypedValue::Streamlet(v.deep_clone()),
+            TypedValue::Port(v) => TypedValue::Port(v.deep_clone()),
+            TypedValue::Implementation(v) => TypedValue::Implementation(v.deep_clone()),
+            TypedValue::Instance(v) => TypedValue::Instance(v.deep_clone()),
+            TypedValue::Net(v) => TypedValue::Net(v.deep_clone()),
+            TypedValue::If(v) => TypedValue::If(v.deep_clone()),
+            TypedValue::For(v) => TypedValue::For(v.deep_clone()),
+            TypedValue::Array(v) => TypedValue::Array(v.deep_clone()),
+            TypedValue::RefToVar(v) => TypedValue::RefToVar(v.deep_clone()),
+            TypedValue::Identifier(v) => TypedValue::Identifier(v.deep_clone()),
+        };
+        return output;
+    }
 }
 
 impl Serialize for TypedValue {

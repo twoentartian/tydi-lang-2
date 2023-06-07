@@ -2,7 +2,7 @@ use std::{sync::{Arc, RwLock}, usize};
 
 use serde::{Serialize};
 
-use crate::{tydi_parser::*, generate_name::generate_init_value};
+use crate::{tydi_parser::*, generate_name::generate_init_value, deep_clone::DeepClone};
 
 #[derive(Clone, Debug, Serialize)]
 pub struct CodeLocation {
@@ -10,6 +10,12 @@ pub struct CodeLocation {
     pub end: Option<usize>,
     #[serde(skip)]
     pub src_file: Arc<String>,
+}
+
+impl DeepClone for CodeLocation {
+    fn deep_clone(&self) -> Self {
+        return self.clone();
+    }
 }
 
 impl CodeLocation {

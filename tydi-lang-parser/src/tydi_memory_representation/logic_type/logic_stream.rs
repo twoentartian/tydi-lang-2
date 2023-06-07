@@ -2,6 +2,7 @@ use std::sync::{Arc, RwLock};
 
 use serde::{Serialize};
 
+use crate::deep_clone::DeepClone;
 use crate::{generate_get_pub};
 use crate::tydi_memory_representation::{TypeIndication, CodeLocation, TraitCodeLocationAccess, Variable, TypedValue, LogicType};
 
@@ -150,6 +151,24 @@ pub struct LogicStream {
 impl GetName for LogicStream {
     fn get_name(&self) -> String {
         return self.name.clone();
+    }
+}
+
+impl DeepClone for LogicStream {
+    fn deep_clone(&self) -> Self {
+        let output = Self {
+            name: self.name.deep_clone(),
+            stream_type: self.stream_type.deep_clone(),
+            location_define: self.location_define.deep_clone(),
+            dimension: self.dimension.deep_clone(),
+            user_type: self.user_type.deep_clone(),
+            throughput: self.throughput.deep_clone(),
+            synchronicity: self.synchronicity.deep_clone(),
+            complexity: self.complexity.deep_clone(),
+            direction: self.direction.deep_clone(),
+            keep: self.keep.deep_clone(),
+        };
+        return output;
     }
 }
 

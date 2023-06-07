@@ -2,7 +2,7 @@ use std::sync::{Arc, RwLock};
 
 use serde::{Serialize, Serializer, Deserialize};
 
-use crate::deep_clone::DeepClone;
+use crate::deep_clone::{DeepClone, DeepClone_ArcLock};
 use crate::tydi_memory_representation::{TypedValue, TypeIndication, CodeLocation, TraitCodeLocationAccess, Streamlet, LogicType, Port, Implementation, Instance};
 use crate::trait_common::GetName;
 use crate::{generate_get_pub, generate_access_pub, generate_set_pub, generate_name};
@@ -62,6 +62,12 @@ impl DeepClone for Variable {
             declare_location: self.declare_location.clone(),
         };
         return output;
+    }
+}
+
+impl DeepClone_ArcLock for Variable {
+    fn deep_clone_arclock(&self) -> Arc<RwLock<Self>> {
+        return Arc::new(RwLock::new(self.deep_clone()));
     }
 }
 

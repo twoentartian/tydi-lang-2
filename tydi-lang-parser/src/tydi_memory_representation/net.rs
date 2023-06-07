@@ -2,6 +2,7 @@ use std::sync::{Arc, RwLock};
 
 use serde::{Serialize};
 
+use crate::deep_clone::{DeepClone, DeepClone_ArcLock};
 use crate::tydi_memory_representation::{CodeLocation, Attribute, TraitCodeLocationAccess, Variable, Instance, Streamlet, Implementation, Port};
 use crate::trait_common::{GetName, HasDocument};
 use crate::{generate_access, generate_get, generate_set, generate_access_pub, generate_get_pub, generate_set_pub};
@@ -37,6 +38,24 @@ pub struct Net {
 impl GetName for Net {
     fn get_name(&self) -> String {
         return self.name.clone();
+    }
+}
+
+impl DeepClone for Net {
+    fn deep_clone(&self) -> Self {
+        let output = Self {
+            name: self.name.clone(),
+            source: self.source.read().unwrap().deep_clone_arclock(),
+            source_port: self.source_port.deep_clone(),
+            sink: self.sink.read().unwrap().deep_clone_arclock(),
+            sink_port: self.sink_port.deep_clone(),
+            net_name: self.net_name.deep_clone(),
+            parent_impl: self.parent_impl.deep_clone(),
+            location_define: self.location_define.deep_clone(),
+            document: self.document.deep_clone(),
+            attributes: self.attributes.deep_clone(),
+        };
+        return output;
     }
 }
 

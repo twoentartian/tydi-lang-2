@@ -4,6 +4,7 @@ use std::collections::BTreeMap;
 
 use serde::{Serialize};
 
+use crate::deep_clone::{DeepClone, DeepClone_ArcLock};
 use crate::generate_name::generate_init_value;
 use crate::tydi_memory_representation::{Scope, GetScope, CodeLocation, TraitCodeLocationAccess, Variable};
 use crate::trait_common::{GetName};
@@ -29,6 +30,20 @@ pub struct If {
 impl GetName for If {
     fn get_name(&self) -> String {
         return self.name.clone();
+    }
+}
+
+impl DeepClone for If {
+    fn deep_clone(&self) -> Self {
+        let output = Self {
+            name: self.name.deep_clone(),
+            if_exp: self.if_exp.deep_clone(),
+            if_scope: self.if_scope.read().unwrap().deep_clone_arclock(),
+            elif_blocks: self.elif_blocks.deep_clone(),
+            else_block: self.else_block.deep_clone(),
+            location_define: self.location_define.deep_clone(),
+        };
+        return output;
     }
 }
 
@@ -79,6 +94,18 @@ pub struct Elif {
     location_define: CodeLocation,
 }
 
+impl DeepClone for Elif {
+    fn deep_clone(&self) -> Self {
+        let output = Self {
+            name: self.name.deep_clone(),
+            elif_exp: self.elif_exp.deep_clone(),
+            elif_scope: self.elif_scope.read().unwrap().deep_clone_arclock(),
+            location_define: self.location_define.deep_clone(),
+        };
+        return output;
+    }
+}
+
 impl TraitCodeLocationAccess for Elif {
     generate_access!(location_define, CodeLocation, get_code_location, set_code_location);
 }
@@ -110,6 +137,17 @@ pub struct Else {
     else_scope: Arc<RwLock<Scope>>,
 
     location_define: CodeLocation,
+}
+
+impl DeepClone for Else {
+    fn deep_clone(&self) -> Self {
+        let output = Self {
+            name: self.name.deep_clone(),
+            else_scope: self.else_scope.read().unwrap().deep_clone_arclock(),
+            location_define: self.location_define.deep_clone(),
+        };
+        return output;
+    }
 }
 
 impl TraitCodeLocationAccess for Else {
@@ -155,6 +193,19 @@ pub struct For {
 impl GetName for For {
     fn get_name(&self) -> String {
         return self.name.clone();
+    }
+}
+
+impl DeepClone for For {
+    fn deep_clone(&self) -> Self {
+        let output = Self {
+            name: self.name.deep_clone(),
+            for_var_name: self.for_var_name.deep_clone(),
+            for_array_exp: self.for_array_exp.deep_clone(),
+            for_scope: self.for_scope.read().unwrap().deep_clone_arclock(),
+            location_define: self.location_define.deep_clone(),
+        };
+        return output;
     }
 }
 

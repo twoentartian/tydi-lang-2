@@ -14,7 +14,7 @@ pub(in crate) use logic_union::*;
 pub mod logic_stream;
 pub(in crate) use logic_stream::*;
 
-use crate::trait_common::GetName;
+use crate::{trait_common::GetName, deep_clone::DeepClone};
 
 #[derive(Clone, Debug, Serialize)]
 pub enum LogicType {
@@ -31,6 +31,19 @@ pub enum LogicType {
 
     #[serde(with = "crate::serde_serialization::use_inner_for_arc_rwlock")]
     LogicStreamType(Arc<RwLock<LogicStream>>),
+}
+
+impl DeepClone for LogicType {
+    fn deep_clone(&self) -> Self {
+        let output = match self {
+            LogicType::LogicNullType => LogicType::LogicNullType,
+            LogicType::LogicBitType(v) => LogicType::LogicBitType(v.deep_clone()),
+            LogicType::LogicGroupType(v) => LogicType::LogicGroupType(v.deep_clone()),
+            LogicType::LogicUnionType(v) => LogicType::LogicUnionType(v.deep_clone()),
+            LogicType::LogicStreamType(v) => LogicType::LogicStreamType(v.deep_clone()),
+        };
+        return output;
+    }
 }
 
 impl PartialEq for LogicType {

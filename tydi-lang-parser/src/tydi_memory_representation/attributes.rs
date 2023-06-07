@@ -1,9 +1,17 @@
 use serde::{Serialize};
 
+use crate::deep_clone::DeepClone;
+
 #[derive(Clone, Debug, Serialize)]
 pub enum Attribute {
     NoStrictTypeChecking,
     External,
+}
+
+impl DeepClone for Attribute {
+    fn deep_clone(&self) -> Self {
+        return self.clone();
+    }
 }
 
 impl std::convert::TryFrom<String> for Attribute {

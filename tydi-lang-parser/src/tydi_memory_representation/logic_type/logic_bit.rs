@@ -2,6 +2,7 @@ use std::sync::{Arc, RwLock};
 
 use serde::{Serialize};
 
+use crate::deep_clone::DeepClone;
 use crate::{generate_access_pub, generate_get_pub, generate_set_pub};
 use crate::tydi_memory_representation::{Variable, TypeIndication, CodeLocation, TraitCodeLocationAccess};
 
@@ -24,6 +25,17 @@ pub struct LogicBit {
 impl GetName for LogicBit {
     fn get_name(&self) -> String {
         return self.name.clone();
+    }
+}
+
+impl DeepClone for LogicBit {
+    fn deep_clone(&self) -> Self {
+        let output = Self {
+            name: self.name.deep_clone(),
+            bit_width: self.bit_width.deep_clone(),
+            location_define: self.location_define.deep_clone(),
+        };
+        return output;
     }
 }
 

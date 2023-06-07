@@ -2,6 +2,7 @@ use std::sync::{Arc, RwLock};
 
 use serde::{Serialize};
 
+use crate::deep_clone::DeepClone;
 use crate::tydi_memory_representation::{CodeLocation, Attribute, TraitCodeLocationAccess, Variable, TypeIndication, Implementation};
 use crate::trait_common::{GetName, HasDocument};
 use crate::{generate_access, generate_get, generate_set, generate_access_pub, generate_get_pub, generate_set_pub, generate_name};
@@ -11,6 +12,12 @@ pub enum InstanceType {
     Unknown,
     SelfInst,
     ExternalInst,
+}
+
+impl DeepClone for InstanceType {
+    fn deep_clone(&self) -> Self {
+        return self.clone();
+    }
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -35,6 +42,21 @@ pub struct Instance {
 impl GetName for Instance {
     fn get_name(&self) -> String {
         return self.name.clone();
+    }
+}
+
+impl DeepClone for Instance {
+    fn deep_clone(&self) -> Self {
+        let output = Self {
+            name: self.name.deep_clone(),
+            derived_impl_var: self.derived_impl_var.deep_clone(),
+            derived_impl: self.derived_impl.deep_clone(),
+            inst_type: self.inst_type.deep_clone(),
+            location_define: self.location_define.deep_clone(),
+            document: self.document.deep_clone(),
+            attributes: self.attributes.deep_clone(),
+        };
+        return output;
     }
 }
 

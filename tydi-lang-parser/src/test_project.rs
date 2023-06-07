@@ -845,10 +845,10 @@ fn sample_project_simple_for_0() {
         }
 
         impl bypass_i of bypass {
-            for_array = [0,1,2,3,4,5];
+            for_array = [0,1,2];
             for_not_array = 0;
             for i in for_array {
-                if i > 3 {
+                if i > 1 {
                     data = i;
                 }
                 instance nested_self(bypass2_i);

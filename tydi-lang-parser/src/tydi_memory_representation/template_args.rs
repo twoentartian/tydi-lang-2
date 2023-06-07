@@ -1,5 +1,6 @@
 use serde::{Serialize};
 
+use crate::deep_clone::DeepClone;
 use crate::tydi_memory_representation::{CodeLocation, TypeIndication};
 use crate::trait_common::GetName;
 
@@ -19,6 +20,18 @@ pub struct TemplateArg {
 
 impl GetName for TemplateArg {
     generate_get!(name, String, get_name);
+}
+
+impl DeepClone for TemplateArg {
+    fn deep_clone(&self) -> Self {
+        let output = Self {
+            name: self.name.deep_clone(),
+            is_array: self.is_array.clone(),
+            type_indication: self.type_indication.deep_clone(),
+            declare_location: self.declare_location.deep_clone(),
+        };
+        return output;
+    }
 }
 
 impl TraitCodeLocationAccess for TemplateArg {

@@ -100,6 +100,8 @@ pub fn evaluate_scope(target_scope: Arc<RwLock<Scope>>, scope_type: &ScopeType, 
             for single_for_element in for_array_var_value {
                 let for_scope_deepcloned = for_scope.read().unwrap().deep_clone_arclock();
 
+                println!("{}", serde_json::to_string_pretty(&*for_scope_deepcloned.read().unwrap()).unwrap());
+
                 //add var to the deepcloned for scope
                 let for_element_var = Variable::new_predefined(for_var_name.clone(), single_for_element);
                 for_scope_deepcloned.write().unwrap().add_var(for_element_var)?;
@@ -118,33 +120,35 @@ pub fn evaluate_scope(target_scope: Arc<RwLock<Scope>>, scope_type: &ScopeType, 
 
                     let var_value = var.read().unwrap().get_value();
                     let result = Scope::resolve_identifier(&var_name, target_scope.clone(), ScopeRelationType::resolve_id_in_current_scope()); //try to find the variable in the target scope
-                    match result {
+                    let outside_var = match result {
                         Ok((outside_var, _)) => {
-                            let outside_var_type = outside_var.read().unwrap().get_type_indication();
-                            match &outside_var_type {
-                                TypeIndication::Array(_) => (),
-                                _ => return Err(TydiLangError::new_multiple_locations(format!("find an external variable outside of \"for\" scope, but it's not an array. Its type indication:{}", outside_var_type.to_string()),  vec![outside_var.read().unwrap().get_code_location(), var.read().unwrap().get_code_location()])),
-                            }
-                            let outside_var_value = outside_var.read().unwrap().get_value();
-                            let mut existing_array = match &outside_var_value {
-                                TypedValue::Array(array) => {
-                                    array.clone()
-                                }
-                                _ => return Err(TydiLangError::new_multiple_locations(format!("find an external variable outside of \"for\" scope, but it's not an array. Its value:{}", outside_var_value.get_brief_info()),  vec![outside_var.read().unwrap().get_code_location(), var.read().unwrap().get_code_location()])),
-                            };
-                            while existing_array.len() < for_evaluation_count {
-                                existing_array.push(TypedValue::UnknwonValue);
-                            }
-                            existing_array.push(var_value);
-                            outside_var.write().unwrap().set_value(TypedValue::Array(existing_array));
+                            outside_var
                         },
                         Err(_) => {
                             // we should create an array variable
                             let array_var = Variable::new_predefined_empty_array(var_name.clone(), TypeIndication::Array(Box::new(TypeIndication::Unknown)));
-                            array_var.write().unwrap().add_predefined_element(var_value).expect("we should definitely succeed here");
-                            target_scope.write().unwrap().add_var(array_var)?;
+                            target_scope.write().unwrap().add_var(array_var.clone())?;
+                            array_var
                         },
+                    };
+
+                    let outside_var_type = outside_var.read().unwrap().get_type_indication();
+                    match &outside_var_type {
+                        TypeIndication::Array(_) => (),
+                        _ => return Err(TydiLangError::new_multiple_locations(format!("find an external variable outside of \"for\" scope, but it's not an array. Its type indication:{}", outside_var_type.to_string()),  vec![outside_var.read().unwrap().get_code_location(), var.read().unwrap().get_code_location()])),
                     }
+                    let outside_var_value = outside_var.read().unwrap().get_value();
+                    let mut existing_array = match &outside_var_value {
+                        TypedValue::Array(array) => {
+                            array.clone()
+                        }
+                        _ => return Err(TydiLangError::new_multiple_locations(format!("find an external variable outside of \"for\" scope, but it's not an array. Its value:{}", outside_var_value.get_brief_info()),  vec![outside_var.read().unwrap().get_code_location(), var.read().unwrap().get_code_location()])),
+                    };
+                    while existing_array.len() < for_evaluation_count {
+                        existing_array.push(TypedValue::UnknwonValue);
+                    }
+                    existing_array.push(var_value);
+                    outside_var.write().unwrap().set_value(TypedValue::Array(existing_array));
                 }
 
                 for_evaluation_count += 1;

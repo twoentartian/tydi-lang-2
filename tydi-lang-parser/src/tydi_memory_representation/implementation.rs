@@ -3,6 +3,7 @@ use std::collections::BTreeMap;
 
 use serde::{Serialize};
 
+use crate::deep_clone::{DeepClone, DeepClone_ArcLock};
 use crate::tydi_memory_representation::{Streamlet, TemplateArg, CodeLocation, Scope, ScopeType, GetScope, Attribute, TraitCodeLocationAccess, Variable, TypeIndication};
 use crate::trait_common::{GetName, HasDocument};
 use crate::{generate_access, generate_get, generate_set, generate_access_pub, generate_get_pub, generate_set_pub, generate_name};
@@ -32,6 +33,22 @@ pub struct Implementation {
 impl GetName for Implementation {
     fn get_name(&self) -> String {
         return self.name.clone();
+    }
+}
+
+impl DeepClone for Implementation {
+    fn deep_clone(&self) -> Self {
+        let output = Self {
+            name: self.name.deep_clone(),
+            scope: self.scope.read().unwrap().deep_clone_arclock(),
+            derived_streamlet_var: self.derived_streamlet_var.deep_clone(),
+            derived_streamlet: self.derived_streamlet.deep_clone(),
+            location_define: self.location_define.deep_clone(),
+            document: self.document.deep_clone(),
+            template_args: self.template_args.deep_clone(),
+            attributes: self.attributes.deep_clone(),
+        };
+        return output;
     }
 }
 

@@ -2,6 +2,7 @@ use std::sync::{Arc, RwLock};
 
 use serde::{Serialize, Deserialize};
 
+use crate::deep_clone::DeepClone;
 use crate::tydi_memory_representation::{Variable, Attribute, CodeLocation, TraitCodeLocationAccess, TypedValue, Streamlet};
 
 use crate::trait_common::{GetName, HasDocument};
@@ -12,6 +13,12 @@ pub enum PortDirection {
     In,
     Out,
     Unknown,
+}
+
+impl DeepClone for PortDirection {
+    fn deep_clone(&self) -> Self {
+        return self.clone();
+    }
 }
 
 impl PortDirection {
@@ -49,6 +56,22 @@ pub struct Port {
 impl GetName for Port {
     fn get_name(&self) -> String {
         return self.name.clone();
+    }
+}
+
+impl DeepClone for Port {
+    fn deep_clone(&self) -> Self {
+        let output = Self {
+            name: self.name.deep_clone(),
+            direction: self.direction.deep_clone(),
+            time_domain: self.time_domain.deep_clone(),
+            logical_type: self.logical_type.deep_clone(),
+            parent_streamlet: self.parent_streamlet.deep_clone(),
+            attributes: self.attributes.deep_clone(),
+            document: self.document.deep_clone(),
+            location_define: self.location_define.deep_clone(),
+        };
+        return output;
     }
 }
 
