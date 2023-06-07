@@ -2,20 +2,54 @@ use std::sync::{Arc, RwLock};
 
 use crate::evaluation::{evaluate_LogicBit, evaluate_LogicGroup, evaluate_LogicUnion, evaluate_LogicStream, evaluate_expression};
 use crate::trait_common::GetName;
-use crate::tydi_memory_representation::{Variable, TypedValue, Scope, EvaluationStatus, TraitCodeLocationAccess, TypeIndication, LogicType, ScopeRelationType};
+use crate::tydi_memory_representation::{IdentifierType, Variable, TypedValue, Scope, EvaluationStatus, TraitCodeLocationAccess, TypeIndication, LogicType, ScopeRelationType};
 use crate::error::TydiLangError;
 
 use super::{Evaluator, evaluate_streamlet, evaluate_impl, evaluate_instance};
+
+pub fn evaluate_value_with_identifier_type(id_name: &String, id_value: TypedValue, id_type: IdentifierType, scope: Arc<RwLock<Scope>>, evaluator: Arc<RwLock<Evaluator>>) -> Result<TypedValue, TydiLangError> {
+    match &id_type {
+        IdentifierType::FunctionExp(function_args) => {
+            todo!()
+        },
+        IdentifierType::IndexExp(index_exp) => {
+            if let TypedValue::Array(array) = id_value {  //get array value
+                let value = evaluate_expression(index_exp.clone(), scope.clone(), evaluator.clone())?;
+                if let TypedValue::IntValue(index_int) = value {    //get index value
+                    if index_int < 0 {
+                        return Err(TydiLangError::new(format!("array index expression {{{}}} is less than 0, array name: {}", index_exp, id_name), crate::tydi_memory_representation::CodeLocation::new_unknown()));
+                    }
+                    let index_int = index_int as usize;
+                    if index_int as usize >= array.len() {
+                        return Err(TydiLangError::new(format!("array index out of range, array name: {{{}}}, index value: {}, array size: {}", id_name, value.get_brief_info(), array.len()), crate::tydi_memory_representation::CodeLocation::new_unknown()));
+                    }
+                    return Ok(array[index_int].clone());
+                }
+                else {
+                    return Err(TydiLangError::new(format!("array index expression {{{}}} is not an integer, value: {}", index_exp, value.get_brief_info()), crate::tydi_memory_representation::CodeLocation::new_unknown()));
+                }
+            }
+            else {
+                return Err(TydiLangError::new(format!("identifier {{{}}} is not an array, value: {}", id_name, id_value.get_brief_info()), crate::tydi_memory_representation::CodeLocation::new_unknown()));
+            }
+        },
+        IdentifierType::IdentifierExp => {
+            return Ok(id_value);
+        },
+        _ => unreachable!()
+    }
+}
 
 pub fn evaluate_id_in_typed_value(id_in_typed_value: TypedValue, scope: Arc<RwLock<Scope>>, evaluator: Arc<RwLock<Evaluator>>) -> Result<TypedValue, TydiLangError> {
     let mut output_value = id_in_typed_value.clone();
     //if the output_value is an identifier
     match &id_in_typed_value {
         TypedValue::Identifier(id) => {
-            let id_read = id.read().unwrap();
-            let (id_var, id_var_scope) = Scope::resolve_identifier(&id_read.id, scope.clone(), ScopeRelationType::resolve_id_default())?;
+            let id_name = id.read().unwrap().get_id();
+            let id_type = id.read().unwrap().get_id_type();
+            let (id_var, id_var_scope) = Scope::resolve_identifier(&id_name, scope.clone(), ScopeRelationType::resolve_id_default())?;
             let id_typed_value = evaluate_var(id_var.clone(), id_var_scope.clone(), evaluator.clone())?;
-            output_value = id_typed_value;
+            output_value = evaluate_value_with_identifier_type(&id_name, id_typed_value, id_type, scope.clone(), evaluator.clone())?;
         },
         _ => (),
     }

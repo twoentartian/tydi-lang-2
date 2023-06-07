@@ -3,7 +3,7 @@ use std::{sync::{Arc, RwLock}, clone};
 use crate::{tydi_memory_representation::{TypedValue, CodeLocation, Scope, ScopeRelationType, GetScope, streamlet, EvaluationStatus}, trait_common::AccessProperty};
 use crate::{error::TydiLangError, trait_common::GetName};
 
-use super::{Expression, Operator, Evaluator, evaluate_var, evaluate_id_in_typed_value};
+use super::{Expression, Operator, Evaluator, evaluate_var, evaluate_id_in_typed_value, evaluate_value_with_identifier_type};
 
 
 pub fn evaluate_BinaryOperation(lhs: &Box<Expression>, op: &Operator, rhs: &Box<Expression>, scope: Arc<RwLock<Scope>>, evaluator: Arc<RwLock<Evaluator>>) -> Result<TypedValue, TydiLangError> {
@@ -78,12 +78,13 @@ pub fn perform_AccessInner(lhs: &Box<Expression>, rhs: &Box<Expression>, scope: 
     let mut lhs_value = evaluate_id_in_typed_value(lhs_value, scope.clone(), evaluator.clone())?;
     let rhs_value = rhs.evaluate_TypedValue(scope.clone(), evaluator.clone())?;
     //get rhs var name
-    let rhs_var_name = match rhs_value {
-        TypedValue::Identifier(id) => {
-            id.read().unwrap().get_id()
+    let rhs_var_id = match rhs_value {
+        TypedValue::Identifier(iden) => {
+            iden
         }
         _ => unreachable!()
     };
+    let rhs_var_name = rhs_var_id.read().unwrap().get_id();
     
     // let rhs_value = evaluate_id_in_typed_value(rhs_value, scope.clone(), evaluator.clone())?;    //we don't try to evaluate the id of rhs_value since its scope is unknown
 
@@ -156,6 +157,7 @@ pub fn perform_AccessInner(lhs: &Box<Expression>, rhs: &Box<Expression>, scope: 
 
     let (rhs_var, rhs_var_scope) = Scope::resolve_identifier(&rhs_var_name, scope_of_rhs_var.clone(), resolve_var_scope_edge)?;
     let rhs_typed_value = evaluate_var(rhs_var.clone(), rhs_var_scope.clone(), evaluator.clone())?;
+    let rhs_typed_value = evaluate_value_with_identifier_type(&rhs_var_name, rhs_typed_value, rhs_var_id.read().unwrap().get_id_type(), scope.clone(), evaluator.clone())?;
     return Ok(rhs_typed_value);
 }
 

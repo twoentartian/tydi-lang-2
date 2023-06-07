@@ -51,12 +51,10 @@ mod test {
         //check ID_BLOCK_LIST
         try_parse(String::from("impl"), Rule::ID, true).err().unwrap();
         try_parse(String::from("streamlet"), Rule::ID, true).err().unwrap();
-        try_parse(String::from("const"), Rule::ID, true).err().unwrap();
         try_parse(String::from("int"), Rule::ID, true).err().unwrap();
         try_parse(String::from("string"), Rule::ID, true).err().unwrap();
         try_parse(String::from("bool"), Rule::ID, true).err().unwrap();
         try_parse(String::from("float"), Rule::ID, true).err().unwrap();
-        try_parse(String::from("type"), Rule::ID, true).err().unwrap();
         try_parse(String::from("instance"), Rule::ID, true).err().unwrap();
     }
 
@@ -104,8 +102,8 @@ mod test {
         try_parse(String::from("\"this is a string\""), Rule::Exp, true).ok().unwrap();
         try_parse(String::from("123"), Rule::Exp, true).ok().unwrap();
         try_parse(String::from("false"), Rule::Exp, true).ok().unwrap();
-        try_parse(String::from("{1,2,3,4,5,6,7}"), Rule::Exp, true).ok().unwrap();
-        try_parse(String::from("{true, 1, 2.0, func()}"), Rule::Exp, true).ok().unwrap();
+        try_parse(String::from("[1,2,3,4,5,6,7]"), Rule::Exp, true).ok().unwrap();
+        try_parse(String::from("[true, 1, 2.0, func()]"), Rule::Exp, true).ok().unwrap();
         try_parse(String::from("pow(2,8)"), Rule::Exp, true).ok().unwrap();
         try_parse(String::from("bitwise(1,10)"), Rule::Exp, true).ok().unwrap();
         try_parse(String::from("1>>8"), Rule::Exp, true).ok().unwrap();
@@ -276,7 +274,7 @@ mod test {
     fn parse_tydi_array() {
         try_parse(String::from("\
         package test;
-        logicalTypes = {Null, Bit(8)};
+        logicalTypes = [Null, Bit(8)];
         access_external_value = external_package.data[0];
         streamlet x< a0:[int], a1: [type]> {
             
@@ -300,7 +298,7 @@ mod test {
         impl x_impl of y {
             #documentation#
             instance i2(impl0<x,y>) [10];
-            for i in {0,1,2,3,4} {
+            for i in [0,1,2,3,4] {
                 if (x) {
                     i2[i].out => i2[i].in;
                 }

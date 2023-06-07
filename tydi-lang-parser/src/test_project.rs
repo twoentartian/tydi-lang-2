@@ -103,15 +103,15 @@ fn sample_project_2() {
         stream_bit_8_2 = Stream(pack0.bit_8);
         ");
 
-        let src_pack0_ptr = Arc::new(RwLock::new(src_pack0.clone()));
-        let src_pack1_ptr = Arc::new(RwLock::new(src_pack1.clone()));
+
+
         let status = project_write.add_package(format!("./pack0.td"), src_pack0);
         if status.is_err() {
-            panic!("{}", status.err().unwrap().print(Some(src_pack0_ptr)));
+            panic!("{}", status.err().unwrap().print());
         }
         let status = project_write.add_package(format!("./pack1.td"), src_pack1);
         if status.is_err() {
-            panic!("{}", status.err().unwrap().print(Some(src_pack1_ptr)));
+            panic!("{}", status.err().unwrap().print());
         }
     }
     project.read().unwrap().evaluate_target(format!("stream_bit_8_2"), format!("pack1")).expect("fail to evaluate");
@@ -142,15 +142,15 @@ fn sample_project_3() {
         stream_bit_8 = Stream(bit_8);
         ");
 
-        let src_pack0_ptr = Arc::new(RwLock::new(src_pack0.clone()));
-        let src_pack1_ptr = Arc::new(RwLock::new(src_pack1.clone()));
+
+
         let status = project_write.add_package(format!("./pack0.td"), src_pack0);
         if status.is_err() {
-            panic!("{}", status.err().unwrap().print(Some(src_pack0_ptr)));
+            panic!("{}", status.err().unwrap().print());
         }
         let status = project_write.add_package(format!("./pack1.td"), src_pack1);
         if status.is_err() {
-            panic!("{}", status.err().unwrap().print(Some(src_pack1_ptr)));
+            panic!("{}", status.err().unwrap().print());
         }
     }
     project.read().unwrap().evaluate_target(format!("stream_bit_8"), format!("pack1")).expect("fail to evaluate");
@@ -186,15 +186,15 @@ fn sample_project_4() {
         stream_rgb = Stream(pack0.rgb);
         ");
 
-        let src_pack0_ptr = Arc::new(RwLock::new(src_pack0.clone()));
-        let src_pack1_ptr = Arc::new(RwLock::new(src_pack1.clone()));
+
+
         let status = project_write.add_package(format!("./pack0.td"), src_pack0);
         if status.is_err() {
-            panic!("{}", status.err().unwrap().print(Some(src_pack0_ptr)));
+            panic!("{}", status.err().unwrap().print());
         }
         let status = project_write.add_package(format!("./pack1.td"), src_pack1);
         if status.is_err() {
-            panic!("{}", status.err().unwrap().print(Some(src_pack1_ptr)));
+            panic!("{}", status.err().unwrap().print());
         }
     }
     project.read().unwrap().evaluate_target(format!("stream_rgb"), format!("pack1")).expect("fail to evaluate");
@@ -230,15 +230,15 @@ fn sample_project_5() {
         stream_rgb = Stream(pack0.rgb);
         ");
 
-        let src_pack0_ptr = Arc::new(RwLock::new(src_pack0.clone()));
-        let src_pack1_ptr = Arc::new(RwLock::new(src_pack1.clone()));
+
+
         let status = project_write.add_package(format!("./pack0.td"), src_pack0);
         if status.is_err() {
-            panic!("{}", status.err().unwrap().print(Some(src_pack0_ptr)));
+            panic!("{}", status.err().unwrap().print());
         }
         let status = project_write.add_package(format!("./pack1.td"), src_pack1);
         if status.is_err() {
-            panic!("{}", status.err().unwrap().print(Some(src_pack1_ptr)));
+            panic!("{}", status.err().unwrap().print());
         }
     }
     project.read().unwrap().evaluate_target(format!("stream_rgb"), format!("pack1")).expect("fail to evaluate");
@@ -276,15 +276,15 @@ fn sample_project_6() {
         stream_rgb = Stream(pack0.rgb);
         ");
 
-        let src_pack0_ptr = Arc::new(RwLock::new(src_pack0.clone()));
-        let src_pack1_ptr = Arc::new(RwLock::new(src_pack1.clone()));
+
+
         let status = project_write.add_package(format!("./pack0.td"), src_pack0);
         if status.is_err() {
-            panic!("{}", status.err().unwrap().print(Some(src_pack0_ptr)));
+            panic!("{}", status.err().unwrap().print());
         }
         let status = project_write.add_package(format!("./pack1.td"), src_pack1);
         if status.is_err() {
-            panic!("{}", status.err().unwrap().print(Some(src_pack1_ptr)));
+            panic!("{}", status.err().unwrap().print());
         }
     }
     project.read().unwrap().evaluate_target(format!("stream_rgb"), format!("pack1")).expect("fail to evaluate");
@@ -323,15 +323,15 @@ fn sample_project_7() {
         stream_rgb2 = Stream(pack0.rgb);
         ");
 
-        let src_pack0_ptr = Arc::new(RwLock::new(src_pack0.clone()));
-        let src_pack1_ptr = Arc::new(RwLock::new(src_pack1.clone()));
+
+
         let status = project_write.add_package(format!("./pack0.td"), src_pack0);
         if status.is_err() {
-            panic!("{}", status.err().unwrap().print(Some(src_pack0_ptr)));
+            panic!("{}", status.err().unwrap().print());
         }
         let status = project_write.add_package(format!("./pack1.td"), src_pack1);
         if status.is_err() {
-            panic!("{}", status.err().unwrap().print(Some(src_pack1_ptr)));
+            panic!("{}", status.err().unwrap().print());
         }
     }
     let evaluator = project.read().unwrap().evaluate_target(format!("stream_rgb"), format!("pack1")).expect("fail to evaluate");
@@ -366,15 +366,15 @@ fn sample_project_8() {
         result = eight + complexity + throughtput;
         ");
 
-        let src_pack0_ptr = Arc::new(RwLock::new(src_pack0.clone()));
-        let src_pack1_ptr = Arc::new(RwLock::new(src_pack1.clone()));
+
+
         let status = project_write.add_package(format!("./pack0.td"), src_pack0);
         if status.is_err() {
-            panic!("{}", status.err().unwrap().print(Some(src_pack0_ptr)));
+            panic!("{}", status.err().unwrap().print());
         }
         let status = project_write.add_package(format!("./pack1.td"), src_pack1);
         if status.is_err() {
-            panic!("{}", status.err().unwrap().print(Some(src_pack1_ptr)));
+            panic!("{}", status.err().unwrap().print());
         }
     }
     let evaluator = project.read().unwrap().evaluate_target(format!("result"), format!("pack1")).expect("fail to evaluate");
@@ -419,15 +419,15 @@ fn sample_project_access_value_in_group() {
         seven = pack0.rgb.a.six;
         ");
 
-        let src_pack0_ptr = Arc::new(RwLock::new(src_pack0.clone()));
-        let src_pack1_ptr = Arc::new(RwLock::new(src_pack1.clone()));
+
+
         let status = project_write.add_package(format!("./pack0.td"), src_pack0);
         if status.is_err() {
-            panic!("{}", status.err().unwrap().print(Some(src_pack0_ptr)));
+            panic!("{}", status.err().unwrap().print());
         }
         let status = project_write.add_package(format!("./pack1.td"), src_pack1);
         if status.is_err() {
-            panic!("{}", status.err().unwrap().print(Some(src_pack1_ptr)));
+            panic!("{}", status.err().unwrap().print());
         }
     }
     let evaluator = project.read().unwrap().evaluate_target(format!("seven"), format!("pack1")).expect("fail to evaluate");
@@ -465,15 +465,15 @@ fn sample_project_streamlet() {
         }
         "#);
 
-        let src_pack0_ptr = Arc::new(RwLock::new(src_pack0.clone()));
-        let src_pack1_ptr = Arc::new(RwLock::new(src_pack1.clone()));
+
+
         let status = project_write.add_package(format!("./pack0.td"), src_pack0);
         if status.is_err() {
-            panic!("{}", status.err().unwrap().print(Some(src_pack0_ptr)));
+            panic!("{}", status.err().unwrap().print());
         }
         let status = project_write.add_package(format!("./pack1.td"), src_pack1);
         if status.is_err() {
-            panic!("{}", status.err().unwrap().print(Some(src_pack1_ptr)));
+            panic!("{}", status.err().unwrap().print());
         }
     }
     let evaluator = project.read().unwrap().evaluate_target(format!("bit_8_bypass"), format!("pack1")).expect("fail to evaluate");
@@ -520,15 +520,15 @@ fn sample_project_nested_stream() {
         }
         "#);
 
-        let src_pack0_ptr = Arc::new(RwLock::new(src_pack0.clone()));
-        let src_pack1_ptr = Arc::new(RwLock::new(src_pack1.clone()));
+
+
         let status = project_write.add_package(format!("./pack0.td"), src_pack0);
         if status.is_err() {
-            panic!("{}", status.err().unwrap().print(Some(src_pack0_ptr)));
+            panic!("{}", status.err().unwrap().print());
         }
         let status = project_write.add_package(format!("./pack1.td"), src_pack1);
         if status.is_err() {
-            panic!("{}", status.err().unwrap().print(Some(src_pack1_ptr)));
+            panic!("{}", status.err().unwrap().print());
         }
     }
     let evaluator = project.read().unwrap().evaluate_target(format!("bypass"), format!("pack1")).expect("fail to evaluate");
@@ -579,15 +579,15 @@ fn sample_project_simple_impl_1() {
         }
         "#);
 
-        let src_pack0_ptr = Arc::new(RwLock::new(src_pack0.clone()));
-        let src_pack1_ptr = Arc::new(RwLock::new(src_pack1.clone()));
+
+
         let status = project_write.add_package(format!("./pack0.td"), src_pack0);
         if status.is_err() {
-            panic!("{}", status.err().unwrap().print(Some(src_pack0_ptr)));
+            panic!("{}", status.err().unwrap().print());
         }
         let status = project_write.add_package(format!("./pack1.td"), src_pack1);
         if status.is_err() {
-            panic!("{}", status.err().unwrap().print(Some(src_pack1_ptr)));
+            panic!("{}", status.err().unwrap().print());
         }
     }
     let evaluator = project.read().unwrap().evaluate_target(format!("bypass_i"), format!("pack1")).expect("fail to evaluate");
@@ -638,22 +638,34 @@ fn sample_project_simple_impl_2() {
             self.in_port => self.out_port;
         }
 
+        #this is just an example streamlet#
+        streamlet bypass2 {
+            in_port2 : pack0.char_string_timestamp_stream in;
+            out_port2 : pack0.char_string_timestamp_stream out;
+        }
+
+        impl bypass2_i of bypass2 {
+            self.in_port2 => self.out_port2;
+        }
+
         impl bypass_i2 of bypass {
-            instance nested_self(bypass_i);
-            self.in_port => nested_self.in_port;
-            nested_self.out_port => self.out_port;
+            instance nested_self(bypass2_i);
+            self.in_port => nested_self.in_port2;
+            nested_self.out_port2 => self.out_port;
+
+            i = 0;
         }
         "#);
 
-        let src_pack0_ptr = Arc::new(RwLock::new(src_pack0.clone()));
-        let src_pack1_ptr = Arc::new(RwLock::new(src_pack1.clone()));
+
+
         let status = project_write.add_package(format!("./pack0.td"), src_pack0);
         if status.is_err() {
-            panic!("{}", status.err().unwrap().print(Some(src_pack0_ptr)));
+            panic!("{}", status.err().unwrap().print());
         }
         let status = project_write.add_package(format!("./pack1.td"), src_pack1);
         if status.is_err() {
-            panic!("{}", status.err().unwrap().print(Some(src_pack1_ptr)));
+            panic!("{}", status.err().unwrap().print());
         }
     }
     let evaluator = project.read().unwrap().evaluate_target(format!("bypass_i2"), format!("pack1")).expect("fail to evaluate");
@@ -661,6 +673,211 @@ fn sample_project_simple_impl_2() {
     let json_output = project.read().unwrap().get_pretty_json();
 
     println!("{json_output}");
+    std::fs::write("./output.json", &json_output).unwrap();
+
+    println!("{}", evaluator.read().unwrap().print_evaluation_record());
+}
+
+#[test]
+fn sample_project_simple_array_0() {
+    let project = Project::new(format!("sample_project"));
+    {
+        let mut project_write = project.write().unwrap();
+
+        let src_pack0 = String::from(r#"
+        package pack0;
+        three = 3;
+        array_0 = [0, 1.0, "2", three, three+1, Bit(5)];
+
+        "#);
+        let src_pack1 = String::from(r#"
+        package pack1;
+        use pack0;
+
+        value = pack0.array_0[3];
+
+        "#);
+
+
+
+        let status = project_write.add_package(format!("./pack0.td"), src_pack0);
+        if status.is_err() {
+            panic!("{}", status.err().unwrap().print());
+        }
+        let status = project_write.add_package(format!("./pack1.td"), src_pack1);
+        if status.is_err() {
+            panic!("{}", status.err().unwrap().print());
+        }
+    }
+    let evaluator = project.read().unwrap().evaluate_target(format!("value"), format!("pack1")).expect("fail to evaluate");
+
+    let json_output = project.read().unwrap().get_pretty_json();
+
+    println!("{json_output}");
+    std::fs::write("./output.json", &json_output).unwrap();
+
+    println!("{}", evaluator.read().unwrap().print_evaluation_record());
+}
+
+#[test]
+fn sample_project_simple_if_0() {
+    let project = Project::new(format!("sample_project"));
+    {
+        let mut project_write = project.write().unwrap();
+
+        let src_pack0 = String::from(r#"
+        package pack0;
+
+        char_8 = Bit(8);
+
+        char_string_stream = Stream(char_8, d=1);
+
+        timestamp = Bit(60);
+
+        flag = true && false;
+
+        Group char_string_timestamp {
+            string: char_string_stream;
+            time_stamp: timestamp;
+        }
+
+        char_string_timestamp_stream = Stream(char_string_timestamp);
+
+        "#);
+        let src_pack1 = String::from(r#"
+        package pack1;
+        use pack0;
+
+        streamlet bypass {
+            in_port : pack0.char_string_timestamp_stream in;
+            out_port : pack0.char_string_timestamp_stream out;
+        }
+
+
+        streamlet bypass2 {
+            in_port2 : pack0.char_string_timestamp_stream in;
+            out_port2 : pack0.char_string_timestamp_stream out;
+        }
+
+        impl bypass2_i of bypass2 {
+            self.in_port2 => self.out_port2;
+        }
+
+        impl bypass_i of bypass {
+            if pack0.flag {
+                self.in_port => self.out_port;
+            }
+            else {
+                instance nested_self(bypass2_i);
+                self.in_port => nested_self.in_port2;
+                nested_self.out_port2 => self.out_port;
+            }
+        }
+        "#);
+
+        let status = project_write.add_package(format!("./pack0.td"), src_pack0);
+        if status.is_err() {
+            panic!("{}", status.err().unwrap().print());
+        }
+        let status = project_write.add_package(format!("./pack1.td"), src_pack1);
+        if status.is_err() {
+            panic!("{}", status.err().unwrap().print());
+        }
+    }
+    let evaluator = project.read().unwrap().evaluate_target(format!("bypass_i"), format!("pack1"));
+    let evaluator = match evaluator {
+        Ok(e) => e,
+        Err(e) => {
+            println!("{}", e.print());
+            return;
+        },
+    };
+
+    let json_output = project.read().unwrap().get_pretty_json();
+
+    std::fs::write("./output.json", &json_output).unwrap();
+
+    println!("{}", evaluator.read().unwrap().print_evaluation_record());
+}
+
+#[test]
+fn sample_project_simple_for_0() {
+    let project = Project::new(format!("sample_project"));
+    {
+        let mut project_write = project.write().unwrap();
+
+        let src_pack0 = String::from(r#"
+        package pack0;
+
+        char_8 = Bit(8);
+
+        char_string_stream = Stream(char_8, d=1);
+
+        timestamp = Bit(60);
+
+        flag = true && false;
+
+        Group char_string_timestamp {
+            string: char_string_stream;
+            time_stamp: timestamp;
+        }
+
+        char_string_timestamp_stream = Stream(char_string_timestamp);
+
+        "#);
+        let src_pack1 = String::from(r#"
+        package pack1;
+        use pack0;
+
+        streamlet bypass {
+            in_port : pack0.char_string_timestamp_stream in;
+            out_port : pack0.char_string_timestamp_stream out;
+        }
+
+
+        streamlet bypass2 {
+            in_port2 : pack0.char_string_timestamp_stream in;
+            out_port2 : pack0.char_string_timestamp_stream out;
+        }
+
+        impl bypass2_i of bypass2 {
+            self.in_port2 => self.out_port2;
+        }
+
+        impl bypass_i of bypass {
+            for_array = [0,1,2,3,4,5];
+            for_not_array = 0;
+            for i in for_array {
+                if i > 3 {
+                    data = i;
+                }
+                instance nested_self(bypass2_i);
+                self.in_port => nested_self.in_port2;
+                nested_self.out_port2 => self.out_port;
+            }
+        }
+        "#);
+
+        let status = project_write.add_package(format!("./pack0.td"), src_pack0);
+        if status.is_err() {
+            panic!("{}", status.err().unwrap().print());
+        }
+        let status = project_write.add_package(format!("./pack1.td"), src_pack1);
+        if status.is_err() {
+            panic!("{}", status.err().unwrap().print());
+        }
+    }
+    let evaluator = project.read().unwrap().evaluate_target(format!("bypass_i"), format!("pack1"));
+    let evaluator = match evaluator {
+        Ok(e) => e,
+        Err(e) => {
+            println!("{}", e.print());
+            return;
+        },
+    };
+
+    let json_output = project.read().unwrap().get_pretty_json();
+
     std::fs::write("./output.json", &json_output).unwrap();
 
     println!("{}", evaluator.read().unwrap().print_evaluation_record());

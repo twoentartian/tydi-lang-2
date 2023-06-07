@@ -38,11 +38,11 @@ impl TydiLangError {
         };
     }
 
-    pub fn print(&self, src_ptr: Option<Arc<RwLock<String>>>) -> String {
+    pub fn print(&self) -> String {
         let mut output_string = String::new();
         output_string.push_str(&format!("{}\n", self.message));
         for single_location in &self.location {
-            output_string.push_str(&format!("{}\n", single_location.show(src_ptr.clone())));
+            output_string.push_str(&format!("{}\n", single_location.show(Some(single_location.src_file.clone()))));
         }
         output_string.push_str(&format!("{:#?}\n", *self.stack_trace));
         return output_string;

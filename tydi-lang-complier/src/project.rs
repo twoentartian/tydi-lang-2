@@ -48,17 +48,24 @@ impl TydiProject {
             let file_content = std::fs::read_to_string(single_src).expect(&format!("cannot read file {}", single_src.to_string_lossy()));
             let add_package_result = project_write.add_package(file_path.clone(), file_content.clone());
             if add_package_result.is_err() {
-                let src_pointer = Arc::new(RwLock::new(file_content.clone()));
                 let err = add_package_result.err().unwrap();
-                return Err(err.print(Some(src_pointer)));
+                return Err(err.print());
             }
             output_message.push_str(&format!("parse finished: {}\n", single_src.as_os_str().to_str().unwrap().to_string()));
         }
         return Ok(output_message);
     }
 
-    pub fn evaluation(&self) -> Result<String, String> {
-        todo!()
+    pub fn evaluation(&self, package_name: String, target_name: String) -> Result<String, String> {
+        let result = self.project.read().unwrap().evaluate_target(package_name, target_name);
+        match result {
+            Ok(evaluator) => {
+                return Ok(evaluator.read().unwrap().print_evaluation_record());
+            },
+            Err(err) => {
+                return Err(err.print());
+            }
+        }
     }
 
     pub fn get_pretty_json(&self) -> String {

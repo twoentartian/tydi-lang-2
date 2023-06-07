@@ -1,13 +1,13 @@
 use std::sync::{RwLock, Arc};
 
-use crate::evaluation::EvaluationTraceType;
+use crate::generate_name::generate_init_value;
 use crate::trait_common::GetName;
 use crate::tydi_lang_src_to_memory_representation;
-use crate::tydi_memory_representation::{Scope, TypedValue, TypeIndication, LogicType, LogicStream, LogicUnion, LogicGroup, LogicBit, TraitCodeLocationAccess, GetScope};
+use crate::tydi_memory_representation::{Scope, TypedValue, TypeIndication, LogicType, LogicStream, LogicUnion, LogicGroup, LogicBit, TraitCodeLocationAccess, GetScope, ScopeType};
 use crate::tydi_parser::*;
 use crate::error::TydiLangError;
 
-use super::{Evaluator, evaluate_var};
+use super::{Evaluator, evaluate_var, evaluate_scope, ScopeOwner};
 
 #[allow(non_snake_case)]
 pub fn evaluate_LogicalType(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, evaluator: Arc<RwLock<Evaluator>>) -> Result<TypedValue, TydiLangError> {
@@ -18,7 +18,7 @@ pub fn evaluate_LogicalType(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, evaluato
         let rule = element.as_rule();
         match rule {
             Rule::LogicalType_Basic => {
-                let logic_type = tydi_lang_src_to_memory_representation::parse_LogicalType_Basic(element, scope.clone())?;
+                let logic_type = tydi_lang_src_to_memory_representation::parse_LogicalType_Basic(element, scope.clone(), Arc::new(generate_init_value()))?;
                 match &logic_type {
                     TypeIndication::LogicNull => {
                         output = TypedValue::LogicTypeValue(Arc::new(RwLock::new(LogicType::LogicNullType)));
@@ -175,8 +175,6 @@ pub fn evaluate_LogicStream(target: Arc<RwLock<LogicStream>>, scope: Arc<RwLock<
     }
 
     let output = TypedValue::LogicTypeValue(Arc::new(RwLock::new(LogicType::LogicStreamType(target.clone()))));
-    let target_name = target.read().unwrap().get_name();
-    // evaluator.write().unwrap().add_evaluation_trace(target_name, Some(output.clone()), EvaluationTraceType::FinishEvaluation);
 
 
     evaluator.write().unwrap().decrease_deepth();
@@ -198,8 +196,6 @@ pub fn evaluate_LogicBit(target: Arc<RwLock<LogicBit>>, scope: Arc<RwLock<Scope>
         _ => return Err(TydiLangError::new(format!("the bitwidth {:?} must be an integer", bit_width_typed_value), target.read().unwrap().get_code_location()))
     }
     let output = TypedValue::LogicTypeValue(Arc::new(RwLock::new(LogicType::LogicBitType(target.clone()))));
-    let target_name = target.read().unwrap().get_name();
-    // evaluator.write().unwrap().add_evaluation_trace(target_name, Some(output.clone()), EvaluationTraceType::FinishEvaluation);
 
     evaluator.write().unwrap().decrease_deepth();
     return Ok(output);
@@ -210,16 +206,10 @@ pub fn evaluate_LogicGroup(target: Arc<RwLock<LogicGroup>>, scope: Arc<RwLock<Sc
     evaluator.write().unwrap().increase_deepth();
 
     let logic_group_scope = target.read().unwrap().get_scope();
-    let vars_in_scope = logic_group_scope.read().unwrap().get_variables();
-    for (var_name, var) in vars_in_scope {
-        let property_of_scope = var.read().unwrap().get_is_property_of_scope();
-        if !property_of_scope { continue; }
-        let var_value = evaluate_var(var.clone(), logic_group_scope.clone(), evaluator.clone())?;
-    }
-    let output = TypedValue::LogicTypeValue(Arc::new(RwLock::new(LogicType::LogicGroupType(target.clone()))));
-    let target_name = target.read().unwrap().get_name();
-    // evaluator.write().unwrap().add_evaluation_trace(target_name, Some(output.clone()), EvaluationTraceType::FinishEvaluation);
+    evaluate_scope(logic_group_scope.clone(), &ScopeType::GroupScope, &ScopeOwner::LogicGroup(target.clone()), logic_group_scope.clone(), evaluator.clone())?;
 
+    let output = TypedValue::LogicTypeValue(Arc::new(RwLock::new(LogicType::LogicGroupType(target.clone()))));
+    
     evaluator.write().unwrap().decrease_deepth();
     return Ok(output);
 }
@@ -229,16 +219,9 @@ pub fn evaluate_LogicUnion(target: Arc<RwLock<LogicUnion>>, scope: Arc<RwLock<Sc
     evaluator.write().unwrap().increase_deepth();
 
     let logic_union_scope = target.read().unwrap().get_scope();
-    let vars_in_scope = logic_union_scope.read().unwrap().get_variables();
-    for (var_name, var) in vars_in_scope {
-        let property_of_scope = var.read().unwrap().get_is_property_of_scope();
-        if !property_of_scope { continue; }
-        let var_value = evaluate_var(var.clone(), logic_union_scope.clone(), evaluator.clone())?;
-    }
-    let output = TypedValue::LogicTypeValue(Arc::new(RwLock::new(LogicType::LogicUnionType(target.clone()))));
+    evaluate_scope(logic_union_scope.clone(), &ScopeType::UnionScope, &ScopeOwner::LogicUnion(target.clone()), logic_union_scope.clone(), evaluator.clone())?;
 
-    let target_name = target.read().unwrap().get_name();
-    // evaluator.write().unwrap().add_evaluation_trace(target_name, Some(output.clone()), EvaluationTraceType::FinishEvaluation);
+    let output = TypedValue::LogicTypeValue(Arc::new(RwLock::new(LogicType::LogicUnionType(target.clone()))));
 
     evaluator.write().unwrap().decrease_deepth();
     return Ok(output);

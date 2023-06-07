@@ -3,8 +3,9 @@ use std::sync::{Arc, RwLock};
 
 use serde::{Serialize, Deserialize};
 
+use crate::deep_clone::{DeepClone, DeepClone_ArcLock};
 use crate::error::TydiLangError;
-use crate::{generate_get, generate_name, generate_get_ref_pub, generate_get_pub};
+use crate::{generate_get, generate_name, generate_get_ref_pub, generate_get_pub, generate_set_pub, generate_access_pub};
 use crate::trait_common::{GetName};
 use crate::tydi_memory_representation::{Variable, CodeLocation};
 
@@ -32,6 +33,7 @@ impl ScopeRelationType {
         output.insert(ScopeRelationType::UnionScopeRela);
         output.insert(ScopeRelationType::StreamletScopeRela);
         output.insert(ScopeRelationType::ImplementationScopeRela);
+        output.insert(ScopeRelationType::IfForScopeRela);
         return output;
     }
 
@@ -71,10 +73,16 @@ pub struct ScopeRelationship {
     relationship: ScopeRelationType,
 }
 
+impl DeepClone for ScopeRelationship {
+    fn deep_clone(&self) -> Self {
+        return self.clone();
+    }
+}
+
 #[derive(Clone, Debug, Serialize)]
 pub struct Scope {
     name: String,
-    pub scope_type: ScopeType,
+    scope_type: ScopeType,
 
     #[serde(skip)]
     self_ref: Option<Arc<RwLock<Scope>>>,
@@ -88,6 +96,24 @@ pub struct Scope {
 
 impl GetName for Scope {
     generate_get!(name, String, get_name);
+}
+
+impl DeepClone_ArcLock for Scope {
+    fn deep_clone_arclock(&self) -> Arc<RwLock<Self>> {
+        let output = Self {
+            name: self.name.deep_clone(),
+            scope_type: self.scope_type.clone(),
+            self_ref: None,
+            scope_relationships: self.scope_relationships.deep_clone(),
+            variables: self.variables.deep_clone(),
+        };
+        let output = Arc::new(RwLock::new(output));
+        {
+            let mut output_write = output.write().unwrap();
+            output_write.self_ref = Some(output.clone());
+        }
+        return output;
+    }
 }
 
 impl Scope {
@@ -182,7 +208,8 @@ impl Scope {
     //     return &self.scope_relationships;
     // }
 
-    generate_get_pub!(variables, BTreeMap<String, Arc<RwLock<Variable>>>, get_variables);
+    generate_access_pub!(variables, BTreeMap<String, Arc<RwLock<Variable>>>, get_variables, set_variables);
+    generate_get_pub!(scope_type, ScopeType, get_scope_type);
     generate_get_ref_pub!(variables, BTreeMap<String, Arc<RwLock<Variable>>>, get_variables_ref);
     generate_get_ref_pub!(scope_relationships, BTreeMap<String, ScopeRelationship>, get_scope_relationships);
 

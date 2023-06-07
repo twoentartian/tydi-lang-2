@@ -2,6 +2,7 @@ use std::sync::{Arc, RwLock};
 
 use serde::{Serialize, Serializer, Deserialize};
 
+use crate::deep_clone::DeepClone;
 use crate::tydi_memory_representation::{TypedValue, TypeIndication, CodeLocation, TraitCodeLocationAccess, Streamlet, LogicType, Port, Implementation, Instance};
 use crate::trait_common::GetName;
 use crate::{generate_get_pub, generate_access_pub, generate_set_pub, generate_name};
@@ -42,6 +43,25 @@ pub struct Variable {
 impl GetName for Variable {
     fn get_name(&self) -> String {
         return self.name.clone();
+    }
+}
+
+impl DeepClone for Variable {
+    fn deep_clone(&self) -> Self {
+        let output = Self {
+            name: self.name.clone(),
+            exp: self.exp.clone(),
+            evaluated: self.evaluated.clone(),
+            value: self.value.clone(),
+            array_size: match &self.array_size {
+                Some(var) => Some(Arc::new(RwLock::new(var.read().unwrap().deep_clone()))),
+                None => None,
+            },
+            type_indication: self.type_indication.clone(),
+            is_property_of_scope: self.is_property_of_scope.clone(),
+            declare_location: self.declare_location.clone(),
+        };
+        return output;
     }
 }
 
@@ -273,15 +293,18 @@ impl Variable {
             TypedValue::Array(_) => (),
             _ => return Err(format!("{} is not an array type", &self.name)),
         }
-        if !self.type_indication.is_compatible_with_typed_value(&value) {
-            return Err(format!("type mismatch, array type: {:?}, element type: {:?}", self.type_indication, value));
-        }
 
         //change the type indicator?
         match &mut self.value {
             TypedValue::Array(values) => {
                 if values.len() == 0 {
-                    self.type_indication = TypeIndication::infer_from_typed_value(&value);
+                    self.type_indication = TypeIndication::Array(Box::new(TypeIndication::infer_from_typed_value(&value)));
+                }
+                else {
+                    let new_type_indication = TypeIndication::infer_from_typed_value(&value);
+                    if self.type_indication != new_type_indication {
+                        self.type_indication = TypeIndication::Array(Box::new(TypeIndication::Any));
+                    }
                 }
                 values.push(value);
             },

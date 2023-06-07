@@ -47,7 +47,7 @@ BoolExp = { BOOL }
 FloatExp = { FLOAT }
 
 //// Expression ////
-ArrayExp = { "{" ~ Exp ~ ("," ~ Exp)* ~ "}" }
+ArrayExp = { "[" ~ Exp ~ ("," ~ Exp)* ~ "]" }
 // ArrayRange = { "(" ~ Exp ~ "=" ~ Exp ~ "=>" ~ Exp ~ ")" }
 ArraySizeIndicator = { "[" ~ Exp? ~ "]" } //specifying the size of the array is optional
 

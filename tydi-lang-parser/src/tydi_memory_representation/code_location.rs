@@ -2,12 +2,14 @@ use std::{sync::{Arc, RwLock}, usize};
 
 use serde::{Serialize};
 
-use crate::tydi_parser::*;
+use crate::{tydi_parser::*, generate_name::generate_init_value};
 
 #[derive(Clone, Debug, Serialize)]
 pub struct CodeLocation {
     pub begin: Option<usize>,
     pub end: Option<usize>,
+    #[serde(skip)]
+    pub src_file: Arc<String>,
 }
 
 impl CodeLocation {
@@ -15,27 +17,31 @@ impl CodeLocation {
         return Self {
             begin: None,
             end: None,
+            src_file: Arc::new(generate_init_value()),
         };
     }
 
-    pub fn new(begin:usize, end:usize) -> Self {
+    pub fn new(begin:usize, end:usize, src_file: Arc<String>) -> Self {
         return Self {
             begin: Some(begin),
             end: Some(end),
+            src_file: src_file,
         };
     }
 
-    pub fn new_only_begin(begin:usize) -> Self {
+    pub fn new_only_begin(begin:usize, src_file: Arc<String>) -> Self {
         return Self {
             begin: Some(begin),
             end: None,
+            src_file: src_file,
         };
     }
 
-    pub fn new_from_pest_rule(src: &Pair<Rule>) -> Self {
+    pub fn new_from_pest_rule(src: &Pair<Rule>, src_file: Arc<String>) -> Self {
         return Self {
             begin: Some(src.as_span().start_pos().pos()),
             end: Some(src.as_span().end_pos().pos()),
+            src_file: src_file,
         };
     }
 
@@ -85,11 +91,17 @@ impl CodeLocation {
         unreachable!()
     }
 
-    pub fn show(&self, src: Option<Arc<RwLock<String>>>) -> String {
+    pub fn show(&self, src: Option<Arc<String>>) -> String {
+        // is the src empty?
         if src.is_none() {
             return format!("token location: {}~{}", self.begin.unwrap(), self.end.unwrap());
         }
-        let src = src.as_ref().unwrap().read().unwrap();
+        if **(src.as_ref().unwrap()) == generate_init_value() {
+            return format!("location not available");
+        }
+
+        // not empty
+        let src = src.as_ref().unwrap();
         if self.begin.is_some() && self.end.is_some() {
             let begin_line = CodeLocation::count_lines(&src[0..self.begin.unwrap()].to_string());
             let end_line = CodeLocation::count_lines(&src[0..self.end.unwrap()].to_string());

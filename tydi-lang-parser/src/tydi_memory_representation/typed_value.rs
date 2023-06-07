@@ -50,6 +50,35 @@ pub enum TypeIndication {
     Array(Box<TypeIndication>),
 }
 
+impl std::string::ToString for TypeIndication {
+    fn to_string(&self) -> String {
+        match self {
+            TypeIndication::Any => format!("any"),
+            TypeIndication::Unknown => format!("unknown"),
+            TypeIndication::ComplierBuiltin => format!("complier_builtin"),
+            TypeIndication::Int => format!("int"),
+            TypeIndication::String => format!("string"),
+            TypeIndication::Bool => format!("bool"),
+            TypeIndication::Float => format!("float"),
+            TypeIndication::Clockdomain => format!("clock_domain"),
+            TypeIndication::AnyLogicType => format!("any_logic_type"),
+            TypeIndication::LogicNull => format!("logic_null"),
+            TypeIndication::LogicStream(v) => format!("logic_stream({})", v.read().unwrap().get_value().get_brief_info()),
+            TypeIndication::LogicBit(v) => format!("logic_bit({})", v.read().unwrap().get_value().get_brief_info()),
+            TypeIndication::LogicGroup(v) => format!("logic_group({})", v.read().unwrap().get_value().get_brief_info()),
+            TypeIndication::LogicUnion(v) => format!("logic_union({})", v.read().unwrap().get_value().get_brief_info()),
+            TypeIndication::LogicTypeRef(v) => format!("logic_type_ref({})", v),
+            TypeIndication::AnyStreamlet => format!("any_streamlet"),
+            TypeIndication::AnyPort => format!("any_port"),
+            TypeIndication::AnyImplementation => format!("any_implementation"),
+            TypeIndication::AnyInstance => format!("any_instance"),
+            TypeIndication::AnyNet => format!("any_net"),
+            TypeIndication::PackageReference => format!("package_reference"),
+            TypeIndication::Array(v) => format!("array({})", v.to_string()),
+        }
+    }
+}
+
 impl PartialEq for TypeIndication {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
@@ -313,7 +342,7 @@ impl TypedValue {
             TypedValue::Net(_) => todo!(),
             TypedValue::If(_) => todo!(),
             TypedValue::For(_) => todo!(),
-            TypedValue::Array(_) => todo!(),
+            TypedValue::Array(array) => return format!("Array({})", array.iter().map(|i| i.get_brief_info()).collect::<Vec<_>>().join(", ")),
             TypedValue::RefToVar(v) => return format!("RefToVar({})", v.read().unwrap().get_name()),
             TypedValue::Identifier(v) => return format!("Identifier({})", v.read().unwrap().get_brief_info()),
         }

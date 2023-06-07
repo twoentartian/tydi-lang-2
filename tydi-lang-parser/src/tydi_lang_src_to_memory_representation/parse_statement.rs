@@ -10,7 +10,7 @@ use super::parse_logic_flow::{parse_If, parse_For};
 
 
 #[allow(non_snake_case)]
-pub fn parse_StatementDeclareVariable(src: Pair<Rule>, scope: Arc<RwLock<Scope>>) -> Result<(), TydiLangError> {
+pub fn parse_StatementDeclareVariable(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<String>) -> Result<(), TydiLangError> {
     let var = Variable::new_place_holder();
     let mut type_indicator = TypeIndication::Any;
     for element in src.clone().into_inner().into_iter() {
@@ -20,7 +20,7 @@ pub fn parse_StatementDeclareVariable(src: Pair<Rule>, scope: Arc<RwLock<Scope>>
                 var.write().unwrap().set_name(element.as_str().to_string());
             }
             Rule::TypeIndicator => {
-                type_indicator = parse_type::parse_TypeIndicator(element, scope.clone())?;
+                type_indicator = parse_type::parse_TypeIndicator(element, scope.clone(), raw_src.clone())?;
             }
             Rule::Exp => {
                 var.write().unwrap().set_exp(Some(element.as_str().to_string()));
@@ -31,7 +31,7 @@ pub fn parse_StatementDeclareVariable(src: Pair<Rule>, scope: Arc<RwLock<Scope>>
     {
         let mut var_write = var.write().unwrap();
         var_write.set_type_indication(type_indicator.clone());
-        var_write.set_code_location(CodeLocation::new_from_pest_rule(&src));
+        var_write.set_code_location(CodeLocation::new_from_pest_rule(&src, raw_src.clone()));
     }
     {
         let mut scope_write = scope.write().unwrap();
@@ -41,7 +41,7 @@ pub fn parse_StatementDeclareVariable(src: Pair<Rule>, scope: Arc<RwLock<Scope>>
 }
 
 #[allow(non_snake_case)]
-pub fn parse_StatementDeclareType(src: Pair<Rule>, scope: Arc<RwLock<Scope>>) -> Result<(), TydiLangError> {
+pub fn parse_StatementDeclareType(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<String>) -> Result<(), TydiLangError> {
     let var = Variable::new_place_holder();
     let mut type_indicator = TypeIndication::Any;
     for element in src.clone().into_inner().into_iter() {
@@ -51,7 +51,7 @@ pub fn parse_StatementDeclareType(src: Pair<Rule>, scope: Arc<RwLock<Scope>>) ->
                 var.write().unwrap().set_name(element.as_str().to_string());
             }
             Rule::TypeIndicator => {
-                type_indicator = parse_type::parse_TypeIndicator(element, scope.clone())?;
+                type_indicator = parse_type::parse_TypeIndicator(element, scope.clone(), raw_src.clone())?;
             }
             _ => unreachable!()
         }
@@ -61,7 +61,7 @@ pub fn parse_StatementDeclareType(src: Pair<Rule>, scope: Arc<RwLock<Scope>>) ->
         let mut var_write = var.write().unwrap();
         var_write.set_type_indication(type_indicator.clone());
         var_write.set_is_property_of_scope(true);
-        var_write.set_code_location(CodeLocation::new_from_pest_rule(&src));
+        var_write.set_code_location(CodeLocation::new_from_pest_rule(&src, raw_src.clone()));
 
         //if it is a logic type (excluding LogicNull):
         match &type_indicator {
@@ -84,12 +84,12 @@ pub fn parse_StatementDeclareType(src: Pair<Rule>, scope: Arc<RwLock<Scope>>) ->
 }
 
 #[allow(non_snake_case)]
-pub fn parse_StatementDeclareGroup(src: Pair<Rule>, scope: Arc<RwLock<Scope>>) -> Result<(), TydiLangError> {
+pub fn parse_StatementDeclareGroup(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<String>) -> Result<(), TydiLangError> {
     for element in src.clone().into_inner().into_iter() {
         let rule = element.as_rule();
         match rule {
             Rule::LogicalGroup => {
-                let var = parse_logic_type::parse_LogicalGroup(element, scope.clone())?;
+                let var = parse_logic_type::parse_LogicalGroup(element, scope.clone(), raw_src.clone())?;
                 {
                     let mut scope_write = scope.write().unwrap();
                     scope_write.add_var(var)?;
@@ -102,12 +102,12 @@ pub fn parse_StatementDeclareGroup(src: Pair<Rule>, scope: Arc<RwLock<Scope>>) -
 }
 
 #[allow(non_snake_case)]
-pub fn parse_StatementDeclareUnion(src: Pair<Rule>, scope: Arc<RwLock<Scope>>) -> Result<(), TydiLangError> {
+pub fn parse_StatementDeclareUnion(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<String>) -> Result<(), TydiLangError> {
     for element in src.clone().into_inner().into_iter() {
         let rule = element.as_rule();
         match rule {
             Rule::LogicalUnion => {
-                let var = parse_logic_type::parse_LogicalUnion(element, scope.clone())?;
+                let var = parse_logic_type::parse_LogicalUnion(element, scope.clone(), raw_src.clone())?;
                 {
                     let mut scope_write = scope.write().unwrap();
                     scope_write.add_var(var)?;
@@ -120,12 +120,12 @@ pub fn parse_StatementDeclareUnion(src: Pair<Rule>, scope: Arc<RwLock<Scope>>) -
 }
 
 #[allow(non_snake_case)]
-pub fn parse_StatementDeclareStreamlet(src: Pair<Rule>, scope: Arc<RwLock<Scope>>) -> Result<(), TydiLangError> {
+pub fn parse_StatementDeclareStreamlet(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<String>) -> Result<(), TydiLangError> {
     for element in src.clone().into_inner().into_iter() {
         let rule = element.as_rule();
         match rule {
             Rule::StreamLet => {
-                let var = parse_streamlet::parse_StreamLet(element, scope.clone())?;
+                let var = parse_streamlet::parse_StreamLet(element, scope.clone(), raw_src.clone())?;
                 {
                     let mut scope_write = scope.write().unwrap();
                     scope_write.add_var(var)?;
@@ -138,12 +138,12 @@ pub fn parse_StatementDeclareStreamlet(src: Pair<Rule>, scope: Arc<RwLock<Scope>
 }
 
 #[allow(non_snake_case)]
-pub fn parse_StatementDeclarePort(src: Pair<Rule>, scope: Arc<RwLock<Scope>>) -> Result<(), TydiLangError> {
+pub fn parse_StatementDeclarePort(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<String>) -> Result<(), TydiLangError> {
     for element in src.clone().into_inner().into_iter() {
         let rule = element.as_rule();
         match rule {
             Rule::Port => {
-                let port_var = parse_streamlet::parse_Port(element, scope.clone())?;
+                let port_var = parse_streamlet::parse_Port(element, scope.clone(), raw_src.clone())?;
                 {
                     let mut scope_write = scope.write().unwrap();
                     scope_write.add_var(port_var)?;
@@ -156,12 +156,12 @@ pub fn parse_StatementDeclarePort(src: Pair<Rule>, scope: Arc<RwLock<Scope>>) ->
 }
 
 #[allow(non_snake_case)]
-pub fn parse_StatementDeclareImplementation(src: Pair<Rule>, scope: Arc<RwLock<Scope>>) -> Result<(), TydiLangError> {
+pub fn parse_StatementDeclareImplementation(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<String>) -> Result<(), TydiLangError> {
     for element in src.clone().into_inner().into_iter() {
         let rule = element.as_rule();
         match rule {
             Rule::Implementation => {
-                let var = parse_implementation::parse_Implementation(element, scope.clone())?;
+                let var = parse_implementation::parse_Implementation(element, scope.clone(), raw_src.clone())?;
                 {
                     let mut scope_write = scope.write().unwrap();
                     scope_write.add_var(var)?;
@@ -174,12 +174,12 @@ pub fn parse_StatementDeclareImplementation(src: Pair<Rule>, scope: Arc<RwLock<S
 }
 
 #[allow(non_snake_case)]
-pub fn parse_StatementDeclareInstance(src: Pair<Rule>, scope: Arc<RwLock<Scope>>) -> Result<(), TydiLangError> {
+pub fn parse_StatementDeclareInstance(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<String>) -> Result<(), TydiLangError> {
     for element in src.clone().into_inner().into_iter() {
         let rule = element.as_rule();
         match rule {
             Rule::Instance => {
-                let var = parse_implementation::parse_Instance(element, scope.clone())?;
+                let var = parse_implementation::parse_Instance(element, scope.clone(), raw_src.clone())?;
                 {
                     let mut scope_write = scope.write().unwrap();
                     scope_write.add_var(var)?;
@@ -192,12 +192,12 @@ pub fn parse_StatementDeclareInstance(src: Pair<Rule>, scope: Arc<RwLock<Scope>>
 }
 
 #[allow(non_snake_case)]
-pub fn parse_StatementDeclareNet(src: Pair<Rule>, scope: Arc<RwLock<Scope>>) -> Result<(), TydiLangError> {
+pub fn parse_StatementDeclareNet(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<String>) -> Result<(), TydiLangError> {
     for element in src.clone().into_inner().into_iter() {
         let rule = element.as_rule();
         match rule {
             Rule::Net => {
-                let var = parse_implementation::parse_Net(element, scope.clone())?;
+                let var = parse_implementation::parse_Net(element, scope.clone(), raw_src.clone())?;
                 {
                     let mut scope_write = scope.write().unwrap();
                     scope_write.add_var(var)?;
@@ -210,7 +210,7 @@ pub fn parse_StatementDeclareNet(src: Pair<Rule>, scope: Arc<RwLock<Scope>>) -> 
 }
 
 #[allow(non_snake_case)]
-pub fn parse_StatementFunction(src: Pair<Rule>, scope: Arc<RwLock<Scope>>) -> Result<(), TydiLangError> {
+pub fn parse_StatementFunction(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<String>) -> Result<(), TydiLangError> {
     for element in src.clone().into_inner().into_iter() {
         let rule = element.as_rule();
         match rule {
@@ -224,12 +224,12 @@ pub fn parse_StatementFunction(src: Pair<Rule>, scope: Arc<RwLock<Scope>>) -> Re
 }
 
 #[allow(non_snake_case)]
-pub fn parse_StatementIf(src: Pair<Rule>, scope: Arc<RwLock<Scope>>) -> Result<(), TydiLangError> {
+pub fn parse_StatementIf(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<String>) -> Result<(), TydiLangError> {
     for element in src.clone().into_inner().into_iter() {
         let rule = element.as_rule();
         match rule {
             Rule::If => {
-                let var = parse_If(element, scope.clone())?;
+                let var = parse_If(element, scope.clone(), raw_src.clone())?;
                 {
                     let mut scope_write = scope.write().unwrap();
                     scope_write.add_var(var)?;
@@ -242,12 +242,12 @@ pub fn parse_StatementIf(src: Pair<Rule>, scope: Arc<RwLock<Scope>>) -> Result<(
 }
 
 #[allow(non_snake_case)]
-pub fn parse_StatementFor(src: Pair<Rule>, scope: Arc<RwLock<Scope>>) -> Result<(), TydiLangError> {
+pub fn parse_StatementFor(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<String>) -> Result<(), TydiLangError> {
     for element in src.clone().into_inner().into_iter() {
         let rule = element.as_rule();
         match rule {
             Rule::For => {
-                let var = parse_For(element, scope.clone())?;
+                let var = parse_For(element, scope.clone(), raw_src.clone())?;
                 {
                     let mut scope_write = scope.write().unwrap();
                     scope_write.add_var(var)?;

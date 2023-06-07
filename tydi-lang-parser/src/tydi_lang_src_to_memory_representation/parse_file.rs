@@ -5,7 +5,7 @@ use crate::tydi_memory_representation::{Package, Scope, Variable, TypeIndication
 use crate::tydi_parser::*;
 
 #[allow(non_snake_case)]
-pub fn parse_PackageStatement(src: Pair<Rule>, package: Arc<RwLock<Package>>) -> Result<Arc<RwLock<Package>>, TydiLangError> {
+pub fn parse_PackageStatement(src: Pair<Rule>, package: Arc<RwLock<Package>>, raw_src: Arc<String>) -> Result<Arc<RwLock<Package>>, TydiLangError> {
     for element in src.into_inner().into_iter() {
         match element.as_rule() {
             Rule::ID => {
@@ -18,49 +18,49 @@ pub fn parse_PackageStatement(src: Pair<Rule>, package: Arc<RwLock<Package>>) ->
 }
 
 #[allow(non_snake_case)]
-pub fn parse_Scope_WithoutBracket(src: Pair<Rule>, scope: Arc<RwLock<Scope>>) -> Result<(), TydiLangError> {
+pub fn parse_Scope_WithoutBracket(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<String>) -> Result<(), TydiLangError> {
     use crate::tydi_lang_src_to_memory_representation::parse_statement::*;
 
     for element in src.into_inner().into_iter() {
         match element.as_rule() {
             Rule::StatementDeclareVariable => {
-                parse_StatementDeclareVariable(element, scope.clone())?;
+                parse_StatementDeclareVariable(element, scope.clone(), raw_src.clone())?;
             }
             Rule::StatementDeclareType => {
-                parse_StatementDeclareType(element, scope.clone())?;
+                parse_StatementDeclareType(element, scope.clone(), raw_src.clone())?;
             }
             Rule::StatementDeclareGroup => {
-                parse_StatementDeclareGroup(element, scope.clone())?;
+                parse_StatementDeclareGroup(element, scope.clone(), raw_src.clone())?;
             }
             Rule::StatementDeclareUnion => {
-                parse_StatementDeclareUnion(element, scope.clone())?;
+                parse_StatementDeclareUnion(element, scope.clone(), raw_src.clone())?;
             }
             Rule::StatementDeclareStreamlet => {
-                parse_StatementDeclareStreamlet(element, scope.clone())?;
+                parse_StatementDeclareStreamlet(element, scope.clone(), raw_src.clone())?;
             }
             Rule::StatementDeclarePort => {
-                parse_StatementDeclarePort(element, scope.clone())?;
+                parse_StatementDeclarePort(element, scope.clone(), raw_src.clone())?;
             }
             Rule::StatementDeclareImplementation => {
-                parse_StatementDeclareImplementation(element, scope.clone())?;
+                parse_StatementDeclareImplementation(element, scope.clone(), raw_src.clone())?;
             }
             Rule::StatementDeclareInstance => {
-                parse_StatementDeclareInstance(element, scope.clone())?;
+                parse_StatementDeclareInstance(element, scope.clone(), raw_src.clone())?;
             }
             Rule::StatementDeclareNet => {
-                parse_StatementDeclareNet(element, scope.clone())?;
+                parse_StatementDeclareNet(element, scope.clone(), raw_src.clone())?;
             }
             Rule::StatementDeclareIf => {
-                parse_StatementIf(element, scope.clone())?;
+                parse_StatementIf(element, scope.clone(), raw_src.clone())?;
             }
             Rule::StatementDeclareFor => {
-                parse_StatementFor(element, scope.clone())?;
+                parse_StatementFor(element, scope.clone(), raw_src.clone())?;
             }
             Rule::StatementUsePackage => {
-                parse_StatementUsePackage(element, scope.clone())?;
+                parse_StatementUsePackage(element, scope.clone(), raw_src.clone())?;
             }
             Rule::StatementFunction => {
-                parse_StatementFunction(element, scope.clone())?;
+                parse_StatementFunction(element, scope.clone(), raw_src.clone())?;
             }
             _ => unreachable!()
         }
@@ -69,7 +69,7 @@ pub fn parse_Scope_WithoutBracket(src: Pair<Rule>, scope: Arc<RwLock<Scope>>) ->
 }
 
 #[allow(non_snake_case)]
-pub fn parse_StatementUsePackage(src: Pair<Rule>, scope: Arc<RwLock<Scope>>) -> Result<(), TydiLangError> {
+pub fn parse_StatementUsePackage(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<String>) -> Result<(), TydiLangError> {
     for element in src.clone().into_inner().into_iter() {
         match element.as_rule() {
             Rule::ID => {
@@ -77,7 +77,7 @@ pub fn parse_StatementUsePackage(src: Pair<Rule>, scope: Arc<RwLock<Scope>>) -> 
                 let package_ref_var = Variable::new_with_type_indication(package_name.clone(), Some(package_name.clone()), TypeIndication::PackageReference);
                 {
                     let mut package_ref_var_write = package_ref_var.write().unwrap();
-                    package_ref_var_write.set_code_location(CodeLocation::new_from_pest_rule(&src));
+                    package_ref_var_write.set_code_location(CodeLocation::new_from_pest_rule(&src, raw_src.clone()));
                 }
                 {
                     let mut scope_write = scope.write().unwrap();
