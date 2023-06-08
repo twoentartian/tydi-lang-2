@@ -19,6 +19,12 @@ pub enum EvaluationStatus {
     PreEvaluatedLogicType,
 }
 
+impl DeepClone for EvaluationStatus {
+    fn deep_clone(&self) -> Self {
+        return self.clone();
+    }
+}
+
 impl EvaluationStatus {
     pub fn is_value_known(&self) -> bool {
         if *self == EvaluationStatus::Evaluated || *self == EvaluationStatus::Predefined {
@@ -49,17 +55,14 @@ impl GetName for Variable {
 impl DeepClone for Variable {
     fn deep_clone(&self) -> Self {
         let output = Self {
-            name: self.name.clone(),
-            exp: self.exp.clone(),
-            evaluated: self.evaluated.clone(),
-            value: self.value.clone(),
-            array_size: match &self.array_size {
-                Some(var) => Some(Arc::new(RwLock::new(var.read().unwrap().deep_clone()))),
-                None => None,
-            },
-            type_indication: self.type_indication.clone(),
-            is_property_of_scope: self.is_property_of_scope.clone(),
-            declare_location: self.declare_location.clone(),
+            name: self.name.deep_clone(),
+            exp: self.exp.deep_clone(),
+            evaluated: self.evaluated.deep_clone(),
+            value: self.value.deep_clone(),
+            array_size: self.array_size.deep_clone(),
+            type_indication: self.type_indication.deep_clone(),
+            is_property_of_scope: self.is_property_of_scope.deep_clone(),
+            declare_location: self.declare_location.deep_clone(),
         };
         return output;
     }

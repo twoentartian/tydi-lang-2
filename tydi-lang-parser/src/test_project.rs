@@ -849,7 +849,7 @@ fn sample_project_simple_for_0() {
             for_not_array = 0;
             for i in for_array {
                 if i > 1 {
-                    data = i;
+                    data = i + 2;
                 }
                 instance nested_self(bypass2_i);
                 self.in_port => nested_self.in_port2;

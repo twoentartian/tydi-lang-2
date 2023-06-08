@@ -24,6 +24,12 @@ impl DeepClone for usize {
     }
 }
 
+impl DeepClone for bool {
+    fn deep_clone(&self) -> Self {
+        return self.clone();
+    }
+}
+
 impl<T> DeepClone for Vec<T> where T: DeepClone {
     fn deep_clone(&self) -> Self {
         let mut output = vec![];
