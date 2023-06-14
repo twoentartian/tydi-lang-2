@@ -20,8 +20,6 @@ pub enum LogicType {
     Ref(String),
 }
 
-const LogicNullExp: &str = "null";
-
 impl serde::Serialize for LogicType {
     fn serialize<S>(&self, serializer: S) -> Result<<S as serde::Serializer>::Ok, <S as serde::Serializer>::Error> 
     where S: serde::Serializer {
@@ -30,7 +28,7 @@ impl serde::Serialize for LogicType {
         state.serialize_field("type", enum_type_str)?;
         match &self {
             LogicType::Null => {
-                state.serialize_field("value", LogicNullExp)?;
+                // state.serialize_field("value", LogicNullExp)?;   //do nothing because type already says this is Null
             },
             LogicType::Bit(v) => {
                 state.serialize_field("value", &v)?;

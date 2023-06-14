@@ -30,7 +30,6 @@ fn sample_project_rgb() {
         ");
 
 
-
         let status = project_write.add_package(format!("./pack0.td"), src_pack0);
         if status.is_err() {
             panic!("{}", status.err().unwrap().print());
