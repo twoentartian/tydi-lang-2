@@ -7,7 +7,7 @@ use crate::tydi_memory_representation::{TypedValue, TypeIndication, CodeLocation
 use crate::trait_common::GetName;
 use crate::{generate_get_pub, generate_access_pub, generate_set_pub, generate_name};
 
-use super::Net;
+use super::{Net, Scope};
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub enum EvaluationStatus {
@@ -44,6 +44,7 @@ pub struct Variable {
     type_indication: TypeIndication,
     is_property_of_scope: bool,
     declare_location: CodeLocation,
+    parent_scope: Option<Arc<RwLock<Scope>>>,
 }
 
 impl GetName for Variable {
@@ -63,6 +64,7 @@ impl DeepClone for Variable {
             type_indication: self.type_indication.deep_clone(),
             is_property_of_scope: self.is_property_of_scope.deep_clone(),
             declare_location: self.declare_location.deep_clone(),
+            parent_scope: self.parent_scope.clone(),    //clone should be enough here
         };
         return output;
     }
@@ -133,6 +135,7 @@ impl Variable {
             type_indication: TypeIndication::Any,
             is_property_of_scope: false,
             declare_location: CodeLocation::new_unknown(),
+            parent_scope: None,
         };
         return Arc::new(RwLock::new(output));
     }
@@ -147,6 +150,7 @@ impl Variable {
             type_indication: type_indication,
             is_property_of_scope: false,
             declare_location: CodeLocation::new_unknown(),
+            parent_scope: None,
         };
         return Arc::new(RwLock::new(output));
     }
@@ -161,6 +165,7 @@ impl Variable {
             type_indication: TypeIndication::Unknown,
             is_property_of_scope: false,
             declare_location: CodeLocation::new_unknown(),
+            parent_scope: None,
         };
         return Arc::new(RwLock::new(output));
     }
@@ -176,6 +181,7 @@ impl Variable {
             type_indication: TypeIndication::AnyLogicType,
             is_property_of_scope: false,
             declare_location: CodeLocation::new_unknown(),
+            parent_scope: None,
         };
         return Arc::new(RwLock::new(output));
     }
@@ -191,6 +197,7 @@ impl Variable {
             type_indication: TypeIndication::AnyStreamlet,
             is_property_of_scope: false,
             declare_location: CodeLocation::new_unknown(),
+            parent_scope: None,
         };
         return Arc::new(RwLock::new(output));
     }
@@ -206,6 +213,7 @@ impl Variable {
             type_indication: TypeIndication::AnyPort,
             is_property_of_scope: false,
             declare_location: CodeLocation::new_unknown(),
+            parent_scope: None,
         };
         return Arc::new(RwLock::new(output));
     }
@@ -221,6 +229,7 @@ impl Variable {
             type_indication: TypeIndication::AnyImplementation,
             is_property_of_scope: false,
             declare_location: CodeLocation::new_unknown(),
+            parent_scope: None,
         };
         return Arc::new(RwLock::new(output));
     }
@@ -236,6 +245,7 @@ impl Variable {
             type_indication: TypeIndication::AnyInstance,
             is_property_of_scope: false,
             declare_location: CodeLocation::new_unknown(),
+            parent_scope: None,
         };
         return Arc::new(RwLock::new(output));
     }
@@ -251,6 +261,7 @@ impl Variable {
             type_indication: TypeIndication::AnyNet,
             is_property_of_scope: false,
             declare_location: CodeLocation::new_unknown(),
+            parent_scope: None,
         };
         return Arc::new(RwLock::new(output));
     }
@@ -265,6 +276,7 @@ impl Variable {
             type_indication: TypeIndication::infer_from_typed_value(&value),
             is_property_of_scope: false,
             declare_location: CodeLocation::new_unknown(),
+            parent_scope: None,
         };
         return Arc::new(RwLock::new(output));
     }
@@ -279,6 +291,7 @@ impl Variable {
             type_indication: TypeIndication::infer_from_typed_value(&value),
             is_property_of_scope: false,
             declare_location: CodeLocation::new_unknown(),
+            parent_scope: None,
         };
         return Arc::new(RwLock::new(output));
     }
@@ -293,6 +306,7 @@ impl Variable {
             type_indication: type_indication,
             is_property_of_scope: false,
             declare_location: CodeLocation::new_unknown(),
+            parent_scope: None,
         };
         return Arc::new(RwLock::new(output));
     }
@@ -329,6 +343,7 @@ impl Variable {
     generate_access_pub!(array_size, Option<Arc<RwLock<Variable>>>, get_array_size, set_array_size);
     generate_access_pub!(is_property_of_scope, bool, get_is_property_of_scope, set_is_property_of_scope);
     generate_access_pub!(evaluated, EvaluationStatus, get_evaluated, set_evaluated);
+    generate_access_pub!(parent_scope, Option<Arc<RwLock<Scope>>>, get_parent_scope, set_parent_scope);
 
 }
 

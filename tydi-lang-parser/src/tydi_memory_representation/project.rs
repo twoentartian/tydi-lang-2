@@ -6,7 +6,7 @@ use serde::{Serialize};
 use crate::error::TydiLangError;
 use crate::evaluation::{Evaluator, evaluate_var};
 use crate::generate_get_pub;
-use crate::tydi_memory_representation::{Package, CodeLocation, GetScope, Scope, ScopeRelationType};
+use crate::tydi_memory_representation::{Package, CodeLocation, GetScope, Scope, ScopeRelationType, Variable};
 
 #[derive(Clone, Debug, Serialize)]
 pub struct Project {
@@ -63,6 +63,23 @@ impl Project {
         };
         evaluate_var(target_var.clone(), target_var_scope.clone(), evaluator.clone())?;
         return Ok(evaluator);
+    }
+
+    pub fn get_variable(&self, package_name: String, target_name: String) -> Result<Arc<RwLock<Variable>>, String> {
+        let packages = self.get_packages();
+        let target_package = packages.get(&package_name);
+        if target_package.is_none() {
+            return Err(format!("package {} not found", &package_name));
+        }
+        let target_package = target_package.unwrap();
+        let target_package_scope = target_package.read().unwrap().get_scope();
+        let all_variables_in_target_package = target_package_scope.read().unwrap().get_variables();
+        let target_variable = all_variables_in_target_package.get(&target_name);
+        if target_variable.is_none() {
+            return Err(format!("variable {} not found in package {}", &target_name, &package_name));
+        }
+        let target_variable = target_variable.unwrap();
+        return Ok(target_variable.clone());
     }
 
     generate_get_pub!(packages, BTreeMap<String, Arc<RwLock<Package>>>, get_packages);

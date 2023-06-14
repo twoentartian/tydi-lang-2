@@ -11,7 +11,7 @@ mod generate_name;
 mod deep_clone;
 mod serde_serialization;
 
-mod trait_common;
+pub mod trait_common;
 
 pub mod tydi_memory_representation;
 

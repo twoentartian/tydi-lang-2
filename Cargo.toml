@@ -3,4 +3,5 @@
 members = [
     "tydi-lang-complier",
     "tydi-lang-parser",
+    "tydi-lang-json-generator",
 ]

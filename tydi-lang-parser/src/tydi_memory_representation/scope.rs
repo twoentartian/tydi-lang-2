@@ -186,6 +186,11 @@ impl Scope {
             },
         }
         self.variables.insert(var_name, var.clone());
+        //set parent scope of variable
+        {
+            assert!(self.self_ref.is_some());
+            var.write().unwrap().set_parent_scope(Some(self.self_ref.as_ref().unwrap().clone()));
+        }
         return Ok(());
     }
 

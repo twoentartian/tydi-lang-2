@@ -100,8 +100,6 @@ pub fn evaluate_scope(target_scope: Arc<RwLock<Scope>>, scope_type: &ScopeType, 
             for single_for_element in for_array_var_value {
                 let for_scope_deepcloned = for_scope.read().unwrap().deep_clone_arclock();
 
-                println!("{}", serde_json::to_string_pretty(&*for_scope_deepcloned.read().unwrap()).unwrap());
-
                 //add var to the deepcloned for scope
                 let for_element_var = Variable::new_predefined(for_var_name.clone(), single_for_element);
                 for_scope_deepcloned.write().unwrap().add_var(for_element_var)?;
