@@ -12,7 +12,7 @@ use std::sync::{Arc, RwLock};
 
 use tydi_lang_parser::tydi_memory_representation::{Project, scope::GetScope};
 
-fn generate_json_representation_from_tydi_project(project: Arc<RwLock<Project>>, target_name: String, package_name: String) -> Result<(), String> {
+fn generate_json_representation_from_tydi_project(project: Arc<RwLock<Project>>, target_name: String, package_name: String) -> Result<String, String> {
     let mut project_json = json_representation_all::JsonRepresentation::new();
 
     let target_var = project.read().unwrap().get_variable(package_name, target_name)?;
@@ -24,7 +24,5 @@ fn generate_json_representation_from_tydi_project(project: Arc<RwLock<Project>>,
     project_json.logic_types = dependencies;
 
     let json_output = serde_json::to_string_pretty(&project_json).expect("fail to convert the JsonRepresentation to json string");
-    println!("{}", json_output);
-
-    return Ok(());
+    return Ok(json_output);
 }

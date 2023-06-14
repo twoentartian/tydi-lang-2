@@ -42,8 +42,9 @@ fn sample_project_rgb() {
     project.read().unwrap().evaluate_target(format!("stream_rgb"), format!("pack1")).expect("fail to evaluate");
 
     let json_output = project.read().unwrap().get_pretty_json();
-    std::fs::write("./output.json", &json_output).unwrap();
+    std::fs::write("./code_structure.json", &json_output).unwrap();
 
     generate_json_representation_from_tydi_project(project.clone(), format!("stream_rgb"), format!("pack1")).expect("fail to generate json");
-
+    std::fs::write("./json_output.json", &json_output).unwrap();
+    println!("{}", json_output);
 }
