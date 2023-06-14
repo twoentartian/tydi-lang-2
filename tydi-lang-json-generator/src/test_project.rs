@@ -13,11 +13,12 @@ fn sample_project_rgb() {
         package pack0;
 
         bit_8 = Bit(8);
+        bit_8_copy = Bit(8);
 
         Group rgb {
             r : bit_8;
             g : bit_8;
-            b : bit_8;
+            b : bit_8_copy;
         }
 
         "#);
@@ -25,7 +26,7 @@ fn sample_project_rgb() {
         package pack1;
         use pack0;
 
-        stream_rgb = Stream(pack0.rgb);
+        stream_rgb = Stream(pack0.rgb, d=2);
         ");
 
 
@@ -41,10 +42,10 @@ fn sample_project_rgb() {
     }
     project.read().unwrap().evaluate_target(format!("stream_rgb"), format!("pack1")).expect("fail to evaluate");
 
-    let json_output = project.read().unwrap().get_pretty_json();
-    std::fs::write("./code_structure.json", &json_output).unwrap();
+    let code_structure = project.read().unwrap().get_pretty_json();
+    std::fs::write("./code_structure.json", &code_structure).unwrap();
 
-    generate_json_representation_from_tydi_project(project.clone(), format!("stream_rgb"), format!("pack1")).expect("fail to generate json");
+    let json_output = generate_json_representation_from_tydi_project(project.clone(), format!("stream_rgb"), format!("pack1")).expect("fail to generate json");
     std::fs::write("./json_output.json", &json_output).unwrap();
     println!("{}", json_output);
 }
