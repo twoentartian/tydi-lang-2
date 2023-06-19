@@ -65,6 +65,7 @@ mod test {
         try_parse(String::from("abcdef/* this is a block \n comment */"), Rule::ID, false).ok().unwrap();
         try_parse(String::from("abcdef/* this is a block
          comment */"), Rule::ID, false).ok().unwrap();
+        try_parse(String::from("abcdef3214"), Rule::ID, false).ok().unwrap();
     }
 
     #[test]

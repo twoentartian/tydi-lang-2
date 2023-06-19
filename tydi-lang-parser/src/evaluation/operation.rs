@@ -1,71 +1,90 @@
 use std::{sync::{Arc, RwLock}, clone};
 
-use crate::{tydi_memory_representation::{TypedValue, CodeLocation, Scope, ScopeRelationType, GetScope, streamlet, EvaluationStatus}, trait_common::AccessProperty};
+use crate::{tydi_memory_representation::{TypedValue, CodeLocation, Scope, ScopeRelationType, GetScope, streamlet, EvaluationStatus, Variable}, trait_common::AccessProperty};
 use crate::{error::TydiLangError, trait_common::GetName};
 
 use super::{Expression, Operator, Evaluator, evaluate_var, evaluate_id_in_typed_value, evaluate_value_with_identifier_type};
 
 
-pub fn evaluate_BinaryOperation(lhs: &Box<Expression>, op: &Operator, rhs: &Box<Expression>, scope: Arc<RwLock<Scope>>, evaluator: Arc<RwLock<Evaluator>>) -> Result<TypedValue, TydiLangError> {
+pub fn evaluate_BinaryOperation(lhs: &Box<Expression>, op: &Operator, rhs: &Box<Expression>, scope: Arc<RwLock<Scope>>, evaluator: Arc<RwLock<Evaluator>>) -> Result<(TypedValue, Option<Arc<RwLock<Variable>>>), TydiLangError> {
     match op {
         Operator::Unknown => unreachable!(),
         Operator::AccessInner => {
-            return perform_AccessInner(lhs, rhs, scope.clone(), evaluator.clone());
+            let (value, ref_var) = perform_AccessInner(lhs, rhs, scope.clone(), evaluator.clone())?;
+            return Ok((value, Some(ref_var)));
         },
         Operator::AccessProperty => todo!(),
         Operator::LeftShift => {
-            return perform_LeftShift(lhs, rhs, scope.clone(), evaluator.clone());
+            let value = perform_LeftShift(lhs, rhs, scope.clone(), evaluator.clone())?;
+            return Ok((value, None));
         },
         Operator::RightShift => {
-            return perform_RightShift(lhs, rhs, scope.clone(), evaluator.clone());
+            let value = perform_RightShift(lhs, rhs, scope.clone(), evaluator.clone())?;
+            return Ok((value, None));
         },
         Operator::LogicalAnd => {
-            return perform_LogicalAnd(lhs, rhs, scope.clone(), evaluator.clone());
+            let value = perform_LogicalAnd(lhs, rhs, scope.clone(), evaluator.clone())?;
+            return Ok((value, None));
         },
         Operator::LogicalOr => {
-            return perform_LogicalOr(lhs, rhs, scope.clone(), evaluator.clone());
+            let value = perform_LogicalOr(lhs, rhs, scope.clone(), evaluator.clone())?;
+            return Ok((value, None));
         },
         Operator::LogicalEq => {
-            return perform_LogicalEq(lhs, rhs, scope.clone(), evaluator.clone());
+            let value = perform_LogicalEq(lhs, rhs, scope.clone(), evaluator.clone())?;
+            return Ok((value, None));
         },
         Operator::LogicalNotEq => {
-            return perform_LogicalNotEq(lhs, rhs, scope.clone(), evaluator.clone());
+            let value = perform_LogicalNotEq(lhs, rhs, scope.clone(), evaluator.clone())?;
+            return Ok((value, None));
         },
         Operator::GreaterEq => {
-            return perform_GreaterEq(lhs, rhs, scope.clone(), evaluator.clone());
+            let value = perform_GreaterEq(lhs, rhs, scope.clone(), evaluator.clone())?;
+            return Ok((value, None));
         },
         Operator::LessEq => {
-            return perform_LessEq(lhs, rhs, scope.clone(), evaluator.clone());
+            let value = perform_LessEq(lhs, rhs, scope.clone(), evaluator.clone())?;
+            return Ok((value, None));
         },
         Operator::Greater => {
-            return perform_Greater(lhs, rhs, scope.clone(), evaluator.clone());
+            let value = perform_Greater(lhs, rhs, scope.clone(), evaluator.clone())?;
+            return Ok((value, None));
         },
         Operator::Less => {
-            return perform_Less(lhs, rhs, scope.clone(), evaluator.clone());
+            let value = perform_Less(lhs, rhs, scope.clone(), evaluator.clone())?;
+            return Ok((value, None));
         },
         Operator::Add => {
-            return perform_Add(lhs, rhs, scope.clone(), evaluator.clone());
+            let value = perform_Add(lhs, rhs, scope.clone(), evaluator.clone())?;
+            return Ok((value, None));
         },
         Operator::Minus => {
-            return perform_Minus(lhs, rhs, scope.clone(), evaluator.clone());
+            let value = perform_Minus(lhs, rhs, scope.clone(), evaluator.clone())?;
+            return Ok((value, None));
         },
         Operator::Multiply => {
-            return perform_Multiply(lhs, rhs, scope.clone(), evaluator.clone());
+            let value = perform_Multiply(lhs, rhs, scope.clone(), evaluator.clone())?;
+            return Ok((value, None));
         },
         Operator::Divide => {
-            return perform_Divide(lhs, rhs, scope.clone(), evaluator.clone());
+            let value = perform_Divide(lhs, rhs, scope.clone(), evaluator.clone())?;
+            return Ok((value, None));
         },
         Operator::Mod => {
-            return perform_Mod(lhs, rhs, scope.clone(), evaluator.clone());
+            let value = perform_Mod(lhs, rhs, scope.clone(), evaluator.clone())?;
+            return Ok((value, None));
         },
         Operator::BitAnd => {
-            return perform_BitAnd(lhs, rhs, scope.clone(), evaluator.clone());
+            let value = perform_BitAnd(lhs, rhs, scope.clone(), evaluator.clone())?;
+            return Ok((value, None));
         },
         Operator::BitOr => {
-            return perform_BitOr(lhs, rhs, scope.clone(), evaluator.clone());
+            let value = perform_BitOr(lhs, rhs, scope.clone(), evaluator.clone())?;
+            return Ok((value, None));
         },
         Operator::BitXor => {
-            return perform_BitXor(lhs, rhs, scope.clone(), evaluator.clone());
+            let value = perform_BitXor(lhs, rhs, scope.clone(), evaluator.clone())?;
+            return Ok((value, None));
         },
     }
 
@@ -73,7 +92,7 @@ pub fn evaluate_BinaryOperation(lhs: &Box<Expression>, op: &Operator, rhs: &Box<
 
 //access an identifier in other scopes: e.g. i.x
 #[allow(non_snake_case)]
-pub fn perform_AccessInner(lhs: &Box<Expression>, rhs: &Box<Expression>, scope: Arc<RwLock<Scope>>, evaluator: Arc<RwLock<Evaluator>>) -> Result<TypedValue, TydiLangError> {
+pub fn perform_AccessInner(lhs: &Box<Expression>, rhs: &Box<Expression>, scope: Arc<RwLock<Scope>>, evaluator: Arc<RwLock<Evaluator>>) -> Result<(TypedValue, Arc<RwLock<Variable>>), TydiLangError> {
     let lhs_value = lhs.evaluate_TypedValue(scope.clone(), evaluator.clone())?;
     let mut lhs_value = evaluate_id_in_typed_value(lhs_value, scope.clone(), evaluator.clone())?;
     let rhs_value = rhs.evaluate_TypedValue(scope.clone(), evaluator.clone())?;
@@ -111,7 +130,7 @@ pub fn perform_AccessInner(lhs: &Box<Expression>, rhs: &Box<Expression>, scope: 
                     let var = var.unwrap();
 
                     assert!(var.read().unwrap().get_evaluated().is_value_known());
-                    return Ok(var.read().unwrap().get_value());
+                    return Ok((var.read().unwrap().get_value(), var.clone()));
                 },
                 crate::tydi_memory_representation::LogicType::LogicGroupType(v) => {
                     v.read().unwrap().get_scope()
@@ -126,7 +145,7 @@ pub fn perform_AccessInner(lhs: &Box<Expression>, rhs: &Box<Expression>, scope: 
                     }
                     let var = var.unwrap();
                     assert!(var.read().unwrap().get_evaluated().is_value_known());
-                    return Ok(var.read().unwrap().get_value());
+                    return Ok((var.read().unwrap().get_value(), var.clone()));
                 },
             };
             (output_scope, ScopeRelationType::resolve_id_default())
@@ -158,7 +177,8 @@ pub fn perform_AccessInner(lhs: &Box<Expression>, rhs: &Box<Expression>, scope: 
     let (rhs_var, rhs_var_scope) = Scope::resolve_identifier(&rhs_var_name, scope_of_rhs_var.clone(), resolve_var_scope_edge)?;
     let rhs_typed_value = evaluate_var(rhs_var.clone(), rhs_var_scope.clone(), evaluator.clone())?;
     let rhs_typed_value = evaluate_value_with_identifier_type(&rhs_var_name, rhs_typed_value, rhs_var_id.read().unwrap().get_id_type(), scope.clone(), evaluator.clone())?;
-    return Ok(rhs_typed_value);
+    // return Ok(rhs_typed_value);
+    return Ok((rhs_typed_value, rhs_var.clone()));
 }
 
 #[allow(non_snake_case)]

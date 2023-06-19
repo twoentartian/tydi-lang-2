@@ -407,6 +407,13 @@ impl TypedValue {
             TypedValue::Identifier(v) => return format!("Identifier({})", v.read().unwrap().get_brief_info()),
         }
     }
+
+    pub fn try_get_referenced_variable(&self) -> Option<Arc<RwLock<Variable>>> {
+        match &self {
+            TypedValue::RefToVar(var) => return Some(var.clone()),
+            _ => return None,
+        }
+    }
 }
 
 #[cfg(test)]

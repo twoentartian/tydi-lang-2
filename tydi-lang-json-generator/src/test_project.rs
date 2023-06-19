@@ -26,7 +26,7 @@ fn sample_project_rgb() {
         package pack1;
         use pack0;
 
-        stream_rgb = Stream(pack0.rgb, d=2);
+        stream_rgb = Stream(pack0.rgb, d=2, u=pack0.bit_8);
         ");
 
 

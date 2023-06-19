@@ -22,11 +22,25 @@ pub enum Expression {
 }
 
 impl Expression {
+    #[allow(non_snake_case)]
     pub fn evaluate_TypedValue(&self, scope: Arc<RwLock<Scope>>, evaluator: Arc<RwLock<Evaluator>>) -> Result<TypedValue, TydiLangError> {
         match self {
             Expression::Error(err) => return Err(err.clone()),
             Expression::Term(v) => return Ok(v.clone()),
-            Expression::BinOp { lhs, op, rhs } => return evaluate_BinaryOperation(lhs, op, rhs, scope.clone(), evaluator.clone()),
+            Expression::BinOp { lhs, op, rhs } => {
+                let (value, ref_var) = evaluate_BinaryOperation(lhs, op, rhs, scope.clone(), evaluator.clone())?;
+                match &value {
+                    TypedValue::LogicTypeValue(_) => {
+                        if ref_var.is_some() {
+                            return Ok(TypedValue::RefToVar(ref_var.unwrap().clone()));
+                        }
+                        else {
+                            return Ok(value);
+                        }
+                    },
+                    _ => return Ok(value),
+                }
+            } 
         }
     }
 }

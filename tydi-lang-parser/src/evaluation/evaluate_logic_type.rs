@@ -3,7 +3,7 @@ use std::sync::{RwLock, Arc};
 use crate::generate_name::generate_init_value;
 use crate::trait_common::GetName;
 use crate::tydi_lang_src_to_memory_representation;
-use crate::tydi_memory_representation::{Scope, TypedValue, TypeIndication, LogicType, LogicStream, LogicUnion, LogicGroup, LogicBit, TraitCodeLocationAccess, GetScope, ScopeType};
+use crate::tydi_memory_representation::{Scope, TypedValue, TypeIndication, LogicType, LogicStream, LogicUnion, LogicGroup, LogicBit, TraitCodeLocationAccess, GetScope, ScopeType, Variable};
 use crate::tydi_parser::*;
 use crate::error::TydiLangError;
 
@@ -55,7 +55,7 @@ pub fn evaluate_LogicStream(target: Arc<RwLock<LogicStream>>, scope: Arc<RwLock<
     //evaluate stream_type
     {
         let stream_type = target.read().unwrap().get_stream_type();
-        let value = evaluate_var(stream_type, scope.clone(), evaluator.clone())?;
+        let value = evaluate_var(stream_type.clone(), scope.clone(), evaluator.clone())?;
         match &value {
             TypedValue::LogicTypeValue(x) => {
                 match *x.read().unwrap() {

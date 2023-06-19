@@ -140,6 +140,21 @@ impl Variable {
         return Arc::new(RwLock::new(output));
     }
 
+    pub fn new_ref(name: String, raw_var: Arc<RwLock<Variable>>) -> Arc<RwLock<Self>> {
+        let output = Self {
+            name: name,
+            exp: None,
+            evaluated: EvaluationStatus::Evaluated,
+            value: TypedValue::RefToVar(raw_var.clone()),
+            array_size: None,
+            type_indication: TypeIndication::Any,
+            is_property_of_scope: false,
+            declare_location: CodeLocation::new_unknown(),
+            parent_scope: None,
+        };
+        return Arc::new(RwLock::new(output));
+    }
+
     pub fn new_with_type_indication(name: String, exp: Option<String>, type_indication: TypeIndication) -> Arc<RwLock<Self>> {
         let output = Self {
             name: name,

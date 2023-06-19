@@ -106,7 +106,8 @@ impl LogicType {
                 }
                 let (logic_ref, mut dependencies) = results.ok().unwrap();
                 output_dependency.append(&mut dependencies);
-                output_type = LogicType::Ref(name_conversion::get_global_variable_name(ref_var.clone()));
+                // output_type = LogicType::Ref(name_conversion::get_global_variable_name(ref_var.clone()));
+                output_type = logic_ref;
             },
             _ => unreachable!("{} is not a logic type", var_value.get_brief_info()),
         }
@@ -187,7 +188,11 @@ impl LogicStream {
 
         //stream type
         {
-            let result = LogicType::translate_from_tydi_project(tydi_project.clone(), tydi_target.read().unwrap().get_stream_type().clone());
+            //stream type should be a reference
+            let stream_type = tydi_target.read().unwrap().get_stream_type();
+            let stream_type_var = stream_type.read().unwrap().get_value().try_get_referenced_variable().expect("bug: the stream type should be a reference");
+
+            let result = LogicType::translate_from_tydi_project(tydi_project.clone(), stream_type_var.clone());
             if result.is_err() {
                 return Err(result.err().unwrap());
             }
@@ -215,7 +220,11 @@ impl LogicStream {
 
         //user type
         {
-            let result = LogicType::translate_from_tydi_project(tydi_project.clone(), tydi_target.read().unwrap().get_user_type().clone());
+            //user type should be a reference
+            let user_type = tydi_target.read().unwrap().get_user_type();
+            let user_type_var = user_type.read().unwrap().get_value().try_get_referenced_variable().expect("bug: the stream type should be a reference");
+
+            let result = LogicType::translate_from_tydi_project(tydi_project.clone(), user_type_var.clone());
             if result.is_err() {
                 return Err(result.err().unwrap());
             }
