@@ -3,7 +3,7 @@ use std::{sync::{Arc, RwLock}, clone};
 use crate::{tydi_memory_representation::{TypedValue, CodeLocation, Scope, ScopeRelationType, GetScope, streamlet, EvaluationStatus, Variable}, trait_common::AccessProperty};
 use crate::{error::TydiLangError, trait_common::GetName};
 
-use super::{Expression, Operator, Evaluator, evaluate_var, evaluate_id_in_typed_value, evaluate_value_with_identifier_type};
+use super::{Expression, Operator, Evaluator, evaluate_var, evaluate_id_in_typed_value, evaluate_value_with_identifier_type, evaluate_template_exps_of_var};
 
 
 pub fn evaluate_BinaryOperation(lhs: &Box<Expression>, op: &Operator, rhs: &Box<Expression>, scope: Arc<RwLock<Scope>>, evaluator: Arc<RwLock<Evaluator>>) -> Result<(TypedValue, Option<Arc<RwLock<Variable>>>), TydiLangError> {
@@ -11,7 +11,7 @@ pub fn evaluate_BinaryOperation(lhs: &Box<Expression>, op: &Operator, rhs: &Box<
         Operator::Unknown => unreachable!(),
         Operator::AccessInner => {
             let (value, ref_var) = perform_AccessInner(lhs, rhs, scope.clone(), evaluator.clone())?;
-            return Ok((value, Some(ref_var)));
+            return Ok((value, ref_var));
         },
         Operator::AccessProperty => todo!(),
         Operator::LeftShift => {
@@ -92,7 +92,7 @@ pub fn evaluate_BinaryOperation(lhs: &Box<Expression>, op: &Operator, rhs: &Box<
 
 //access an identifier in other scopes: e.g. i.x
 #[allow(non_snake_case)]
-pub fn perform_AccessInner(lhs: &Box<Expression>, rhs: &Box<Expression>, scope: Arc<RwLock<Scope>>, evaluator: Arc<RwLock<Evaluator>>) -> Result<(TypedValue, Arc<RwLock<Variable>>), TydiLangError> {
+pub fn perform_AccessInner(lhs: &Box<Expression>, rhs: &Box<Expression>, scope: Arc<RwLock<Scope>>, evaluator: Arc<RwLock<Evaluator>>) -> Result<(TypedValue, Option<Arc<RwLock<Variable>>>), TydiLangError> {
     let lhs_value = lhs.evaluate_TypedValue(scope.clone(), evaluator.clone())?;
     let mut lhs_value = evaluate_id_in_typed_value(lhs_value, scope.clone(), evaluator.clone())?;
     let rhs_value = rhs.evaluate_TypedValue(scope.clone(), evaluator.clone())?;
@@ -104,6 +104,7 @@ pub fn perform_AccessInner(lhs: &Box<Expression>, rhs: &Box<Expression>, scope: 
         _ => unreachable!()
     };
     let rhs_var_name = rhs_var_id.read().unwrap().get_id();
+    let rhs_template_args = rhs_var_id.read().unwrap().get_template_args();
     
     // let rhs_value = evaluate_id_in_typed_value(rhs_value, scope.clone(), evaluator.clone())?;    //we don't try to evaluate the id of rhs_value since its scope is unknown
 
@@ -130,7 +131,7 @@ pub fn perform_AccessInner(lhs: &Box<Expression>, rhs: &Box<Expression>, scope: 
                     let var = var.unwrap();
 
                     assert!(var.read().unwrap().get_evaluated().is_value_known());
-                    return Ok((var.read().unwrap().get_value(), var.clone()));
+                    return Ok((var.read().unwrap().get_value(), Some(var.clone())));
                 },
                 crate::tydi_memory_representation::LogicType::LogicGroupType(v) => {
                     v.read().unwrap().get_scope()
@@ -145,7 +146,7 @@ pub fn perform_AccessInner(lhs: &Box<Expression>, rhs: &Box<Expression>, scope: 
                     }
                     let var = var.unwrap();
                     assert!(var.read().unwrap().get_evaluated().is_value_known());
-                    return Ok((var.read().unwrap().get_value(), var.clone()));
+                    return Ok((var.read().unwrap().get_value(), Some(var.clone())));
                 },
             };
             (output_scope, ScopeRelationType::resolve_id_default())
@@ -174,11 +175,22 @@ pub fn perform_AccessInner(lhs: &Box<Expression>, rhs: &Box<Expression>, scope: 
         _ => unreachable!()
     };
 
-    let (rhs_var, rhs_var_scope) = Scope::resolve_identifier(&rhs_var_name, scope_of_rhs_var.clone(), resolve_var_scope_edge)?;
+    let template_exps = evaluate_template_exps_of_var(&rhs_template_args, scope.clone(), evaluator.clone())?;
+    let (rhs_var, rhs_var_scope) = Scope::resolve_identifier(&rhs_var_name, &template_exps, scope_of_rhs_var.clone(), resolve_var_scope_edge)?;
     let rhs_typed_value = evaluate_var(rhs_var.clone(), rhs_var_scope.clone(), evaluator.clone())?;
-    let rhs_typed_value = evaluate_value_with_identifier_type(&rhs_var_name, rhs_typed_value, rhs_var_id.read().unwrap().get_id_type(), scope.clone(), evaluator.clone())?;
-    // return Ok(rhs_typed_value);
-    return Ok((rhs_typed_value, rhs_var.clone()));
+    //if it is an index expression (an element of an array)
+    let iden_type = rhs_var_id.read().unwrap().get_id_type();
+    let rhs_typed_value = evaluate_value_with_identifier_type(&rhs_var_name, rhs_typed_value, iden_type.clone(), scope.clone(), evaluator.clone())?;
+    match iden_type {
+        crate::tydi_memory_representation::IdentifierType::FunctionExp(_) => todo!(),
+        crate::tydi_memory_representation::IdentifierType::IndexExp(_) => {
+            return Ok((rhs_typed_value, None));
+        },
+        crate::tydi_memory_representation::IdentifierType::IdentifierExp => {
+            return Ok((rhs_typed_value, Some(rhs_var.clone())));
+        },
+        crate::tydi_memory_representation::IdentifierType::Unknown => unreachable!(),
+    }
 }
 
 #[allow(non_snake_case)]

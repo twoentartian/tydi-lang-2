@@ -29,3 +29,6 @@ pub(in crate) use evaluate_scope::*;
 
 pub mod evaluate_logic_flow;
 pub(in crate) use evaluate_logic_flow::*;
+
+pub mod template_expansion;
+pub(in crate) use template_expansion::*;

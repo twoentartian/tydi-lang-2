@@ -5,11 +5,10 @@ use serde::{Serialize, Deserialize};
 
 use crate::deep_clone::{DeepClone, DeepClone_ArcLock};
 use crate::error::TydiLangError;
+use crate::evaluation::template_expansion;
 use crate::{generate_get, generate_name, generate_get_ref_pub, generate_get_pub, generate_set_pub, generate_access_pub};
 use crate::trait_common::{GetName};
-use crate::tydi_memory_representation::{Variable, CodeLocation};
-
-use super::TraitCodeLocationAccess;
+use crate::tydi_memory_representation::{Variable, CodeLocation, TraitCodeLocationAccess, template_args, identifier, TypedValue, LogicType};
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize, Hash)]
 pub enum ScopeRelationType {
@@ -79,6 +78,17 @@ impl DeepClone for ScopeRelationship {
     }
 }
 
+impl ScopeRelationship {
+    pub fn new(target_scope: Arc<RwLock<Scope>>, relationship: ScopeRelationType) -> Self {
+        let output = Self {
+            name: target_scope.read().unwrap().get_name(),
+            target_scope: target_scope.clone(),
+            relationship: relationship,
+        };
+        return output;
+    }
+}
+
 #[derive(Clone, Debug, Serialize)]
 pub struct Scope {
     name: String,
@@ -104,14 +114,74 @@ impl DeepClone_ArcLock for Scope {
             name: self.name.deep_clone(),
             scope_type: self.scope_type.clone(),
             self_ref: None,
-            scope_relationships: self.scope_relationships.deep_clone(),
+            scope_relationships: self.scope_relationships.deep_clone(), //Notice: this is a dirty implementation, user needs to maintain the scope relationships by themselves
             variables: self.variables.deep_clone(),
         };
+
         let output = Arc::new(RwLock::new(output));
         {
             let mut output_write = output.write().unwrap();
             output_write.self_ref = Some(output.clone());
         }
+
+        //maintain the scope relationships
+        let variables = output.read().unwrap().get_variables();
+        for (_, var) in variables {
+            let var_value = var.read().unwrap().get_value();
+            let remove_old_scope_add_new_scope = |scope: Arc<RwLock<Scope>>, scope_rela_type: ScopeRelationType, target_scope: Arc<RwLock<Scope>>| {
+                let mut current_relationships = scope.read().unwrap().get_scope_relationships().clone();
+                {   //remove old relationship
+                    let mut rela_to_remove = vec![];
+                    for (name, rela_type) in &current_relationships {
+                        if rela_type.relationship == scope_rela_type {
+                            rela_to_remove.push(name.clone());
+                        }
+                    }
+                    for i in rela_to_remove {
+                        current_relationships.remove(&i);
+                    }
+                }
+                {   //add new relationship
+                    let scope_relationship = ScopeRelationship::new(target_scope.clone(), scope_rela_type);
+                    current_relationships.insert(self.get_name(), scope_relationship);
+                }
+                scope.write().unwrap().set_scope_relationships(current_relationships);
+            };
+            match var_value {
+                TypedValue::LogicTypeValue(logic_type) => {
+                    let logic_type_value = logic_type.write().unwrap();
+                    match &*logic_type_value {
+                        LogicType::LogicGroupType(group) => {
+                            let group_scope = group.read().unwrap().get_scope();
+                            remove_old_scope_add_new_scope(group_scope.clone(), ScopeRelationType::GroupScopeRela, output.clone());
+                        },
+                        LogicType::LogicUnionType(union) => {
+                            let union_scope = union.read().unwrap().get_scope();
+                            remove_old_scope_add_new_scope(union_scope.clone(), ScopeRelationType::GroupScopeRela, output.clone());
+                        },
+                        _ => () //other logic types don't have scope
+                    }
+                },
+                TypedValue::Streamlet(target_streamlet) => {
+                    let streamlet_scope = target_streamlet.read().unwrap().get_scope();
+                    remove_old_scope_add_new_scope(streamlet_scope.clone(), ScopeRelationType::StreamletScopeRela, output.clone());
+                },
+                TypedValue::Implementation(target_implementation) => {
+                    let implementation_scope = target_implementation.read().unwrap().get_scope();
+                    remove_old_scope_add_new_scope(implementation_scope.clone(), ScopeRelationType::ImplementationScopeRela, output.clone());
+                },
+                TypedValue::If(target_if) => {
+                    let if_scope = target_if.read().unwrap().get_scope();
+                    remove_old_scope_add_new_scope(if_scope.clone(), ScopeRelationType::IfForScopeRela, output.clone());
+                },
+                TypedValue::For(target_for) => {
+                    let for_scope = target_for.read().unwrap().get_scope();
+                    remove_old_scope_add_new_scope(for_scope.clone(), ScopeRelationType::IfForScopeRela, output.clone());
+                },
+                _ => (),    //other typed values don't have scope
+            }
+        }
+
         return output;
     }
 }
@@ -217,6 +287,7 @@ impl Scope {
     generate_get_pub!(scope_type, ScopeType, get_scope_type);
     generate_get_ref_pub!(variables, BTreeMap<String, Arc<RwLock<Variable>>>, get_variables_ref);
     generate_get_ref_pub!(scope_relationships, BTreeMap<String, ScopeRelationship>, get_scope_relationships);
+    generate_set_pub!(scope_relationships, BTreeMap<String, ScopeRelationship>, set_scope_relationships);
 
     fn generate_scope_relationship(&self) -> ScopeRelationType {
         match self.scope_type {
@@ -233,20 +304,18 @@ impl Scope {
     }
 
     //resolve identifier
-    pub fn resolve_identifier(name: &String, scope: Arc<RwLock<Scope>>, scope_relation_types/*allowed edges*/: HashSet<ScopeRelationType>) -> Result<(Arc<RwLock<Variable>>, Arc<RwLock<Scope>>), TydiLangError> {
-        let scope_read = scope.read().unwrap();
-        
+    pub fn resolve_identifier(name: &String, template_exps: &Option<BTreeMap<usize, TypedValue>>, scope: Arc<RwLock<Scope>>, scope_relation_types/*allowed edges*/: HashSet<ScopeRelationType>) -> Result<(Arc<RwLock<Variable>>, Arc<RwLock<Scope>>), TydiLangError> {        
         //does current scope has this var?
-        let result = Scope::resolve_identifier_in_current_scope(&name, scope.clone());
+        let result = Scope::resolve_identifier_in_current_scope(&name, &template_exps, scope.clone())?;
         if result.is_some() {
             return Ok((result.unwrap(), scope.clone()));
         }
 
         //how about other scopes?
-        for (_, item) in scope_read.get_scope_relationships() {
+        for (_, item) in scope.read().unwrap().get_scope_relationships() {
             let (other_scope, relationship_type) = (item.target_scope.clone(), &item.relationship);
             if scope_relation_types.contains(relationship_type) {
-                let result = Scope::resolve_identifier(name, other_scope, scope_relation_types)?;
+                let result = Scope::resolve_identifier(name, template_exps, other_scope, scope_relation_types)?;
                 return Ok(result);
             }
         }
@@ -254,13 +323,15 @@ impl Scope {
         return Err(TydiLangError::new(format!("identifier {} not found in scope {}", &name, scope.read().unwrap().get_name()), CodeLocation::new_unknown()));
     }
 
-    fn resolve_identifier_in_current_scope(name: &String, scope: Arc<RwLock<Scope>>) -> Option<Arc<RwLock<Variable>>> {
-        let scope_read = scope.read().unwrap();
-        let vars_in_scope = scope_read.get_variables_ref();
-        match vars_in_scope.get(name) {
-            Some(var) => return Some(var.clone()),
-            None => return None,
-        }
+    fn resolve_identifier_in_current_scope(name: &String, template_exps: &Option<BTreeMap<usize, TypedValue>>, scope: Arc<RwLock<Scope>>) -> Result<Option<Arc<RwLock<Variable>>>, TydiLangError> {
+        let identifier_var = match scope.read().unwrap().get_variables_ref().get(name) {
+            Some(var) => var.clone(),
+            None => return Ok(None),
+        };
+
+        //this is a template instance
+        let output_var = template_expansion::try_template_expansion(identifier_var.clone(), template_exps, scope.clone())?;
+        return Ok(Some(output_var));
     }
 }
 

@@ -70,7 +70,7 @@ Invalid identifier:
 0abc
 ```
 
-Some specific identifiers are not allowed since they are used as keywords, they are: ```impl, streamlet, int, string, bool, float, instance```
+Some specific identifiers are not allowed since they are used as keywords, they are: ```impl, streamlet, int, string, bool, float, instance, in, out```
 
 ## Basic types
 

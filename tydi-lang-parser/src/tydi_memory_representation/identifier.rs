@@ -75,4 +75,5 @@ impl Identifier {
 
     generate_get_pub!(id, String, get_id);
     generate_get_pub!(id_type, IdentifierType, get_id_type);
+    generate_get_pub!(template_args, BTreeMap<usize, String>, get_template_args);
 }

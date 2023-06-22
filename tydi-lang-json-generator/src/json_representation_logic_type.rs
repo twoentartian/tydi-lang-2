@@ -85,7 +85,13 @@ impl LogicType {
                         output_type = LogicType::Group(Arc::new(RwLock::new(logic_group)));
                     },
                     tydi_memory_representation::LogicType::LogicUnionType(v) => {
-                        todo!()
+                        let mut results = LogicUnion::translate_from_tydi_project(tydi_project.clone(), v.clone());
+                        if results.is_err() {
+                            return Err(results.err().unwrap());
+                        }
+                        let (logic_union, mut dependencies) = results.ok().unwrap();
+                        output_dependency.append(&mut dependencies);
+                        output_type = LogicType::Union(Arc::new(RwLock::new(logic_union)));
                     },
                     tydi_memory_representation::LogicType::LogicStreamType(v) => {
                         let results = LogicStream::translate_from_tydi_project(tydi_project.clone(), v.clone());
@@ -154,7 +160,32 @@ impl LogicGroup {
 
 #[derive(Clone, Debug, Serialize)]
 pub struct LogicUnion {
-    elements: BTreeMap<String, String>,
+    elements: BTreeMap<String, LogicType>,
+}
+
+impl LogicUnion {
+    pub fn translate_from_tydi_project(tydi_project: Arc<RwLock<Project>>, tydi_target: Arc<RwLock<tydi_memory_representation::LogicUnion>>) -> Result<(LogicUnion, BTreeMap<String, Arc<RwLock<LogicType>>>), String> {
+        let mut output_dependency = BTreeMap::new();
+        let mut output_group = LogicUnion {
+            elements: BTreeMap::new(),
+        };
+        let scope = tydi_target.read().unwrap().get_scope();
+        let variables = scope.read().unwrap().get_variables();
+        for (var_name, var) in &variables {
+            let is_property = var.read().unwrap().get_is_property_of_scope();
+            if is_property {
+                let result = LogicType::translate_from_tydi_project(tydi_project.clone(), var.clone());
+                if result.is_err() {
+                    return Err(result.err().unwrap());
+                }
+                let (logic_type, mut dependencies) = result.ok().unwrap();
+                output_dependency.append(&mut dependencies);
+                output_group.elements.insert(var_name.clone(), logic_type);
+            }
+        }
+
+        return Ok((output_group, output_dependency));
+    }
 }
 
 

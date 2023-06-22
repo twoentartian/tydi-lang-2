@@ -116,6 +116,7 @@ impl Port {
         return Variable::new_predefined(format!("!default_time_domain"), TypedValue::StringValue(format!("default_time_domain")));
     }
 
+    generate_set_pub!(name, String, set_name);
     generate_access_pub!(time_domain, Arc<RwLock<Variable>>, get_time_domain, set_time_domain);
     generate_access_pub!(logical_type, Arc<RwLock<Variable>>, get_logical_type, set_logical_type);
     generate_access_pub!(parent_streamlet, Option<Arc<RwLock<Streamlet>>>, get_parent_streamlet, set_parent_streamlet);

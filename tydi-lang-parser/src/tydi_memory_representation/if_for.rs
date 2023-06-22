@@ -223,7 +223,7 @@ impl For {
             name: name.clone(),
             for_var_name: generate_init_value(),
             for_array_exp: Variable::new_place_holder(),
-            for_scope: Scope::new(format!("if_{}", &name), super::ScopeType::IfForScope, parent_scope),
+            for_scope: Scope::new(format!("for_{}", &name), super::ScopeType::IfForScope, parent_scope),
             location_define: CodeLocation::new_unknown(),
         };
         return Arc::new(RwLock::new(output));

@@ -73,5 +73,5 @@ impl LogicBit {
     }
 
     generate_access_pub!(bit_width, Arc<RwLock<Variable>>, get_bit_width, set_bit_width);
-
+    generate_set_pub!(name, String, set_name);
 }

@@ -1,8 +1,9 @@
+use std::collections::BTreeMap;
 use std::sync::{Arc, RwLock};
 
 use crate::evaluation::{evaluate_LogicBit, evaluate_LogicGroup, evaluate_LogicUnion, evaluate_LogicStream, evaluate_expression};
 use crate::trait_common::GetName;
-use crate::tydi_memory_representation::{IdentifierType, Variable, TypedValue, Scope, EvaluationStatus, TraitCodeLocationAccess, TypeIndication, LogicType, ScopeRelationType};
+use crate::tydi_memory_representation::{IdentifierType, Variable, TypedValue, Scope, EvaluationStatus, TraitCodeLocationAccess, TypeIndication, LogicType, ScopeRelationType, template_args};
 use crate::error::TydiLangError;
 
 use super::{Evaluator, evaluate_streamlet, evaluate_impl, evaluate_instance};
@@ -47,7 +48,9 @@ pub fn evaluate_id_in_typed_value(id_in_typed_value: TypedValue, scope: Arc<RwLo
         TypedValue::Identifier(id) => {
             let id_name = id.read().unwrap().get_id();
             let id_type = id.read().unwrap().get_id_type();
-            let (id_var, id_var_scope) = Scope::resolve_identifier(&id_name, scope.clone(), ScopeRelationType::resolve_id_default())?;
+            let id_template_args = id.read().unwrap().get_template_args();
+            let id_template_arg_exps = evaluate_template_exps_of_var(&id_template_args, scope.clone(), evaluator.clone())?;
+            let (id_var, id_var_scope) = Scope::resolve_identifier(&id_name, &id_template_arg_exps, scope.clone(), ScopeRelationType::resolve_id_default())?;
             let id_typed_value = evaluate_var(id_var.clone(), id_var_scope.clone(), evaluator.clone())?;
             output_value = evaluate_value_with_identifier_type(&id_name, id_typed_value, id_type, scope.clone(), evaluator.clone())?;
         },
@@ -55,6 +58,19 @@ pub fn evaluate_id_in_typed_value(id_in_typed_value: TypedValue, scope: Arc<RwLo
     }
 
     return Ok(output_value);
+}
+
+pub fn evaluate_template_exps_of_var(var_template_expression: &BTreeMap<usize, String>, scope: Arc<RwLock<Scope>>, evaluator: Arc<RwLock<Evaluator>>) -> Result<Option<BTreeMap<usize, TypedValue>>, TydiLangError> {
+    let template_exps = var_template_expression.clone();
+    if template_exps.len() == 0 {
+        return Ok(None);
+    }
+    let mut template_values = BTreeMap::new();
+    for (arg_index, template_exp) in template_exps {
+        let template_exp_value = evaluate_expression(template_exp, scope.clone(), evaluator.clone())?;
+        template_values.insert(arg_index, template_exp_value);
+    }
+    return Ok(Some(template_values));
 }
 
 pub fn evaluate_var(var: Arc<RwLock<Variable>>, scope: Arc<RwLock<Scope>>, evaluator: Arc<RwLock<Evaluator>>) -> Result<TypedValue, TydiLangError> {
@@ -88,6 +104,21 @@ pub fn evaluate_var(var: Arc<RwLock<Variable>>, scope: Arc<RwLock<Scope>>, evalu
     evaluator.write().unwrap().increase_deepth();
     evaluator.write().unwrap().add_evaluation_trace(var_name.clone(), None, super::EvaluationTraceType::StartEvaluation);
 
+    //if it has template args
+    {
+        let template_args = var.read().unwrap().get_template_args();
+        if template_args.is_some() {
+            let template_args = template_args.unwrap();
+            if template_args.len() != 0 {
+                let mut template_arg_values = BTreeMap::new();
+                for (arg_index, arg_exp) in template_args {
+                    let value = evaluate_expression(arg_exp, scope.clone(), evaluator.clone())?;
+                    template_arg_values.insert(arg_index, value);
+                }
+                var.write().unwrap().set_template_arg_values(Some(template_arg_values));
+            }
+        }
+    }
 
     let typed_value = var.read().unwrap().get_value();
     let type_indication = var.read().unwrap().get_type_indication();
@@ -125,7 +156,9 @@ pub fn evaluate_var(var: Arc<RwLock<Variable>>, scope: Arc<RwLock<Scope>>, evalu
         //real_logic_type could be evaluated to an identifier
         if let TypedValue::Identifier(identifier) = real_logic_type {
             let id: String = identifier.read().unwrap().get_id();
-            let (logic_type, logic_type_scope) = Scope::resolve_identifier(&id, scope.clone(), ScopeRelationType::resolve_id_default())?;
+            let template_args = identifier.read().unwrap().get_template_args();
+            let template_exps = evaluate_template_exps_of_var(&template_args, scope.clone(), evaluator.clone())?;
+            let (logic_type, logic_type_scope) = Scope::resolve_identifier(&id, &template_exps, scope.clone(), ScopeRelationType::resolve_id_default())?;
             real_logic_type = evaluate_var(logic_type.clone(), logic_type_scope.clone(), evaluator.clone())?;
         }
 
@@ -207,7 +240,24 @@ pub fn evaluate_var(var: Arc<RwLock<Variable>>, scope: Arc<RwLock<Scope>>, evalu
                 }
             },
             None => {
-                todo!()
+                //this should be an instance of logic type template
+                let value = var.read().unwrap().get_value();
+                if let TypedValue::LogicTypeValue(logic_type) = &value {
+                    match &*logic_type.read().unwrap() {
+                        LogicType::LogicGroupType(group) => {
+                            evaluate_LogicGroup(group.clone(), scope.clone(), evaluator.clone())?;
+                        },
+                        LogicType::LogicUnionType(union) => {
+                            evaluate_LogicUnion(union.clone(), scope.clone(), evaluator.clone())?;
+                        },
+                        _ => return Err(TydiLangError::new(format!("only LogicGroup and LogicUnion can be templates, find {}", logic_type.read().unwrap().get_brief_info()), var.read().unwrap().get_code_location()))
+                    }
+                };
+                {
+                    let mut var_write = var.write().unwrap();
+                    var_write.set_evaluated(EvaluationStatus::Evaluated);
+                }
+                output_value = value;
             },
         }
     }

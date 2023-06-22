@@ -3,7 +3,7 @@ use std::sync::{Arc, RwLock};
 use serde::{Serialize};
 
 use crate::deep_clone::DeepClone;
-use crate::{generate_get_pub};
+use crate::{generate_get_pub, generate_set_pub};
 use crate::tydi_memory_representation::{TypeIndication, CodeLocation, TraitCodeLocationAccess, Variable, TypedValue, LogicType};
 
 use crate::trait_common::{GetName, AccessProperty};
@@ -233,6 +233,7 @@ impl LogicStream {
         return Ok(());
     }
 
+    generate_set_pub!(name, String, set_name);
     generate_get_pub!(stream_type, Arc<RwLock<Variable>>, get_stream_type);
     generate_get_pub!(dimension, Arc<RwLock<Variable>>, get_dimension);
     generate_get_pub!(user_type, Arc<RwLock<Variable>>, get_user_type);

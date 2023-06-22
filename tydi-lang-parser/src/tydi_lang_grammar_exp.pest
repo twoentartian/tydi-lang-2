@@ -23,7 +23,7 @@ CHAR = @{ ' '..'!' | '#'..'[' | ']'..'~' | "\\\t" | "\\n" | "\\t" | "\\\\"}
 STRING = @{ "\"" ~ CHAR* ~ "\"" }
 
 //// ID ////
-ID_BLOCK_LIST = { !(("impl" | "streamlet" | "int" | "string" | "bool" | "float" | "instance") ~ (WHITESPACE | EOI) )}
+ID_BLOCK_LIST = { !(("impl" | "streamlet" | "int" | "string" | "bool" | "float" | "instance" | "in" | "out") ~ (!( ASCII_ALPHA | ASCII_DIGIT | "_" )) )}
 ID_BLOCK_CHAR = { !( WHITESPACE ) } //empty ID
 ID = @{ ID_BLOCK_LIST ~ (ID_BLOCK_CHAR ~ ( ASCII_ALPHA | "_" )) ~ (ID_BLOCK_CHAR ~ ( ASCII_ALPHA | ASCII_DIGIT | "_" ))*  ~ !(ASCII_ALPHA | ASCII_DIGIT | "_") }
 
@@ -203,9 +203,9 @@ StatementDeclareFor = { For }
 StatementUsePackage = { "use" ~ ID ~ ";"}
 StatementFunction = { FunctionExp ~ ";" }
 
-Statement = _{ StatementDeclareType | StatementDeclareVariable | StatementDeclareGroup | StatementDeclareUnion | 
+Statement = _{ StatementDeclareGroup | StatementDeclareUnion | 
     StatementDeclareStreamlet | StatementDeclarePort | StatementDeclareImplementation | StatementDeclareInstance | StatementDeclareNet |
-    StatementDeclareIf | StatementDeclareFor | StatementUsePackage | StatementFunction }
+    StatementDeclareIf | StatementDeclareFor | StatementUsePackage | StatementFunction | StatementDeclareType | StatementDeclareVariable }
 
 //// Scope ////
 Scope_WithBracket = _{ "{" ~ Scope_WithoutBracket ~ "}" }
