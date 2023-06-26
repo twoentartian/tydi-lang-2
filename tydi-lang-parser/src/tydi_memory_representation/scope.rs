@@ -5,7 +5,7 @@ use serde::{Serialize, Deserialize};
 
 use crate::deep_clone::{DeepClone, DeepClone_ArcLock};
 use crate::error::TydiLangError;
-use crate::evaluation::template_expansion;
+use crate::evaluation::{Evaluator, template_expansion};
 use crate::{generate_get, generate_name, generate_get_ref_pub, generate_get_pub, generate_set_pub, generate_access_pub};
 use crate::trait_common::{GetName};
 use crate::tydi_memory_representation::{Variable, CodeLocation, TraitCodeLocationAccess, template_args, identifier, TypedValue, LogicType};
@@ -304,18 +304,19 @@ impl Scope {
     }
 
     //resolve identifier
-    pub fn resolve_identifier(name: &String, template_exps: &Option<BTreeMap<usize, TypedValue>>, scope: Arc<RwLock<Scope>>, scope_relation_types/*allowed edges*/: HashSet<ScopeRelationType>) -> Result<(Arc<RwLock<Variable>>, Arc<RwLock<Scope>>), TydiLangError> {        
+    pub fn resolve_identifier(name: &String, template_exps: &Option<BTreeMap<usize, TypedValue>>, scope: Arc<RwLock<Scope>>, template_expansion_scope: Arc<RwLock<Scope>>, scope_relation_types/*allowed edges*/: HashSet<ScopeRelationType>, evaluator: Arc<RwLock<Evaluator>>) -> Result<(Arc<RwLock<Variable>>, Arc<RwLock<Scope>>), TydiLangError> {        
         //does current scope has this var?
-        let result = Scope::resolve_identifier_in_current_scope(&name, &template_exps, scope.clone())?;
+        let result = Scope::resolve_identifier_in_current_scope(&name, &template_exps, scope.clone(), template_expansion_scope.clone(), evaluator.clone())?;
         if result.is_some() {
             return Ok((result.unwrap(), scope.clone()));
         }
 
         //how about other scopes?
-        for (_, item) in scope.read().unwrap().get_scope_relationships() {
-            let (other_scope, relationship_type) = (item.target_scope.clone(), &item.relationship);
-            if scope_relation_types.contains(relationship_type) {
-                let result = Scope::resolve_identifier(name, template_exps, other_scope, scope_relation_types)?;
+        let other_scope_relationships = scope.read().unwrap().get_scope_relationships().clone();
+        for (_, item) in other_scope_relationships {
+            let (other_scope, relationship_type) = (item.target_scope, item.relationship);
+            if scope_relation_types.contains(&relationship_type) {
+                let result = Scope::resolve_identifier(name, template_exps, other_scope, template_expansion_scope.clone(), scope_relation_types, evaluator.clone())?;
                 return Ok(result);
             }
         }
@@ -323,14 +324,14 @@ impl Scope {
         return Err(TydiLangError::new(format!("identifier {} not found in scope {}", &name, scope.read().unwrap().get_name()), CodeLocation::new_unknown()));
     }
 
-    fn resolve_identifier_in_current_scope(name: &String, template_exps: &Option<BTreeMap<usize, TypedValue>>, scope: Arc<RwLock<Scope>>) -> Result<Option<Arc<RwLock<Variable>>>, TydiLangError> {
+    fn resolve_identifier_in_current_scope(name: &String, template_exps: &Option<BTreeMap<usize, TypedValue>>, scope: Arc<RwLock<Scope>>, template_expansion_scope: Arc<RwLock<Scope>>, evaluator: Arc<RwLock<Evaluator>>) -> Result<Option<Arc<RwLock<Variable>>>, TydiLangError> {
         let identifier_var = match scope.read().unwrap().get_variables_ref().get(name) {
             Some(var) => var.clone(),
             None => return Ok(None),
         };
 
         //this is a template instance
-        let output_var = template_expansion::try_template_expansion(identifier_var.clone(), template_exps, scope.clone())?;
+        let output_var = template_expansion::try_template_expansion(identifier_var.clone(), template_exps, template_expansion_scope.clone(), evaluator.clone())?;
         return Ok(Some(output_var));
     }
 }

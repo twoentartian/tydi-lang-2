@@ -12,6 +12,7 @@ use crate::name_conversion;
 
 #[derive(Clone, Debug, strum::IntoStaticStr)]
 pub enum LogicType {
+    Unknwon,
     Null,
     Bit(usize),
     Group(Arc<RwLock<LogicGroup>>),
@@ -27,6 +28,7 @@ impl serde::Serialize for LogicType {
         let enum_type_str: &'static str = self.into();
         state.serialize_field("type", enum_type_str)?;
         match &self {
+            LogicType::Unknwon => unreachable!("unknown logic type"),
             LogicType::Null => {
                 // state.serialize_field("value", LogicNullExp)?;   //do nothing because type already says this is Null
             },
@@ -192,9 +194,9 @@ impl LogicUnion {
 
 #[derive(Clone, Debug, Serialize)]
 pub struct LogicStream {
-    stream_type: String,
+    stream_type: LogicType,
     dimension: i128,
-    user_type: String,
+    user_type: LogicType,
     throughput: f64,
     synchronicity: String,
     complexity: i128,
@@ -207,9 +209,9 @@ impl LogicStream {
         let mut output_dependency = BTreeMap::new();
 
         let mut output_stream = Self {
-            stream_type: format!("???"),
+            stream_type: LogicType::Unknwon,
             dimension: 0,
-            user_type: format!("???"),
+            user_type: LogicType::Unknwon,
             throughput: 0.0,
             synchronicity: format!("???"),
             complexity: 0,
@@ -231,7 +233,7 @@ impl LogicStream {
             output_dependency.append(&mut dependencies);
             match stream_type {
                 LogicType::Ref(r) => {
-                    output_stream.stream_type = r;
+                    output_stream.stream_type = LogicType::Ref(r);
                 },
                 _ => unreachable!("should be unreachable")
             }
@@ -251,22 +253,34 @@ impl LogicStream {
 
         //user type
         {
-            //user type should be a reference
+            //user type should be a reference or None
             let user_type = tydi_target.read().unwrap().get_user_type();
-            let user_type_var = user_type.read().unwrap().get_value().try_get_referenced_variable().expect("bug: the stream type should be a reference");
-
-            let result = LogicType::translate_from_tydi_project(tydi_project.clone(), user_type_var.clone());
-            if result.is_err() {
-                return Err(result.err().unwrap());
-            }
-            let (user_type, mut dependencies) = result.ok().unwrap();
-            output_dependency.append(&mut dependencies);
-            match user_type {
-                LogicType::Ref(r) => {
-                    output_stream.user_type = r;
+            let user_type_value = user_type.read().unwrap().get_value();
+            let user_type_var = match user_type_value {
+                TypedValue::LogicTypeValue(v) => {
+                    match *v.read().unwrap() {
+                        tydi_memory_representation::LogicType::LogicNullType => {
+                            output_stream.user_type = LogicType::Null;
+                        },
+                        _ => unreachable!("other 4 types are not allowed here")
+                    }
                 },
-                _ => unreachable!("should be unreachable")
-            }
+                TypedValue::RefToVar(user_type_var) => {
+                    let result = LogicType::translate_from_tydi_project(tydi_project.clone(), user_type_var.clone());
+                    if result.is_err() {
+                        return Err(result.err().unwrap());
+                    }
+                    let (user_type, mut dependencies) = result.ok().unwrap();
+                    output_dependency.append(&mut dependencies);
+                    match user_type {
+                        LogicType::Ref(r) => {
+                            output_stream.user_type = LogicType::Ref(r);
+                        },
+                        _ => unreachable!("should be unreachable")
+                    }
+                },
+                _ => return Err(format!("bug: the stream type should be a logic type, but is {}", user_type_value.get_brief_info())),
+            };
         }
 
         //throughput

@@ -55,12 +55,14 @@ impl Project {
         }
         let target_package = target_package.unwrap();
         let target_package_scope = target_package.read().unwrap().get_scope();
-        let (target_var, target_var_scope) = Scope::resolve_identifier(&target_name, &None, target_package_scope.clone(), ScopeRelationType::resolve_id_default())?;
-        
+
         let evaluator = match &self.self_arc {
             Some(self_arc) => Evaluator::new(self_arc.clone()),
             None => unreachable!(),
         };
+
+        let (target_var, target_var_scope) = Scope::resolve_identifier(&target_name, &None, target_package_scope.clone(), target_package_scope.clone(), ScopeRelationType::resolve_id_default(), evaluator.clone())?;
+        
         evaluate_var(target_var.clone(), target_var_scope.clone(), evaluator.clone())?;
         return Ok(evaluator);
     }

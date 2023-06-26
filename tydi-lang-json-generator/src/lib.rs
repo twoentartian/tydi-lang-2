@@ -2,6 +2,7 @@ mod json_representation_logic_type;
 mod json_representation_all;
 
 mod name_conversion;
+mod global_values;
 mod serde_serialization;
 mod util;
 

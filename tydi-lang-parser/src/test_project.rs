@@ -1053,8 +1053,6 @@ mod all_parse_test
             use pack0;
     
             bit8 = pack0.any_bit<8>;
-            // bit8_data = pack0.any_bit<8>.data;
-            // bit8_data_index0 = bit8_data[0];
             bit8_data_index0 = pack0.any_bit<8>.data[0];
             "#);
     
@@ -1068,6 +1066,222 @@ mod all_parse_test
             }
         }
         let evaluator = project.read().unwrap().evaluate_target(format!("bit8_data_index0"), format!("pack1"));
+        let evaluator = match evaluator {
+            Ok(e) => e,
+            Err(e) => {
+                let json_output = project.read().unwrap().get_pretty_json();
+                std::fs::write("./output.json", &json_output).unwrap();
+                println!("{}", e.print());
+                return;
+            },
+        };
+    
+        let json_output = project.read().unwrap().get_pretty_json();
+    
+        std::fs::write("./output.json", &json_output).unwrap();
+    
+        println!("{}", evaluator.read().unwrap().print_evaluation_record());
+    }
+
+    #[test]
+    fn sample_project_simple_template_4() {
+        let project = Project::new(format!("sample_project"));
+        {
+            let mut project_write = project.write().unwrap();
+    
+            let src_pack0 = String::from(r#"
+            package pack0;
+    
+            Union any_bit<n: int> {
+                bit_8: Bit(8);
+                for i in [1,2,3]
+                {
+                    data: Bit(i);
+                }
+            }
+    
+            "#);
+            let src_pack1 = String::from(r#"
+            package pack1;
+            use pack0;
+    
+            bit8 = pack0.any_bit<8>;
+            bit8_data_index0 = pack0.any_bit<8>.data[0];
+            "#);
+    
+            let status = project_write.add_package(format!("./pack0.td"), src_pack0);
+            if status.is_err() {
+                panic!("{}", status.err().unwrap().print());
+            }
+            let status = project_write.add_package(format!("./pack1.td"), src_pack1);
+            if status.is_err() {
+                panic!("{}", status.err().unwrap().print());
+            }
+        }
+        let evaluator = project.read().unwrap().evaluate_target(format!("bit8_data_index0"), format!("pack1"));
+        let evaluator = match evaluator {
+            Ok(e) => e,
+            Err(e) => {
+                let json_output = project.read().unwrap().get_pretty_json();
+                std::fs::write("./output.json", &json_output).unwrap();
+                println!("{}", e.print());
+                return;
+            },
+        };
+    
+        let json_output = project.read().unwrap().get_pretty_json();
+    
+        std::fs::write("./output.json", &json_output).unwrap();
+    
+        println!("{}", evaluator.read().unwrap().print_evaluation_record());
+    }
+
+    #[test]
+    fn sample_project_simple_template_5() {
+        let project = Project::new(format!("sample_project"));
+        {
+            let mut project_write = project.write().unwrap();
+    
+            let src_pack0 = String::from(r#"
+            package pack0;
+            
+            Group bitn<n: int> {
+                bits: Bit(n);
+            }
+            bit8_stream = Stream(bitn<8>);
+            bit16_stream = Stream(bitn<16>);
+            
+            "#);
+            let src_pack1 = String::from(r#"
+            package pack1;
+            use pack0;
+            
+            streamlet bypass <logic_type: type> {
+                in_port: logic_type in;
+                out_port: logic_type out;
+            }
+
+            bypass_bit8 = bypass<pack0.bit8_stream>;
+
+            "#);
+            
+            let status = project_write.add_package(format!("./pack0.td"), src_pack0);
+            if status.is_err() {
+                panic!("{}", status.err().unwrap().print());
+            }
+            let status = project_write.add_package(format!("./pack1.td"), src_pack1);
+            if status.is_err() {
+                panic!("{}", status.err().unwrap().print());
+            }
+        }
+        let evaluator = project.read().unwrap().evaluate_target(format!("bypass_bit8"), format!("pack1"));
+        let evaluator = match evaluator {
+            Ok(e) => e,
+            Err(e) => {
+                let json_output = project.read().unwrap().get_pretty_json();
+                std::fs::write("./output.json", &json_output).unwrap();
+                println!("{}", e.print());
+                return;
+            },
+        };
+    
+        let json_output = project.read().unwrap().get_pretty_json();
+    
+        std::fs::write("./output.json", &json_output).unwrap();
+    
+        println!("{}", evaluator.read().unwrap().print_evaluation_record());
+    }
+
+    #[test]
+    fn sample_project_simple_template_6() {
+        let project = Project::new(format!("sample_project"));
+        {
+            let mut project_write = project.write().unwrap();
+    
+            let src_pack0 = String::from(r#"
+            package pack0;
+            
+            Group bitn<n: int> {
+                bits: Bit(n);
+            }
+            bit8_stream = Stream(bitn<8>);
+            bit16_stream = Stream(bitn<16>);
+            
+            "#);
+            let src_pack1 = String::from(r#"
+            package pack1;
+            use pack0;
+            
+            streamlet bypass <logic_type: type> {
+                in_port: logic_type in;
+                out_port: logic_type out;
+            }
+
+            impl i_bypass <logic_type: type> of bypass<logic_type> {
+                in_port => out_port;
+            }
+
+            bypass_bit8 = i_bypass<pack0.bit8_stream>;
+
+            "#);
+            
+            let status = project_write.add_package(format!("./pack0.td"), src_pack0);
+            if status.is_err() {
+                panic!("{}", status.err().unwrap().print());
+            }
+            let status = project_write.add_package(format!("./pack1.td"), src_pack1);
+            if status.is_err() {
+                panic!("{}", status.err().unwrap().print());
+            }
+        }
+        let evaluator = project.read().unwrap().evaluate_target(format!("bypass_bit8"), format!("pack1"));
+        let evaluator = match evaluator {
+            Ok(e) => e,
+            Err(e) => {
+                let json_output = project.read().unwrap().get_pretty_json();
+                std::fs::write("./output.json", &json_output).unwrap();
+                println!("{}", e.print());
+                return;
+            },
+        };
+    
+        let json_output = project.read().unwrap().get_pretty_json();
+    
+        std::fs::write("./output.json", &json_output).unwrap();
+    
+        println!("{}", evaluator.read().unwrap().print_evaluation_record());
+    }
+
+    #[test]
+    fn sample_project_simple_function_6() {
+        let project = Project::new(format!("sample_project"));
+        {
+            let mut project_write = project.write().unwrap();
+    
+            let src_pack0 = String::from(r#"
+            package pack0;
+            
+            data = 8;
+            
+            "#);
+            let src_pack1 = String::from(r#"
+            package pack1;
+            use pack0;
+            
+            assert(pack0.data == 8);
+
+            "#);
+            
+            let status = project_write.add_package(format!("./pack0.td"), src_pack0);
+            if status.is_err() {
+                panic!("{}", status.err().unwrap().print());
+            }
+            let status = project_write.add_package(format!("./pack1.td"), src_pack1);
+            if status.is_err() {
+                panic!("{}", status.err().unwrap().print());
+            }
+        }
+        let evaluator = project.read().unwrap().evaluate_target(format!("data"), format!("pack1"));
         let evaluator = match evaluator {
             Ok(e) => e,
             Err(e) => {

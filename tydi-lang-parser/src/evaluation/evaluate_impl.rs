@@ -9,9 +9,11 @@ use super::{Evaluator, evaluate_var, evaluate_scope, ScopeOwner};
 
 
 pub fn evaluate_impl(target: Arc<RwLock<Implementation>>, scope: Arc<RwLock<Scope>>, evaluator: Arc<RwLock<Evaluator>>) -> Result<TypedValue, TydiLangError> {
+    let impl_scope = target.read().unwrap().get_scope();
+
     //find derived streamlet
     let target_derived_streamlet = target.read().unwrap().get_derived_streamlet_var();
-    let derived_streamlet_typed_value = evaluate_var(target_derived_streamlet.clone(), scope.clone(), evaluator.clone())?;
+    let derived_streamlet_typed_value = evaluate_var(target_derived_streamlet.clone(), impl_scope.clone(), evaluator.clone())?;
     let derived_streamlet = match &derived_streamlet_typed_value {
         TypedValue::Streamlet(s) => s,
         _ => return Err(TydiLangError::new(format!("{} is not a streamlet, but used in defining impl({})", target_derived_streamlet.read().unwrap().get_name(), target.read().unwrap().get_name()), target_derived_streamlet.read().unwrap().get_code_location()))
@@ -23,7 +25,6 @@ pub fn evaluate_impl(target: Arc<RwLock<Implementation>>, scope: Arc<RwLock<Scop
 
     //add scope relationship
     {
-        let impl_scope = target.read().unwrap().get_scope();
         let derived_streamlet_scope = derived_streamlet.read().unwrap().get_scope();
         let mut impl_scope_write = impl_scope.write().unwrap();
         impl_scope_write.add_scope_relationship(derived_streamlet_scope, crate::tydi_memory_representation::ScopeRelationType::ImplToStreamletRela)?;
@@ -43,7 +44,6 @@ pub fn evaluate_impl(target: Arc<RwLock<Implementation>>, scope: Arc<RwLock<Scop
     }
 
     //add self variable
-    let impl_scope = target.read().unwrap().get_scope();
     let self_var = Variable::new_builtin(format!("self"), TypedValue::Instance(self_instance));
     {
         let mut impl_scope_write = impl_scope.write().unwrap();

@@ -5,7 +5,7 @@ use crate::generate_name::generate_init_value;
 use crate::tydi_parser::*;
 use crate::error::TydiLangError;
 
-use crate::tydi_memory_representation::{Scope, TypedValue, CodeLocation, Identifier, IdentifierType};
+use crate::tydi_memory_representation::{Scope, TypedValue, CodeLocation, Identifier, IdentifierType, ScopeRelationType};
 
 use super::{Evaluator, evaluate_expression_pest, evaluate_id_in_typed_value, UnaryOperator};
 
@@ -138,7 +138,7 @@ pub fn evaluate_ArrayExp(exps: Pair<Rule>, scope: Arc<RwLock<Scope>>, evaluator:
             Rule::Exp => {
                 let element_exp = evaluate_expression_pest(element, scope.clone(), evaluator.clone())?;
                 let element_typed_value = element_exp.evaluate_TypedValue(scope.clone(), evaluator.clone())?;
-                let element_typed_value = evaluate_id_in_typed_value(element_typed_value, scope.clone(), evaluator.clone())?;
+                let element_typed_value = evaluate_id_in_typed_value(element_typed_value, ScopeRelationType::resolve_id_default(), scope.clone(), evaluator.clone())?;
                 output.push(element_typed_value);
             }
             _ => unreachable!()

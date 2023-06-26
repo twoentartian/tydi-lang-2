@@ -5,10 +5,11 @@ use crate::deep_clone::DeepClone;
 use crate::error::TydiLangError;
 use crate::generate_name::{generate_init_value, generate_template_instance_name, generate_template_instance_name_based_on_old_name};
 use crate::trait_common::GetName;
-use crate::tydi_memory_representation::{Variable, TypedValue, Scope, TraitCodeLocationAccess, LogicType, GetScope, TypeIndication, EvaluationStatus};
+use crate::tydi_memory_representation::{Variable, TypedValue, Scope, TraitCodeLocationAccess, LogicType, GetScope, TypeIndication, EvaluationStatus, ScopeRelationType};
+use crate::evaluation::{evaluate_id_in_typed_value, evaluate_var, Evaluator};
 
 
-pub fn try_template_expansion(template_var: Arc<RwLock<Variable>>, template_exps: &Option<BTreeMap<usize, TypedValue>>, scope: Arc<RwLock<Scope>>) -> Result<Arc<RwLock<Variable>>, TydiLangError> {
+pub fn try_template_expansion(template_var: Arc<RwLock<Variable>>, template_exps: &Option<BTreeMap<usize, TypedValue>>, scope: Arc<RwLock<Scope>>, evaluator: Arc<RwLock<Evaluator>>) -> Result<Arc<RwLock<Variable>>, TydiLangError> {
     let template_var_type = template_var.read().unwrap().get_value();
 
     let template_args;
@@ -29,13 +30,33 @@ pub fn try_template_expansion(template_var: Arc<RwLock<Variable>>, template_exps
                     new_instance_var = Variable::new_builtin(generate_init_value(), TypedValue::LogicTypeValue(Arc::new(RwLock::new(cloned_group_var))));
                 },
                 LogicType::LogicUnionType(union_type) => {
-                    todo!()
+                    //deep clone
+                    let mut cloned_union_type = union_type.read().unwrap().deep_clone();
+                    cloned_union_type.set_template_args(None);
+                    new_instance_scope = cloned_union_type.get_scope();
+                    template_args = union_type.read().unwrap().get_template_args();
+                    let cloned_union_var = LogicType::LogicUnionType(Arc::new(RwLock::new(cloned_union_type)));
+                    new_instance_var = Variable::new_builtin(generate_init_value(), TypedValue::LogicTypeValue(Arc::new(RwLock::new(cloned_union_var))));
                 },
                 _ => return Ok(template_var.clone()),   //this type has no template
             }
         },
-        TypedValue::Streamlet(streamlet) => todo!(),
-        TypedValue::Implementation(implementation) => todo!(),
+        TypedValue::Streamlet(streamlet) => {
+            //deep clone
+            let mut cloned_streamlet = streamlet.read().unwrap().deep_clone();
+            cloned_streamlet.set_template_args(None);
+            new_instance_scope = cloned_streamlet.get_scope();
+            template_args = streamlet.read().unwrap().get_template_args();
+            new_instance_var = Variable::new_builtin(generate_init_value(), TypedValue::Streamlet(Arc::new(RwLock::new(cloned_streamlet))));
+        },
+        TypedValue::Implementation(implementation) => {
+            //deep clone
+            let mut cloned_implementation = implementation.read().unwrap().deep_clone();
+            cloned_implementation.set_template_args(None);
+            new_instance_scope = cloned_implementation.get_scope();
+            template_args = implementation.read().unwrap().get_template_args();
+            new_instance_var = Variable::new_builtin(generate_init_value(), TypedValue::Implementation(Arc::new(RwLock::new(cloned_implementation))));
+        },
         _ => return Ok(template_var.clone()),   //this type has no template
     }
 
@@ -57,9 +78,17 @@ pub fn try_template_expansion(template_var: Arc<RwLock<Variable>>, template_exps
         }
         for i in 0..template_args.len() {
             let template_arg_type = template_args.get(&i).expect("bug: template arg index not from 0 to n").get_type_indication();
-            let template_arg_exp = template_exps.get(&i).expect("bug: template exp index not from 0 to n");
-            if !template_arg_type.is_compatible_with_typed_value(template_arg_exp) {
-                return Err(TydiLangError::new(format!("var: {}, template argument index {}, expected {}, get {}", template_var.read().unwrap().get_name(), i, template_arg_type.to_string(), template_arg_exp.get_brief_info()), template_var.read().unwrap().get_code_location()));
+            let template_arg_exp = template_exps.get(&i).expect("bug: template exp index not from 0 to n").clone();
+            let template_arg_exp = evaluate_id_in_typed_value(template_arg_exp, ScopeRelationType::resolve_id_default(), scope.clone(), evaluator.clone())?;
+            let real_value = match template_arg_exp.try_get_referenced_variable() {
+                Some(real_var) => {
+                    evaluate_var(real_var.clone(), scope.clone(), evaluator.clone())?
+                },
+                None => template_arg_exp,
+            };
+
+            if !template_arg_type.is_compatible_with_typed_value(&real_value) {
+                return Err(TydiLangError::new(format!("var: {}, template argument index {}, expected {}, get {}", template_var.read().unwrap().get_name(), i, template_arg_type.to_string(), real_value.get_brief_info()), template_var.read().unwrap().get_code_location()));
             }
         }
 
@@ -83,9 +112,16 @@ pub fn try_template_expansion(template_var: Arc<RwLock<Variable>>, template_exps
         let template_args = template_args.as_ref().unwrap();
         let template_exps = template_exps.as_ref().unwrap();
         for i in 0..template_args.len() {
-            let exp = template_exps.get(&i).unwrap();
+            let exp = template_exps.get(&i).unwrap().clone();
             let arg = template_args.get(&i).unwrap();
-            let temp_var = Variable::new_builtin(arg.get_name(), exp.clone());
+            let exp = evaluate_id_in_typed_value(exp, ScopeRelationType::resolve_id_default(), scope.clone(), evaluator.clone())?;
+            let real_value = match exp.try_get_referenced_variable() {
+                Some(real_var) => {
+                    evaluate_var(real_var.clone(), scope.clone(), evaluator.clone())?
+                },
+                None => exp,
+            };
+            let temp_var = Variable::new_builtin(arg.get_name(), real_value);
             {
                 let mut temp_var_write = temp_var.write().unwrap();
                 temp_var_write.set_evaluated(EvaluationStatus::Evaluated);

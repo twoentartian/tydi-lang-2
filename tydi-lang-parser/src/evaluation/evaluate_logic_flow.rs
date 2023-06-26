@@ -41,7 +41,7 @@ pub fn evaluate_for(for_target: Arc<RwLock<For>>, parent_scope: Arc<RwLock<Scope
             evaluate_var(var.clone(), for_scope_deepcloned.clone(), evaluator.clone())?;
 
             let var_value = var.read().unwrap().get_value();
-            let result = Scope::resolve_identifier(&var_name, &None, parent_scope.clone(), ScopeRelationType::resolve_id_in_current_scope()); //try to find the variable in the target scope
+            let result = Scope::resolve_identifier(&var_name, &None, parent_scope.clone(), parent_scope.clone(), ScopeRelationType::resolve_id_in_current_scope(), evaluator.clone()); //try to find the variable in the target scope
             let outside_var = match result {
                 Ok((outside_var, _)) => {
                     outside_var

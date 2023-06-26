@@ -138,13 +138,13 @@ pub fn parse_Net(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<String
             }
             Rule::Exp => {
                 if exp_index == 0 {
-                    source_var = Variable::new_with_type_indication(generate_built_in_variable_name_from_span(&element), Some(element.as_str().to_string()), TypeIndication::AnyPort);
+                    source_var = Variable::new_with_type_indication(generate_built_in_variable_name_from_span(&element), Some(element.as_str().to_string().replace(" ", "")), TypeIndication::AnyPort);
                     {
                         let mut source_var_write = source_var.write().unwrap();
                         source_var_write.set_code_location(CodeLocation::new_from_pest_rule(&element, raw_src.clone()));
                     }
                 } else if exp_index == 1 {
-                    sink_var = Variable::new_with_type_indication(generate_built_in_variable_name_from_span(&element), Some(element.as_str().to_string()), TypeIndication::AnyPort);
+                    sink_var = Variable::new_with_type_indication(generate_built_in_variable_name_from_span(&element), Some(element.as_str().to_string().replace(" ", "")), TypeIndication::AnyPort);
                     {
                         let mut sink_var_write = sink_var.write().unwrap();
                         sink_var_write.set_code_location(CodeLocation::new_from_pest_rule(&element, raw_src.clone()));
