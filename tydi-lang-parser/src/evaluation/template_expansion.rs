@@ -5,7 +5,7 @@ use crate::deep_clone::DeepClone;
 use crate::error::TydiLangError;
 use crate::generate_name::{generate_init_value, generate_template_instance_name, generate_template_instance_name_based_on_old_name};
 use crate::trait_common::GetName;
-use crate::tydi_memory_representation::{Variable, TypedValue, Scope, TraitCodeLocationAccess, LogicType, GetScope, TypeIndication, EvaluationStatus, ScopeRelationType};
+use crate::tydi_memory_representation::{Variable, TypedValue, Scope, TraitCodeLocationAccess, LogicType, GetScope, TypeIndication, EvaluationStatus, ScopeRelationType, ImplementationType, Attribute};
 use crate::evaluation::{evaluate_id_in_typed_value, evaluate_var, Evaluator};
 
 
@@ -63,7 +63,7 @@ pub fn try_template_expansion(template_var: Arc<RwLock<Variable>>, template_exps
     //check template exps match args
     {
         if template_args.is_none() && template_exps.is_none() {
-            return Ok(template_var);
+            return Ok(template_var);        //this is not a template and no template args are provided
         }
         if template_args.is_none() && !template_exps.is_none() {
             return Err(TydiLangError::new(format!("variable {} is not a template, but no template expression are given", template_var.read().unwrap().get_name()), template_var.read().unwrap().get_code_location()));
@@ -107,7 +107,7 @@ pub fn try_template_expansion(template_var: Arc<RwLock<Variable>>, template_exps
         }
     }
 
-    //add template_args to the cloned_group_type_scope
+    //add template_args to the cloned_scope
     {
         let template_args = template_args.as_ref().unwrap();
         let template_exps = template_exps.as_ref().unwrap();
@@ -127,6 +127,24 @@ pub fn try_template_expansion(template_var: Arc<RwLock<Variable>>, template_exps
                 temp_var_write.set_evaluated(EvaluationStatus::Evaluated);
             }
             new_instance_scope.write().unwrap().add_var(temp_var)?;
+        }
+    }
+
+    //change cloned instance property
+    {
+        let new_instance_var_type = new_instance_var.read().unwrap().get_value();
+        match &new_instance_var_type {
+            TypedValue::LogicTypeValue(logic_type) =>{
+                () //nothing to do
+            },
+            TypedValue::Streamlet(streamlet) => {
+                () //nothing to do
+            },
+            TypedValue::Implementation(implementation) => {
+                //set instance of template implementation 
+                implementation.write().unwrap().set_impl_type(ImplementationType::TemplateInstance(implementation.clone(), template_exps.clone().unwrap()));
+            },
+            _ => unreachable!(),
         }
     }
 

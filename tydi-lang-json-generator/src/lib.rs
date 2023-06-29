@@ -1,4 +1,7 @@
 mod json_representation_logic_type;
+mod json_representation_implementation;
+mod json_representation_streamlet;
+mod json_representation_value;
 mod json_representation_all;
 
 mod name_conversion;

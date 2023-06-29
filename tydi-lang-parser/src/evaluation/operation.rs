@@ -176,7 +176,7 @@ pub fn perform_AccessInner(lhs: &Box<Expression>, rhs: &Box<Expression>, scope: 
     };
 
     let template_exps = evaluate_template_exps_of_var(&rhs_template_args, scope.clone(), evaluator.clone())?;
-    let (rhs_var, rhs_var_scope) = Scope::resolve_identifier(&rhs_var_name, &template_exps, scope_of_rhs_var.clone(), scope_of_rhs_var.clone(), resolve_var_scope_edge, evaluator.clone())?;
+    let (rhs_var, rhs_var_scope) = Scope::resolve_identifier(&rhs_var_name, &template_exps, &CodeLocation::new_unknown(), scope_of_rhs_var.clone(), scope_of_rhs_var.clone(), resolve_var_scope_edge, evaluator.clone())?;
     let rhs_typed_value = evaluate_var(rhs_var.clone(), rhs_var_scope.clone(), evaluator.clone())?;
     //if it is an index expression (an element of an array)
     let iden_type = rhs_var_id.read().unwrap().get_id_type();

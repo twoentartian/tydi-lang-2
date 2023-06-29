@@ -5,6 +5,7 @@ use serde::{Serialize};
 
 use crate::deep_clone::DeepClone;
 use crate::generate_get_pub;
+use crate::tydi_memory_representation::{CodeLocation};
 
 #[derive(Clone, Debug, Serialize)]
 pub enum IdentifierType {
@@ -33,6 +34,7 @@ pub struct Identifier {
     id: String,
     id_type: IdentifierType,
     template_args: BTreeMap<usize, String>,
+    location: CodeLocation,
 }
 
 impl DeepClone for Identifier {
@@ -41,17 +43,19 @@ impl DeepClone for Identifier {
             id: self.id.deep_clone(),
             id_type: self.id_type.deep_clone(),
             template_args: self.template_args.deep_clone(),
+            location: self.location.deep_clone(),
         };
         return output;
     }
 }
 
 impl Identifier {
-    pub fn new(id: String, id_type: IdentifierType, template_args: BTreeMap<usize, String>) -> Arc<RwLock<Self>> {
+    pub fn new(id: String, id_type: IdentifierType, template_args: BTreeMap<usize, String>, location: CodeLocation) -> Arc<RwLock<Self>> {
         let output = Self {
             id: id,
             id_type: id_type,
             template_args: template_args,
+            location: location,
         };
         return Arc::new(RwLock::new(output));
     }

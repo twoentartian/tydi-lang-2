@@ -2,10 +2,11 @@ use serde::{Serialize};
 
 use crate::deep_clone::DeepClone;
 
-#[derive(Clone, Debug, Serialize)]
+#[derive(Clone, Debug, Serialize, PartialEq)]
 pub enum Attribute {
     NoStrictTypeChecking,
     External,
+    NoTemplateExpansion,
 }
 
 impl DeepClone for Attribute {
@@ -24,6 +25,10 @@ impl std::convert::TryFrom<String> for Attribute {
         if value == "External" || value == "external" {
             return Ok(Attribute::External);
         }
+        if value == "NoTemplateExpansion" || value == "no_template_expansion" {
+            return Ok(Attribute::NoTemplateExpansion);
+        }
+
         return Err(());
     }
 }

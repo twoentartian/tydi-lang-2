@@ -61,7 +61,7 @@ impl Project {
             None => unreachable!(),
         };
 
-        let (target_var, target_var_scope) = Scope::resolve_identifier(&target_name, &None, target_package_scope.clone(), target_package_scope.clone(), ScopeRelationType::resolve_id_default(), evaluator.clone())?;
+        let (target_var, target_var_scope) = Scope::resolve_identifier(&target_name, &None, &CodeLocation::new_unknown(), target_package_scope.clone(), target_package_scope.clone(), ScopeRelationType::resolve_id_default(), evaluator.clone())?;
         
         evaluate_var(target_var.clone(), target_var_scope.clone(), evaluator.clone())?;
         return Ok(evaluator);

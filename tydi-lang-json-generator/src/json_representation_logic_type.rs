@@ -120,7 +120,6 @@ impl LogicType {
             _ => unreachable!("{} is not a logic type", var_value.get_brief_info()),
         }
 
-
         //we should always return a reference to it
         let target_var_name = name_conversion::get_global_variable_name(target_var.clone());
         output_dependency.insert(target_var_name.clone(), Arc::new(RwLock::new(output_type)));

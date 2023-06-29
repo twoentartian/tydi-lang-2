@@ -218,7 +218,7 @@ pub fn parse_IdentifierWithArgExp(id: Pair<Rule>, scope: Arc<RwLock<Scope>>, eva
             _ => unreachable!()
         }
     }
-    let output_id = Identifier::new(id_name, id_type, template_exps);
+    let output_id = Identifier::new(id_name, id_type, template_exps, CodeLocation::new_unknown());
     let output_typed_value = TypedValue::Identifier(output_id);
     return Ok(output_typed_value);
 }

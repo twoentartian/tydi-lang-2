@@ -3,7 +3,7 @@ use std::sync::{Arc, RwLock};
 
 use crate::evaluation::{evaluate_LogicBit, evaluate_LogicGroup, evaluate_LogicUnion, evaluate_LogicStream, evaluate_expression};
 use crate::trait_common::GetName;
-use crate::tydi_memory_representation::{IdentifierType, Variable, TypedValue, Scope, EvaluationStatus, TraitCodeLocationAccess, TypeIndication, LogicType, ScopeRelationType, template_args};
+use crate::tydi_memory_representation::{CodeLocation, IdentifierType, Variable, TypedValue, Scope, EvaluationStatus, TraitCodeLocationAccess, TypeIndication, LogicType, ScopeRelationType, template_args};
 use crate::error::TydiLangError;
 
 use super::{Evaluator, evaluate_streamlet, evaluate_impl, evaluate_instance};
@@ -50,7 +50,7 @@ pub fn evaluate_id_in_typed_value(id_in_typed_value: TypedValue, relationships: 
             let id_type = id.read().unwrap().get_id_type();
             let id_template_args = id.read().unwrap().get_template_args();
             let id_template_arg_exps = evaluate_template_exps_of_var(&id_template_args, scope.clone(), evaluator.clone())?;
-            let (id_var, id_var_scope) = Scope::resolve_identifier(&id_name, &id_template_arg_exps, scope.clone(), scope.clone(), relationships, evaluator.clone())?;
+            let (id_var, id_var_scope) = Scope::resolve_identifier(&id_name, &id_template_arg_exps, &CodeLocation::new_unknown(), scope.clone(), scope.clone(), relationships, evaluator.clone())?;
             let id_typed_value = evaluate_var(id_var.clone(), id_var_scope.clone(), evaluator.clone())?;
             output_value = evaluate_value_with_identifier_type(&id_name, id_typed_value, id_type, scope.clone(), evaluator.clone())?;
         },
@@ -158,7 +158,7 @@ pub fn evaluate_var(var: Arc<RwLock<Variable>>, scope: Arc<RwLock<Scope>>, evalu
             let id: String = identifier.read().unwrap().get_id();
             let template_args = identifier.read().unwrap().get_template_args();
             let template_exps = evaluate_template_exps_of_var(&template_args, scope.clone(), evaluator.clone())?;
-            let (logic_type, logic_type_scope) = Scope::resolve_identifier(&id, &template_exps, scope.clone(), scope.clone(), ScopeRelationType::resolve_id_default(), evaluator.clone())?;
+            let (logic_type, logic_type_scope) = Scope::resolve_identifier(&id, &template_exps, &CodeLocation::new_unknown(), scope.clone(), scope.clone(), ScopeRelationType::resolve_id_default(), evaluator.clone())?;
             real_logic_type = evaluate_var(logic_type.clone(), logic_type_scope.clone(), evaluator.clone())?;
         }
 

@@ -3,7 +3,7 @@ use std::sync::{Arc, RwLock};
 use crate::deep_clone::DeepClone_ArcLock;
 use crate::error::TydiLangError;
 use crate::trait_common::GetName;
-use crate::tydi_memory_representation::{For, ScopeType, Scope, TypedValue, GetScope, Variable, TypeIndication, TraitCodeLocationAccess, ScopeRelationType, If};
+use crate::tydi_memory_representation::{For, ScopeType, Scope, TypedValue, GetScope, Variable, TypeIndication, TraitCodeLocationAccess, ScopeRelationType, If, CodeLocation};
 
 use crate::evaluation::{evaluate_var, evaluate_scope, ScopeOwner, Evaluator};
 
@@ -41,7 +41,7 @@ pub fn evaluate_for(for_target: Arc<RwLock<For>>, parent_scope: Arc<RwLock<Scope
             evaluate_var(var.clone(), for_scope_deepcloned.clone(), evaluator.clone())?;
 
             let var_value = var.read().unwrap().get_value();
-            let result = Scope::resolve_identifier(&var_name, &None, parent_scope.clone(), parent_scope.clone(), ScopeRelationType::resolve_id_in_current_scope(), evaluator.clone()); //try to find the variable in the target scope
+            let result = Scope::resolve_identifier(&var_name, &None, &CodeLocation::new_unknown(), parent_scope.clone(), parent_scope.clone(), ScopeRelationType::resolve_id_in_current_scope(), evaluator.clone()); //try to find the variable in the target scope
             let outside_var = match result {
                 Ok((outside_var, _)) => {
                     outside_var

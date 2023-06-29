@@ -5,7 +5,7 @@ use crate::error::TydiLangError;
 use crate::generate_name::{generate_init_value, generate_built_in_variable_name_from_span};
 use crate::trait_common::HasDocument;
 use crate::tydi_lang_src_to_memory_representation::parse_type::{parse_ArraySizeIndicator};
-use crate::tydi_memory_representation::{Scope, GetScope, Variable, TraitCodeLocationAccess, CodeLocation, Implementation, Instance, Net, TypeIndication};
+use crate::tydi_memory_representation::{Scope, GetScope, Variable, TraitCodeLocationAccess, CodeLocation, Implementation, Instance, Net, TypeIndication, ImplementationType};
 use crate::tydi_parser::*;
 
 use crate::tydi_lang_src_to_memory_representation::{parse_template, parse_miscellaneous, parse_file};
@@ -41,7 +41,12 @@ pub fn parse_Implementation(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src:
                 attributes.push(attr);
             }
             Rule::Scope_WithoutBracket => {
-                output_implementation = Implementation::new(name.clone(), streamlet_exp.clone(), scope.clone());
+                if template_args.is_some() {
+                    output_implementation = Implementation::new(name.clone(), streamlet_exp.clone(), ImplementationType::Template, scope.clone());
+                }
+                else {
+                    output_implementation = Implementation::new(name.clone(), streamlet_exp.clone(), ImplementationType::Normal, scope.clone());
+                }
                 parse_file::parse_Scope_WithoutBracket(element, output_implementation.read().unwrap().get_scope(), raw_src.clone())?;
             }
             _ => unreachable!()

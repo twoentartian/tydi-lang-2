@@ -1,16 +1,60 @@
 use std::sync::{Arc, RwLock};
 use std::collections::BTreeMap;
 
+use serde::ser::SerializeStruct;
 use serde::{Serialize};
 
 use crate::deep_clone::{DeepClone, DeepClone_ArcLock};
-use crate::tydi_memory_representation::{Streamlet, TemplateArg, CodeLocation, Scope, ScopeType, GetScope, Attribute, TraitCodeLocationAccess, Variable, TypeIndication};
+use crate::tydi_memory_representation::{Streamlet, TemplateArg, CodeLocation, Scope, ScopeType, GetScope, Attribute, TraitCodeLocationAccess, Variable, TypeIndication, TypedValue};
 use crate::trait_common::{GetName, HasDocument};
 use crate::{generate_access, generate_get, generate_set, generate_access_pub, generate_get_pub, generate_set_pub, generate_name};
+
+#[derive(Clone, Debug, strum::IntoStaticStr)]
+pub enum ImplementationType {
+    Unknown,
+    Normal,
+    Template,
+    TemplateInstance(Arc<RwLock<Implementation>>, BTreeMap<usize, TypedValue>),
+}
+
+impl DeepClone for ImplementationType {
+    fn deep_clone(&self) -> Self {
+        return self.clone();    //shallow clone should be enough
+    }
+}
+
+impl Serialize for ImplementationType {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where S: serde::Serializer {
+        let mut state = serializer.serialize_struct("ImplementationType", 2)?;
+        let enum_type_str: &'static str = self.into();
+        state.serialize_field("type", enum_type_str)?;
+
+        match self {
+            ImplementationType::Unknown => {
+
+            },
+            ImplementationType::Normal => {
+
+            },
+            ImplementationType::Template => {
+
+            },
+            ImplementationType::TemplateInstance(template, arg_map) => {
+                state.serialize_field("template_name", &template.read().unwrap().get_name())?;
+                state.serialize_field("args", arg_map)?;
+            },
+        }
+        state.end()
+    }
+}
+
+
 
 #[derive(Clone, Debug, Serialize)]
 pub struct Implementation {
     name: String,
+
+    impl_type: ImplementationType,
 
     #[serde(with = "crate::serde_serialization::use_inner_for_arc_rwlock")]
     scope: Arc<RwLock<Scope>>,
@@ -40,6 +84,7 @@ impl DeepClone for Implementation {
     fn deep_clone(&self) -> Self {
         let output = Self {
             name: self.name.deep_clone(),
+            impl_type: self.impl_type.deep_clone(),
             scope: self.scope.read().unwrap().deep_clone_arclock(),
             derived_streamlet_var: self.derived_streamlet_var.deep_clone(),
             derived_streamlet: self.derived_streamlet.deep_clone(),
@@ -65,9 +110,10 @@ impl GetScope for Implementation {
 }
 
 impl Implementation {
-    pub fn new(name: String, streamlet_exp: String, parent_scope: Arc<RwLock<Scope>>) -> Arc<RwLock<Self>> {
+    pub fn new(name: String, streamlet_exp: String, impl_type: ImplementationType, parent_scope: Arc<RwLock<Scope>>) -> Arc<RwLock<Self>> {
         let mut output = Self {
             name: name.clone(),
+            impl_type: impl_type,
             scope: Scope::new(format!("implementation_{}", name.clone()), ScopeType::ImplementationScope, parent_scope.clone()),
             derived_streamlet_var: Variable::new_place_holder(),
             derived_streamlet: None,
@@ -83,6 +129,7 @@ impl Implementation {
     pub fn new_place_holder() -> Arc<RwLock<Self>> {
         let output = Self {
             name: generate_name::generate_init_value(),
+            impl_type: ImplementationType::Unknown,
             scope: Scope::new_place_holder(),
             derived_streamlet_var: Variable::new_place_holder(),
             derived_streamlet: None,
@@ -104,6 +151,7 @@ impl Implementation {
         self.scope.write().unwrap().set_name(format!("implementation_{}", name.clone()));
     }
 
+    generate_access_pub!(impl_type, ImplementationType, get_impl_type, set_impl_type);
     generate_access_pub!(template_args, Option<BTreeMap<usize, TemplateArg>>, get_template_args, set_template_args);
     generate_access_pub!(attributes, Vec<Attribute>, get_attributes, set_attributes);
     generate_access_pub!(derived_streamlet_var, Arc<RwLock<Variable>>, get_derived_streamlet_var, set_derived_streamlet_var);

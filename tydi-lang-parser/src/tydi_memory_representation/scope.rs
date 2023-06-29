@@ -304,9 +304,9 @@ impl Scope {
     }
 
     //resolve identifier
-    pub fn resolve_identifier(name: &String, template_exps: &Option<BTreeMap<usize, TypedValue>>, scope: Arc<RwLock<Scope>>, template_expansion_scope: Arc<RwLock<Scope>>, scope_relation_types/*allowed edges*/: HashSet<ScopeRelationType>, evaluator: Arc<RwLock<Evaluator>>) -> Result<(Arc<RwLock<Variable>>, Arc<RwLock<Scope>>), TydiLangError> {        
+    pub fn resolve_identifier(name: &String, template_exps: &Option<BTreeMap<usize, TypedValue>>, location: &CodeLocation, scope: Arc<RwLock<Scope>>, template_expansion_scope: Arc<RwLock<Scope>>, scope_relation_types/*allowed edges*/: HashSet<ScopeRelationType>, evaluator: Arc<RwLock<Evaluator>>) -> Result<(Arc<RwLock<Variable>>, Arc<RwLock<Scope>>), TydiLangError> {        
         //does current scope has this var?
-        let result = Scope::resolve_identifier_in_current_scope(&name, &template_exps, scope.clone(), template_expansion_scope.clone(), evaluator.clone())?;
+        let result = Scope::resolve_identifier_in_current_scope(&name, &template_exps, location, scope.clone(), template_expansion_scope.clone(), evaluator.clone())?;
         if result.is_some() {
             return Ok((result.unwrap(), scope.clone()));
         }
@@ -316,15 +316,15 @@ impl Scope {
         for (_, item) in other_scope_relationships {
             let (other_scope, relationship_type) = (item.target_scope, item.relationship);
             if scope_relation_types.contains(&relationship_type) {
-                let result = Scope::resolve_identifier(name, template_exps, other_scope, template_expansion_scope.clone(), scope_relation_types, evaluator.clone())?;
+                let result = Scope::resolve_identifier(name, template_exps, location, other_scope, template_expansion_scope.clone(), scope_relation_types, evaluator.clone())?;
                 return Ok(result);
             }
         }
 
-        return Err(TydiLangError::new(format!("identifier {} not found in scope {}", &name, scope.read().unwrap().get_name()), CodeLocation::new_unknown()));
+        return Err(TydiLangError::new(format!("identifier {} not found in scope {}", &name, scope.read().unwrap().get_name()), location.clone()));
     }
 
-    fn resolve_identifier_in_current_scope(name: &String, template_exps: &Option<BTreeMap<usize, TypedValue>>, scope: Arc<RwLock<Scope>>, template_expansion_scope: Arc<RwLock<Scope>>, evaluator: Arc<RwLock<Evaluator>>) -> Result<Option<Arc<RwLock<Variable>>>, TydiLangError> {
+    fn resolve_identifier_in_current_scope(name: &String, template_exps: &Option<BTreeMap<usize, TypedValue>>, location: &CodeLocation, scope: Arc<RwLock<Scope>>, template_expansion_scope: Arc<RwLock<Scope>>, evaluator: Arc<RwLock<Evaluator>>) -> Result<Option<Arc<RwLock<Variable>>>, TydiLangError> {
         let identifier_var = match scope.read().unwrap().get_variables_ref().get(name) {
             Some(var) => var.clone(),
             None => return Ok(None),
