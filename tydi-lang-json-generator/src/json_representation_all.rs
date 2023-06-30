@@ -10,6 +10,7 @@ use tydi_lang_parser::tydi_memory_representation::{self, Project};
 use crate::json_representation_implementation::Implementation;
 use crate::json_representation_logic_type::{LogicType};
 use crate::json_representation_streamlet::Streamlet;
+use crate::name_conversion;
 
 
 #[derive(Clone, Debug, Serialize)]
@@ -33,5 +34,9 @@ impl JsonRepresentation {
 }
 
 pub fn translate_from_tydi_project(tydi_project: Arc<RwLock<Project>>, target_var: Arc<RwLock<tydi_memory_representation::Variable>>) -> Result<JsonRepresentation, String> {
-    todo!()
+    let mut output_json_representation = JsonRepresentation::new();
+    
+    let target_var_name = name_conversion::get_global_variable_name(target_var.clone());
+    
+
 }
