@@ -9,6 +9,7 @@ use tydi_lang_parser::tydi_memory_representation::scope::GetScope;
 use tydi_lang_parser::trait_common::GetName;
 
 use crate::name_conversion;
+use crate::util::generate_random_str;
 
 #[derive(Clone, Debug, strum::IntoStaticStr)]
 pub enum LogicType {
@@ -78,29 +79,20 @@ impl LogicType {
                         output_dependency.insert(target_var_name.clone(), Arc::new(RwLock::new(output_type.clone())));
                     },
                     tydi_memory_representation::LogicType::LogicGroupType(v) => {
-                        let mut results = LogicGroup::translate_from_tydi_project(tydi_project.clone(), v.clone());
-                        if results.is_err() {
-                            return Err(results.err().unwrap());
-                        }
-                        let (logic_group, mut dependencies) = results.ok().unwrap();
+                        let results = LogicGroup::translate_from_tydi_project(tydi_project.clone(), v.clone())?;
+                        let (logic_group, mut dependencies) = results;
                         output_dependency.append(&mut dependencies);
                         output_type = LogicType::Group(Arc::new(RwLock::new(logic_group)));
                     },
                     tydi_memory_representation::LogicType::LogicUnionType(v) => {
-                        let mut results = LogicUnion::translate_from_tydi_project(tydi_project.clone(), v.clone());
-                        if results.is_err() {
-                            return Err(results.err().unwrap());
-                        }
-                        let (logic_union, mut dependencies) = results.ok().unwrap();
+                        let results = LogicUnion::translate_from_tydi_project(tydi_project.clone(), v.clone())?;
+                        let (logic_union, mut dependencies) = results;
                         output_dependency.append(&mut dependencies);
                         output_type = LogicType::Union(Arc::new(RwLock::new(logic_union)));
                     },
                     tydi_memory_representation::LogicType::LogicStreamType(v) => {
-                        let results = LogicStream::translate_from_tydi_project(tydi_project.clone(), v.clone());
-                        if results.is_err() {
-                            return Err(results.err().unwrap());
-                        }
-                        let (logic_stream, mut dependencies) = results.ok().unwrap();
+                        let results = LogicStream::translate_from_tydi_project(tydi_project.clone(), v.clone())?;
+                        let (logic_stream, mut dependencies) = results;
                         output_dependency.append(&mut dependencies);
                         output_type = LogicType::Stream(Arc::new(RwLock::new(logic_stream)));
                     },
@@ -126,6 +118,62 @@ impl LogicType {
 
         return Ok((LogicType::Ref(target_var_name), output_dependency));
     }
+
+    pub fn translate_from_tydi_project_type_value(tydi_project: Arc<RwLock<Project>>, target_type_value: &tydi_memory_representation::TypedValue) -> Result<(LogicType, BTreeMap<String, Arc<RwLock<LogicType>>>), String> {
+        let mut output_dependency = BTreeMap::new();
+        let output_type;
+        
+        match &target_type_value {
+            TypedValue::LogicTypeValue(logical_type) => {
+                let logical_type = logical_type.read().unwrap().clone();
+                match logical_type {
+                    tydi_memory_representation::LogicType::LogicNullType => {
+                        output_type = LogicType::Null;
+                    },
+                    tydi_memory_representation::LogicType::LogicBitType(logic_bit) => {
+                        unreachable!("todo - issue to fix: logic bit here doesn't have a name")
+                    },
+                    tydi_memory_representation::LogicType::LogicGroupType(v) => {
+                        let results = LogicGroup::translate_from_tydi_project(tydi_project.clone(), v.clone())?;
+                        let (logic_group, mut dependencies) = results;
+                        output_dependency.append(&mut dependencies);
+                        output_type = LogicType::Group(Arc::new(RwLock::new(logic_group)));
+                    },
+                    tydi_memory_representation::LogicType::LogicUnionType(v) => {
+                        let results = LogicUnion::translate_from_tydi_project(tydi_project.clone(), v.clone())?;
+                        let (logic_union, mut dependencies) = results;
+                        output_dependency.append(&mut dependencies);
+                        output_type = LogicType::Union(Arc::new(RwLock::new(logic_union)));
+                    },
+                    tydi_memory_representation::LogicType::LogicStreamType(v) => {
+                        let results = LogicStream::translate_from_tydi_project(tydi_project.clone(), v.clone())?;
+                        let (logic_stream, mut dependencies) = results;
+                        output_dependency.append(&mut dependencies);
+                        output_type = LogicType::Stream(Arc::new(RwLock::new(logic_stream)));
+                    },
+                }
+
+            },
+            TypedValue::RefToVar(ref_var) => {
+                let results = LogicType::translate_from_tydi_project(tydi_project.clone(), ref_var.clone());
+                if results.is_err() {
+                    return Err(results.err().unwrap());
+                }
+                let (logic_ref, mut dependencies) = results.ok().unwrap();
+                output_dependency.append(&mut dependencies);
+                // output_type = LogicType::Ref(name_conversion::get_global_variable_name(ref_var.clone()));
+                output_type = logic_ref;
+            },
+            _ => unreachable!("{} is not a logic type", target_type_value.get_brief_info()),
+        }
+
+        //we should always return a reference to it
+        let target_var_name = generate_random_str(8);
+        output_dependency.insert(target_var_name.clone(), Arc::new(RwLock::new(output_type)));
+
+        return Ok((LogicType::Ref(target_var_name), output_dependency));
+    }
+
 
 }
 
@@ -222,9 +270,13 @@ impl LogicStream {
         {
             //stream type should be a reference
             let stream_type = tydi_target.read().unwrap().get_stream_type();
-            let stream_type_var = stream_type.read().unwrap().get_value().try_get_referenced_variable().expect("bug: the stream type should be a reference");
+            let stream_type_value = stream_type.read().unwrap().get_value();
+            let stream_type = match stream_type_value.try_get_referenced_variable() {
+                Some(var) => var,
+                None => stream_type,
+            };
 
-            let result = LogicType::translate_from_tydi_project(tydi_project.clone(), stream_type_var.clone());
+            let result = LogicType::translate_from_tydi_project(tydi_project.clone(), stream_type.clone());
             if result.is_err() {
                 return Err(result.err().unwrap());
             }
@@ -255,31 +307,23 @@ impl LogicStream {
             //user type should be a reference or None
             let user_type = tydi_target.read().unwrap().get_user_type();
             let user_type_value = user_type.read().unwrap().get_value();
-            let user_type_var = match user_type_value {
-                TypedValue::LogicTypeValue(v) => {
-                    match *v.read().unwrap() {
-                        tydi_memory_representation::LogicType::LogicNullType => {
-                            output_stream.user_type = LogicType::Null;
-                        },
-                        _ => unreachable!("other 4 types are not allowed here")
-                    }
-                },
-                TypedValue::RefToVar(user_type_var) => {
-                    let result = LogicType::translate_from_tydi_project(tydi_project.clone(), user_type_var.clone());
-                    if result.is_err() {
-                        return Err(result.err().unwrap());
-                    }
-                    let (user_type, mut dependencies) = result.ok().unwrap();
-                    output_dependency.append(&mut dependencies);
-                    match user_type {
-                        LogicType::Ref(r) => {
-                            output_stream.user_type = LogicType::Ref(r);
-                        },
-                        _ => unreachable!("should be unreachable")
-                    }
-                },
-                _ => return Err(format!("bug: the stream type should be a logic type, but is {}", user_type_value.get_brief_info())),
+            let user_type = match user_type_value.try_get_referenced_variable() {
+                Some(var) => var,
+                None => user_type,
             };
+
+            let result = LogicType::translate_from_tydi_project(tydi_project.clone(), user_type.clone());
+            if result.is_err() {
+                return Err(result.err().unwrap());
+            }
+            let (user_type, mut dependencies) = result.ok().unwrap();
+            output_dependency.append(&mut dependencies);
+            match user_type {
+                LogicType::Ref(r) => {
+                    output_stream.user_type = LogicType::Ref(r);
+                },
+                _ => unreachable!("should be unreachable")
+            }
         }
 
         //throughput

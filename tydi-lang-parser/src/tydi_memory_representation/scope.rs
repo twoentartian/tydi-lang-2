@@ -125,60 +125,70 @@ impl DeepClone_ArcLock for Scope {
         }
 
         //maintain the scope relationships
-        let variables = output.read().unwrap().get_variables();
-        for (_, var) in variables {
-            let var_value = var.read().unwrap().get_value();
-            let remove_old_scope_add_new_scope = |scope: Arc<RwLock<Scope>>, scope_rela_type: ScopeRelationType, target_scope: Arc<RwLock<Scope>>| {
-                let mut current_relationships = scope.read().unwrap().get_scope_relationships().clone();
-                {   //remove old relationship
-                    let mut rela_to_remove = vec![];
-                    for (name, rela_type) in &current_relationships {
-                        if rela_type.relationship == scope_rela_type {
-                            rela_to_remove.push(name.clone());
+        {
+            let variables = output.read().unwrap().get_variables();
+            for (_, var) in variables {
+                let var_value = var.read().unwrap().get_value();
+                let remove_old_scope_add_new_scope = |scope: Arc<RwLock<Scope>>, scope_rela_type: ScopeRelationType, target_scope: Arc<RwLock<Scope>>| {
+                    let mut current_relationships = scope.read().unwrap().get_scope_relationships().clone();
+                    {   //remove old relationship
+                        let mut rela_to_remove = vec![];
+                        for (name, rela_type) in &current_relationships {
+                            if rela_type.relationship == scope_rela_type {
+                                rela_to_remove.push(name.clone());
+                            }
+                        }
+                        for i in rela_to_remove {
+                            current_relationships.remove(&i);
                         }
                     }
-                    for i in rela_to_remove {
-                        current_relationships.remove(&i);
+                    {   //add new relationship
+                        let scope_relationship = ScopeRelationship::new(target_scope.clone(), scope_rela_type);
+                        current_relationships.insert(self.get_name(), scope_relationship);
                     }
+                    scope.write().unwrap().set_scope_relationships(current_relationships);
+                };
+                match var_value {
+                    TypedValue::LogicTypeValue(logic_type) => {
+                        let logic_type_value = logic_type.write().unwrap();
+                        match &*logic_type_value {
+                            LogicType::LogicGroupType(group) => {
+                                let group_scope = group.read().unwrap().get_scope();
+                                remove_old_scope_add_new_scope(group_scope.clone(), ScopeRelationType::GroupScopeRela, output.clone());
+                            },
+                            LogicType::LogicUnionType(union) => {
+                                let union_scope = union.read().unwrap().get_scope();
+                                remove_old_scope_add_new_scope(union_scope.clone(), ScopeRelationType::GroupScopeRela, output.clone());
+                            },
+                            _ => () //other logic types don't have scope
+                        }
+                    },
+                    TypedValue::Streamlet(target_streamlet) => {
+                        let streamlet_scope = target_streamlet.read().unwrap().get_scope();
+                        remove_old_scope_add_new_scope(streamlet_scope.clone(), ScopeRelationType::StreamletScopeRela, output.clone());
+                    },
+                    TypedValue::Implementation(target_implementation) => {
+                        let implementation_scope = target_implementation.read().unwrap().get_scope();
+                        remove_old_scope_add_new_scope(implementation_scope.clone(), ScopeRelationType::ImplementationScopeRela, output.clone());
+                    },
+                    TypedValue::If(target_if) => {
+                        let if_scope = target_if.read().unwrap().get_scope();
+                        remove_old_scope_add_new_scope(if_scope.clone(), ScopeRelationType::IfForScopeRela, output.clone());
+                    },
+                    TypedValue::For(target_for) => {
+                        let for_scope = target_for.read().unwrap().get_scope();
+                        remove_old_scope_add_new_scope(for_scope.clone(), ScopeRelationType::IfForScopeRela, output.clone());
+                    },
+                    _ => (),    //other typed values don't have scope
                 }
-                {   //add new relationship
-                    let scope_relationship = ScopeRelationship::new(target_scope.clone(), scope_rela_type);
-                    current_relationships.insert(self.get_name(), scope_relationship);
-                }
-                scope.write().unwrap().set_scope_relationships(current_relationships);
-            };
-            match var_value {
-                TypedValue::LogicTypeValue(logic_type) => {
-                    let logic_type_value = logic_type.write().unwrap();
-                    match &*logic_type_value {
-                        LogicType::LogicGroupType(group) => {
-                            let group_scope = group.read().unwrap().get_scope();
-                            remove_old_scope_add_new_scope(group_scope.clone(), ScopeRelationType::GroupScopeRela, output.clone());
-                        },
-                        LogicType::LogicUnionType(union) => {
-                            let union_scope = union.read().unwrap().get_scope();
-                            remove_old_scope_add_new_scope(union_scope.clone(), ScopeRelationType::GroupScopeRela, output.clone());
-                        },
-                        _ => () //other logic types don't have scope
-                    }
-                },
-                TypedValue::Streamlet(target_streamlet) => {
-                    let streamlet_scope = target_streamlet.read().unwrap().get_scope();
-                    remove_old_scope_add_new_scope(streamlet_scope.clone(), ScopeRelationType::StreamletScopeRela, output.clone());
-                },
-                TypedValue::Implementation(target_implementation) => {
-                    let implementation_scope = target_implementation.read().unwrap().get_scope();
-                    remove_old_scope_add_new_scope(implementation_scope.clone(), ScopeRelationType::ImplementationScopeRela, output.clone());
-                },
-                TypedValue::If(target_if) => {
-                    let if_scope = target_if.read().unwrap().get_scope();
-                    remove_old_scope_add_new_scope(if_scope.clone(), ScopeRelationType::IfForScopeRela, output.clone());
-                },
-                TypedValue::For(target_for) => {
-                    let for_scope = target_for.read().unwrap().get_scope();
-                    remove_old_scope_add_new_scope(for_scope.clone(), ScopeRelationType::IfForScopeRela, output.clone());
-                },
-                _ => (),    //other typed values don't have scope
+            }
+        }
+
+        //set variable parent scope
+        {
+            let variables = output.read().unwrap().get_variables();
+            for (_, var) in variables {
+                var.write().unwrap().set_parent_scope(Some(output.clone()));
             }
         }
 

@@ -1,11 +1,14 @@
 use std::sync::{Arc, RwLock};
 
+use evaluate_var::evaluate_id_in_typed_value;
+
+use crate::generate_name::generate_init_value;
 use crate::trait_common::{GetName, HasDocument};
-use crate::tydi_memory_representation::{InstanceType, Scope, TypedValue, GetScope, Implementation, TraitCodeLocationAccess, Variable, Instance, Net, CodeLocation, ScopeType};
+use crate::tydi_memory_representation::{InstanceType, Scope, TypedValue, GetScope, Implementation, TraitCodeLocationAccess, Variable, Instance, Net, CodeLocation, ScopeType, PortOwner, ScopeRelationType};
 
 use crate::error::TydiLangError;
 
-use super::{Evaluator, evaluate_var, evaluate_scope, ScopeOwner};
+use super::{Evaluator, evaluate_var, evaluate_scope, ScopeOwner, evaluate_expression};
 
 
 pub fn evaluate_impl(target: Arc<RwLock<Implementation>>, scope: Arc<RwLock<Scope>>, evaluator: Arc<RwLock<Evaluator>>) -> Result<TypedValue, TydiLangError> {
@@ -88,6 +91,7 @@ pub fn evaluate_net(target: Arc<RwLock<Net>>, scope: Arc<RwLock<Scope>>, evaluat
         TypedValue::Port(port) => port.clone(),
         _ => return Err(TydiLangError::new(format!("{} is not a port, but used in defining net {}", lhs_port_var.read().unwrap().get_name(), target.read().unwrap().get_name()), target.read().unwrap().get_code_location())),
     };
+    target.write().unwrap().set_source_port(Some(lhs_port.clone()));
 
     let rhs_port_var = target.read().unwrap().get_sink();
     let rhs_port_value = evaluate_var(rhs_port_var.clone(), scope.clone(), evaluator.clone())?;
@@ -95,12 +99,60 @@ pub fn evaluate_net(target: Arc<RwLock<Net>>, scope: Arc<RwLock<Scope>>, evaluat
         TypedValue::Port(port) => port.clone(),
         _ => return Err(TydiLangError::new(format!("{} is not a port, but used in defining net {}", lhs_port_var.read().unwrap().get_name(), target.read().unwrap().get_name()), target.read().unwrap().get_code_location())),
     };
+    target.write().unwrap().set_sink_port(Some(rhs_port.clone()));
 
-    {
-        let mut target_write = target.write().unwrap();
-        target_write.set_source_port(Some(lhs_port.clone()));
-        target_write.set_sink_port(Some(rhs_port.clone()));
-    }
+    let get_port_owner_from_exp = |port_var: Arc<RwLock<Variable>>| -> Result<PortOwner, TydiLangError> {
+        use crate::pest::{Parser};
+        use crate::tydi_parser::{Rule, TydiLangSrc};
+        let port_owner_exp = port_var.read().unwrap().get_exp();
+        let port_owner_exp = match port_owner_exp {
+            Some(exp) => exp,
+            None => return Err(TydiLangError::new(format!("{} of net {} has no port owner expression", port_var.read().unwrap().get_name(), target.read().unwrap().get_name()), target.read().unwrap().get_code_location())),
+        };
+        let port_owner_pest = TydiLangSrc::parse(Rule::Exp,&port_owner_exp).unwrap();
+        let mut port_owner_name = generate_init_value();
+        for ele_exp in port_owner_pest.into_iter() {
+            for element in ele_exp.into_inner().into_iter(){
+                match element.as_rule() {
+                    Rule::Term => {     //we only care about the first term because it's the port owner
+                        port_owner_name = element.as_str().to_string();
+                        break;
+                    },
+                    _ => (),    //ignore
+                }
+            }
+        }
+        assert!(port_owner_name != generate_init_value());
+        let port_owner = if port_owner_name == String::from("self") {
+            PortOwner::ImplSelf
+        }
+        else {
+            let port_owner_value = evaluate_expression(port_owner_name.clone(), scope.clone(), evaluator.clone())?;
+            let port_owner_value = evaluate_id_in_typed_value(port_owner_value, ScopeRelationType::resolve_id_in_current_scope(), scope.clone(), evaluator.clone())?;
+            
+            let port_owner_inst = match port_owner_value {
+                TypedValue::Instance(inst) => inst,
+                TypedValue::RefToVar(var) => {
+                    evaluate_var(var.clone(), scope.clone(), evaluator.clone())?;
+                    let var_value = var.read().unwrap().get_value();
+                    match var_value {
+                        TypedValue::Instance(inst) => {
+                            inst
+                        },
+                        _ => unreachable!(),
+                    }
+                }
+                _ => unreachable!()
+            };
+            PortOwner::ImplInstance(port_owner_inst)
+        };
+        return Ok(port_owner);
+    };
+
+    let lhs_port_owner = get_port_owner_from_exp(lhs_port_var.clone())?;
+    target.write().unwrap().set_source_port_owner(lhs_port_owner);
+    let rhs_port_owner = get_port_owner_from_exp(rhs_port_var.clone())?;
+    target.write().unwrap().set_sink_port_owner(rhs_port_owner);
 
     return Ok(TypedValue::Net(target.clone()));
 }

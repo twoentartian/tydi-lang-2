@@ -8,7 +8,7 @@ use crate::{tydi_memory_representation::{Package, LogicType}, trait_common::GetN
 
 use crate::tydi_memory_representation::{Variable, Streamlet, Port, Implementation, Instance, Net, If, For};
 
-use super::Identifier;
+use super::{Identifier, GetScope};
 
 #[derive(Clone, Debug, Serialize)]
 pub enum TypeIndication {
@@ -262,9 +262,39 @@ impl DeepClone for TypedValue {
             // basic type ends
 
             TypedValue::LogicTypeValue(v) => TypedValue::LogicTypeValue(v.deep_clone()),
-            TypedValue::Streamlet(v) => TypedValue::Streamlet(v.deep_clone()),
+            TypedValue::Streamlet(v) => {
+                //update the parent streamlet for ports
+                let output = v.deep_clone();
+                let streamlet_scope = output.read().unwrap().get_scope();
+                let streamlet_variables = streamlet_scope.read().unwrap().get_variables();
+                for (_, var) in streamlet_variables {
+                    let var_value = var.read().unwrap().get_value();
+                    match var_value {
+                        TypedValue::Port(port) => {
+                            port.write().unwrap().set_parent_streamlet(Some(output.clone()));
+                        },
+                        _ => (),    //ignore
+                    }
+                }
+                TypedValue::Streamlet(output)
+            },
             TypedValue::Port(v) => TypedValue::Port(v.deep_clone()),
-            TypedValue::Implementation(v) => TypedValue::Implementation(v.deep_clone()),
+            TypedValue::Implementation(v) => {
+                //update the parent implementation for nets
+                let output = v.deep_clone();
+                let implementation_scope = output.read().unwrap().get_scope();
+                let implementation_variables = implementation_scope.read().unwrap().get_variables();
+                for (_, var) in implementation_variables {
+                    let var_value = var.read().unwrap().get_value();
+                    match var_value {
+                        TypedValue::Net(net) => {
+                            net.write().unwrap().set_parent_impl(Some(output.clone()));
+                        },
+                        _ => (),    //ignore
+                    }
+                }
+                TypedValue::Implementation(output)
+            },
             TypedValue::Instance(v) => TypedValue::Instance(v.deep_clone()),
             TypedValue::Net(v) => TypedValue::Net(v.deep_clone()),
             TypedValue::If(v) => TypedValue::If(v.deep_clone()),

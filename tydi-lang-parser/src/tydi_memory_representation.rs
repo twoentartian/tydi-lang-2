@@ -52,7 +52,7 @@ pub use instance::{Instance};
 
 pub mod net;
 pub(in crate) use net::*;
-pub use net::{Net};
+pub use net::{Net, PortOwner};
 
 pub mod function;
 pub(in crate) use function::*;

@@ -66,7 +66,7 @@ impl DeepClone for Port {
             direction: self.direction.deep_clone(),
             time_domain: self.time_domain.deep_clone(),
             logical_type: self.logical_type.deep_clone(),
-            parent_streamlet: self.parent_streamlet.deep_clone(),
+            parent_streamlet: None,
             attributes: self.attributes.deep_clone(),
             document: self.document.deep_clone(),
             location_define: self.location_define.deep_clone(),

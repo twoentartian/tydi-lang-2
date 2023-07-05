@@ -20,13 +20,8 @@ fn generate_json_representation_from_tydi_project(project: Arc<RwLock<Project>>,
     let mut project_json = json_representation_all::JsonRepresentation::new();
 
     let target_var = project.read().unwrap().get_variable(package_name, target_name)?;
-    let results = json_representation_logic_type::LogicType::translate_from_tydi_project(project, target_var.clone());
-    if results.is_err() {
-        return Err(results.err().unwrap());
-    }
-    let (logic_types, dependencies) = results.ok().unwrap();
-    project_json.logic_types = dependencies;
+    let (top_level_type, result_json_representation) = json_representation_all::translate_from_tydi_project(project, target_var.clone())?;
 
-    let json_output = serde_json::to_string_pretty(&project_json).expect("fail to convert the JsonRepresentation to json string");
+    let json_output = serde_json::to_string_pretty(&result_json_representation).expect("fail to convert the JsonRepresentation to json string");
     return Ok(json_output);
 }

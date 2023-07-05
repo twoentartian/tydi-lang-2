@@ -49,8 +49,8 @@ impl DeepClone for Instance {
     fn deep_clone(&self) -> Self {
         let output = Self {
             name: self.name.deep_clone(),
-            derived_impl_var: self.derived_impl_var.deep_clone(),
-            derived_impl: self.derived_impl.deep_clone(),
+            derived_impl_var: self.derived_impl_var.clone(),    //shallow clone should be enough, avoid stack overflow
+            derived_impl: self.derived_impl.clone(),            //shallow clone should be enough, avoid stack overflow
             inst_type: self.inst_type.deep_clone(),
             location_define: self.location_define.deep_clone(),
             document: self.document.deep_clone(),
