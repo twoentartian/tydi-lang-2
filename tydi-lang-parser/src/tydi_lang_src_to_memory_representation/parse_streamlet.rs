@@ -5,7 +5,7 @@ use crate::error::TydiLangError;
 use crate::generate_name::{generate_init_value, generate_built_in_variable_name_from_span};
 use crate::trait_common::HasDocument;
 use crate::tydi_lang_src_to_memory_representation::parse_type::{parse_LogicalType, parse_ArraySizeIndicator};
-use crate::tydi_memory_representation::{Scope, Streamlet, GetScope, Variable, TraitCodeLocationAccess, CodeLocation, Port, TypeIndication, PortDirection};
+use crate::tydi_memory_representation::{Scope, Streamlet, GetScope, Variable, TraitCodeLocationAccess, CodeLocation, Port, TypeIndication, PortDirection, GlobalIdentifier};
 use crate::tydi_parser::*;
 
 use crate::tydi_lang_src_to_memory_representation::{parse_template, parse_miscellaneous, parse_file};
@@ -47,12 +47,15 @@ pub fn parse_StreamLet(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<
         output_streamlet_write.set_document(document);
         output_streamlet_write.set_attributes(attributes);
         output_streamlet_write.set_code_location(CodeLocation::new_from_pest_rule(&src, raw_src.clone()));
+        output_streamlet_write.set_parent_scope(Some(scope.clone()));
+        output_streamlet_write.set_id_in_scope(Some(name.clone()));
     }
 
     let output_streamlet_var = Variable::new_streamlet(name.clone(), output_streamlet);
     {
         let mut output_streamlet_var_write = output_streamlet_var.write().unwrap();
         output_streamlet_var_write.set_code_location(CodeLocation::new_from_pest_rule(&src, raw_src.clone()));
+        output_streamlet_var_write.set_is_name_user_defined(true);
     }
 
     return Ok(output_streamlet_var);
@@ -113,6 +116,8 @@ pub fn parse_Port(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<Strin
         output_port_write.set_attributes(attributes);
         output_port_write.set_code_location(CodeLocation::new_from_pest_rule(&src, raw_src.clone()));
         output_port_write.set_document(document);
+        output_port_write.set_parent_scope(Some(scope.clone()));
+        output_port_write.set_id_in_scope(Some(name.clone()));
         match port_time_domain_exp {
             Some(time_domain_var) => output_port_write.set_time_domain(time_domain_var),
             None => output_port_write.set_time_domain(Port::get_default_time_domain()),
@@ -131,6 +136,7 @@ pub fn parse_Port(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<Strin
                 output_port_var_write.set_array_size(None);
             }
         }
+        output_port_var_write.set_is_name_user_defined(true);
     }
     return Ok(output_port_var);
 }

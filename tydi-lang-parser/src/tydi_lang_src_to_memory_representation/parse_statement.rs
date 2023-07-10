@@ -32,6 +32,7 @@ pub fn parse_StatementDeclareVariable(src: Pair<Rule>, scope: Arc<RwLock<Scope>>
         let mut var_write = var.write().unwrap();
         var_write.set_type_indication(type_indicator.clone());
         var_write.set_code_location(CodeLocation::new_from_pest_rule(&src, raw_src.clone()));
+        var_write.set_is_name_user_defined(true);
     }
     {
         let mut scope_write = scope.write().unwrap();
@@ -62,6 +63,7 @@ pub fn parse_StatementDeclareType(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, ra
         var_write.set_type_indication(type_indicator.clone());
         var_write.set_is_property_of_scope(true);
         var_write.set_code_location(CodeLocation::new_from_pest_rule(&src, raw_src.clone()));
+        var_write.set_is_name_user_defined(true);
 
         //if it is a logic type (excluding LogicNull):
         match &type_indicator {

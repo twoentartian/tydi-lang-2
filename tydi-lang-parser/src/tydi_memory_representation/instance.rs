@@ -3,7 +3,7 @@ use std::sync::{Arc, RwLock};
 use serde::{Serialize};
 
 use crate::deep_clone::DeepClone;
-use crate::tydi_memory_representation::{CodeLocation, Attribute, TraitCodeLocationAccess, Variable, TypeIndication, Implementation};
+use crate::tydi_memory_representation::{CodeLocation, Attribute, TraitCodeLocationAccess, Variable, TypeIndication, Implementation, Scope, GlobalIdentifier};
 use crate::trait_common::{GetName, HasDocument};
 use crate::{generate_access, generate_get, generate_set, generate_access_pub, generate_get_pub, generate_set_pub, generate_name};
 
@@ -37,6 +37,10 @@ pub struct Instance {
     document: Option<String>,
 
     attributes: Vec<Attribute>,
+
+    #[serde(with = "crate::serde_serialization::use_name_for_optional_arc_rwlock")]
+    parent_scope: Option<Arc<RwLock<Scope>>>,
+    id_in_scope: Option<String>,
 }
 
 impl GetName for Instance {
@@ -55,6 +59,8 @@ impl DeepClone for Instance {
             location_define: self.location_define.deep_clone(),
             document: self.document.deep_clone(),
             attributes: self.attributes.deep_clone(),
+            parent_scope: self.parent_scope.clone(),
+            id_in_scope: self.id_in_scope.deep_clone(),
         };
         return output;
     }
@@ -68,6 +74,11 @@ impl TraitCodeLocationAccess for Instance {
     generate_access!(location_define, CodeLocation, get_code_location, set_code_location);
 }
 
+impl GlobalIdentifier for Instance {
+    generate_access!(parent_scope, Option<Arc<RwLock<Scope>>>, get_parent_scope, set_parent_scope);
+    generate_access!(id_in_scope, Option<String>, get_id_in_scope, set_id_in_scope);
+}
+
 impl Instance {
     pub fn new(name: String, derived_implementation_exp: String) -> Arc<RwLock<Self>> {
         let mut output = Self {
@@ -78,6 +89,8 @@ impl Instance {
             location_define: CodeLocation::new_unknown(),
             document: None,
             attributes: vec![],
+            parent_scope: None,
+            id_in_scope: None,
         };
         output.set_derived_implementation_exp(derived_implementation_exp, CodeLocation::new_unknown());
         return Arc::new(RwLock::new(output));
@@ -92,6 +105,8 @@ impl Instance {
             location_define: CodeLocation::new_unknown(),
             document: None,
             attributes: vec![],
+            parent_scope: None,
+            id_in_scope: None,
         };
         return Arc::new(RwLock::new(output));
     }

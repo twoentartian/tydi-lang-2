@@ -3,7 +3,7 @@ use std::sync::{Arc, RwLock};
 use serde::{Serialize};
 use tydi_lang_parser::tydi_memory_representation::{TypedValue, Project};
 
-use crate::{json_representation_logic_type::LogicType, json_representation_all::JsonRepresentation};
+use crate::{json_representation_logic_type::LogicType, json_representation_all::JsonRepresentation, util::generate_random_str};
 
 
 
@@ -31,7 +31,7 @@ impl Value {
             TypedValue::FloatValue(v) => return Ok((Value::Float(*v), output_dependency)),
             TypedValue::ClockDomainValue(v) => return Ok((Value::ClockDomain(v.clone()), output_dependency)),
             TypedValue::LogicTypeValue(_) | TypedValue::RefToVar(_) => {
-                let (output_value, mut dependencies) = LogicType::translate_from_tydi_project_type_value(tydi_project, value)?;
+                let (output_value, mut dependencies) = LogicType::translate_from_tydi_project_type_value(tydi_project, value, generate_random_str(8))?;
                 output_dependency.logic_types.append(&mut dependencies);
                 return Ok((Value::LogicType(output_value), output_dependency));
             }

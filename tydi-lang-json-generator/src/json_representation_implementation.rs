@@ -4,14 +4,12 @@ use std::collections::BTreeMap;
 use serde::{Serialize};
 
 use tydi_lang_parser::trait_common::GetName;
-use tydi_lang_parser::tydi_memory_representation::net::PortOwner;
-use tydi_lang_parser::tydi_memory_representation::scope::GetScope;
-use tydi_lang_parser::tydi_memory_representation::{self, Project, TypedValue, Scope};
+use tydi_lang_parser::tydi_memory_representation::{self, Project, TypedValue, Scope, GetScope, PortOwner, GlobalIdentifier};
 
 use crate::json_representation_all::{JsonRepresentation};
 use crate::json_representation_value::Value;
 use crate::json_representation_streamlet::Streamlet;
-use crate::name_conversion::{self, get_global_variable_name_with_scope};
+use crate::name_conversion::{self, get_global_variable_name_with_scope, get_global_variable_name_with_parent_scope};
 use crate::util::generate_init_name;
 
 #[derive(Clone, Debug, Serialize)]
@@ -102,7 +100,7 @@ impl Implementation {
         let mut output_dependency = JsonRepresentation::new();
         let mut output_implementation = Implementation::new();
 
-        let target_var_name = name_conversion::get_global_variable_name_with_scope(target_impl.clone(), scope.clone());
+        let target_var_name = name_conversion::get_global_variable_name_with_parent_scope(target_impl.clone());
         output_implementation.name = target_var_name.clone();
 
         let implementation_scope = target_impl.read().unwrap().get_scope();
@@ -166,15 +164,13 @@ impl Implementation {
                         {
                             let src_port = net.read().unwrap().get_source_port().expect("bug: src port not available");
                             let src_port_parent_streamlet = src_port.read().unwrap().get_parent_streamlet().expect("bug: parent streamlet not available");
-                            let src_port_parent_streamlet_scope = src_port_parent_streamlet.read().unwrap().get_scope();
-                            let src_port_name = get_global_variable_name_with_scope(src_port.clone(), src_port_parent_streamlet_scope.clone());
+                            let src_port_name = get_global_variable_name_with_parent_scope(src_port.clone());
                             output_net.src_port_name = src_port_name;
                         }
                         {
                             let sink_port = net.read().unwrap().get_sink_port().expect("bug: sink port not available");
                             let sink_port_parent_streamlet = sink_port.read().unwrap().get_parent_streamlet().expect("bug: parent streamlet not available");
-                            let sink_port_parent_streamlet_scope = sink_port_parent_streamlet.read().unwrap().get_scope();
-                            let sink_port_name = get_global_variable_name_with_scope(sink_port.clone(), sink_port_parent_streamlet_scope.clone());
+                            let sink_port_name = get_global_variable_name_with_parent_scope(sink_port.clone());
                             output_net.sink_port_name = sink_port_name;
                         }
 

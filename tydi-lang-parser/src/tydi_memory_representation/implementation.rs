@@ -9,6 +9,8 @@ use crate::tydi_memory_representation::{Streamlet, TemplateArg, CodeLocation, Sc
 use crate::trait_common::{GetName, HasDocument};
 use crate::{generate_access, generate_get, generate_set, generate_access_pub, generate_get_pub, generate_set_pub, generate_name};
 
+use super::GlobalIdentifier;
+
 #[derive(Clone, Debug, strum::IntoStaticStr)]
 pub enum ImplementationType {
     Unknown,
@@ -31,13 +33,13 @@ impl Serialize for ImplementationType {
 
         match self {
             ImplementationType::Unknown => {
-
+                //skip
             },
             ImplementationType::Normal => {
-
+                //skip
             },
             ImplementationType::Template => {
-
+                //skip
             },
             ImplementationType::TemplateInstance(template, arg_map) => {
                 state.serialize_field("template_name", &template.read().unwrap().get_name())?;
@@ -47,8 +49,6 @@ impl Serialize for ImplementationType {
         state.end()
     }
 }
-
-
 
 #[derive(Clone, Debug, Serialize)]
 pub struct Implementation {
@@ -66,6 +66,10 @@ pub struct Implementation {
     derived_streamlet: Option<Arc<RwLock<Streamlet>>>,
 
     location_define: CodeLocation,
+
+    #[serde(with = "crate::serde_serialization::use_name_for_optional_arc_rwlock")]
+    parent_scope: Option<Arc<RwLock<Scope>>>,
+    id_in_scope: Option<String>,
 
     document: Option<String>,
 
@@ -89,6 +93,8 @@ impl DeepClone for Implementation {
             derived_streamlet_var: self.derived_streamlet_var.deep_clone(),
             derived_streamlet: self.derived_streamlet.deep_clone(),
             location_define: self.location_define.deep_clone(),
+            parent_scope: self.parent_scope.clone(),
+            id_in_scope: self.id_in_scope.deep_clone(),
             document: self.document.deep_clone(),
             template_args: self.template_args.deep_clone(),
             attributes: self.attributes.deep_clone(),
@@ -109,6 +115,11 @@ impl GetScope for Implementation {
     generate_get!(scope, Arc<RwLock<Scope>>, get_scope);
 }
 
+impl GlobalIdentifier for Implementation {
+    generate_access!(parent_scope, Option<Arc<RwLock<Scope>>>, get_parent_scope, set_parent_scope);
+    generate_access!(id_in_scope, Option<String>, get_id_in_scope, set_id_in_scope);
+}
+
 impl Implementation {
     pub fn new(name: String, streamlet_exp: String, impl_type: ImplementationType, parent_scope: Arc<RwLock<Scope>>) -> Arc<RwLock<Self>> {
         let mut output = Self {
@@ -118,6 +129,8 @@ impl Implementation {
             derived_streamlet_var: Variable::new_place_holder(),
             derived_streamlet: None,
             location_define: CodeLocation::new_unknown(),
+            parent_scope: None,
+            id_in_scope: None,
             document: None,
             template_args: None,
             attributes: vec![],
@@ -134,6 +147,8 @@ impl Implementation {
             derived_streamlet_var: Variable::new_place_holder(),
             derived_streamlet: None,
             location_define: CodeLocation::new_unknown(),
+            parent_scope: None,
+            id_in_scope: None,
             document: None,
             template_args: None,
             attributes: vec![],

@@ -92,6 +92,9 @@ impl ScopeRelationship {
 #[derive(Clone, Debug, Serialize)]
 pub struct Scope {
     name: String,
+
+    id_in_code: Option<String>,
+
     scope_type: ScopeType,
 
     #[serde(skip)]
@@ -112,6 +115,7 @@ impl DeepClone_ArcLock for Scope {
     fn deep_clone_arclock(&self) -> Arc<RwLock<Self>> {
         let output = Self {
             name: self.name.deep_clone(),
+            id_in_code: self.id_in_code.deep_clone(),
             scope_type: self.scope_type.clone(),
             self_ref: None,
             scope_relationships: self.scope_relationships.deep_clone(), //Notice: this is a dirty implementation, user needs to maintain the scope relationships by themselves
@@ -202,6 +206,7 @@ impl Scope {
     pub fn new(name: String, scope_type: ScopeType, parent_scope: Arc<RwLock<Self>>) -> Arc<RwLock<Self>> {
         let output = Arc::new(RwLock::new(Scope {
             name: name,
+            id_in_code: None,
             scope_type: scope_type,
             self_ref: None,
             scope_relationships: BTreeMap::new(),
@@ -225,6 +230,7 @@ impl Scope {
     pub fn new_top_scope(name: String) -> Arc<RwLock<Self>> {
         let output = Arc::new(RwLock::new(Scope {
             name: name,
+            id_in_code: None,
             scope_type: ScopeType::RootScope,
             self_ref: None,
             scope_relationships: BTreeMap::new(),
@@ -242,6 +248,7 @@ impl Scope {
     pub fn new_place_holder() -> Arc<RwLock<Self>> {
         let output = Self {
             name: generate_name::generate_init_value(),
+            id_in_code: None,
             scope_type: ScopeType::UnknownScope,
             self_ref: None,
             scope_relationships: BTreeMap::new(),
@@ -350,3 +357,12 @@ pub trait GetScope {
     fn get_scope(&self) -> Arc<RwLock<Scope>>;
 }
 
+pub trait GlobalIdentifier {
+    fn set_parent_scope(&mut self, parent_scope: Option<Arc<RwLock<Scope>>>);
+
+    fn get_parent_scope(&self) -> Option<Arc<RwLock<Scope>>>;
+
+    fn set_id_in_scope(&mut self, id: Option<String>);
+
+    fn get_id_in_scope(&self) -> Option<String>;
+}

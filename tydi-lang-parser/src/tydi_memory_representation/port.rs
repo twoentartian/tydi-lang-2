@@ -3,7 +3,7 @@ use std::sync::{Arc, RwLock};
 use serde::{Serialize, Deserialize};
 
 use crate::deep_clone::DeepClone;
-use crate::tydi_memory_representation::{Variable, Attribute, CodeLocation, TraitCodeLocationAccess, TypedValue, Streamlet};
+use crate::tydi_memory_representation::{Variable, Attribute, CodeLocation, TraitCodeLocationAccess, TypedValue, Streamlet, Scope, GlobalIdentifier};
 
 use crate::trait_common::{GetName, HasDocument};
 use crate::{generate_access, generate_get, generate_set, generate_name, generate_access_pub, generate_get_pub, generate_set_pub};
@@ -51,12 +51,21 @@ pub struct Port {
     document: Option<String>,
 
     location_define: CodeLocation,
+
+    #[serde(with = "crate::serde_serialization::use_name_for_optional_arc_rwlock")]
+    parent_scope: Option<Arc<RwLock<Scope>>>,
+    id_in_scope: Option<String>,
 }
 
 impl GetName for Port {
     fn get_name(&self) -> String {
         return self.name.clone();
     }
+}
+
+impl GlobalIdentifier for Port {
+    generate_access!(parent_scope, Option<Arc<RwLock<Scope>>>, get_parent_scope, set_parent_scope);
+    generate_access!(id_in_scope, Option<String>, get_id_in_scope, set_id_in_scope);
 }
 
 impl DeepClone for Port {
@@ -70,6 +79,8 @@ impl DeepClone for Port {
             attributes: self.attributes.deep_clone(),
             document: self.document.deep_clone(),
             location_define: self.location_define.deep_clone(),
+            parent_scope: self.parent_scope.clone(),
+            id_in_scope: self.id_in_scope.deep_clone(),
         };
         return output;
     }
@@ -94,6 +105,8 @@ impl Port {
             attributes: vec![],
             document: None,
             location_define: CodeLocation::new_unknown(),
+            parent_scope: None,
+            id_in_scope: None,
         };
         return Arc::new(RwLock::new(output));
     }
@@ -108,6 +121,8 @@ impl Port {
             attributes: vec![],
             document: None,
             location_define: CodeLocation::new_unknown(),
+            parent_scope: None,
+            id_in_scope: None,
         };
         return Arc::new(RwLock::new(output));
     }

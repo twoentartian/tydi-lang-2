@@ -4,7 +4,7 @@ use std::collections::BTreeMap;
 use serde::{Serialize};
 
 use crate::deep_clone::{DeepClone, DeepClone_ArcLock};
-use crate::tydi_memory_representation::{Scope, GetScope, ScopeType, CodeLocation, TraitCodeLocationAccess, TemplateArg};
+use crate::tydi_memory_representation::{Scope, GetScope, ScopeType, CodeLocation, TraitCodeLocationAccess, TemplateArg, GlobalIdentifier};
 use crate::trait_common::{GetName, HasDocument};
 use crate::{generate_access, generate_get, generate_set, generate_name, generate_access_pub, generate_get_pub, generate_set_pub};
 
@@ -20,6 +20,10 @@ pub struct LogicUnion {
     document: Option<String>,
 
     template_args: Option<BTreeMap<usize, TemplateArg>>,
+
+    #[serde(with = "crate::serde_serialization::use_name_for_optional_arc_rwlock")]
+    parent_scope: Option<Arc<RwLock<Scope>>>,
+    id_in_scope: Option<String>,
 }
 
 impl GetName for LogicUnion {
@@ -36,6 +40,8 @@ impl DeepClone for LogicUnion {
             location_define: self.location_define.deep_clone(),
             document: self.document.deep_clone(),
             template_args: self.template_args.deep_clone(),
+            parent_scope: self.parent_scope.clone(),
+            id_in_scope: self.id_in_scope.deep_clone(),
         };
         return output;
     }
@@ -53,6 +59,11 @@ impl GetScope for LogicUnion {
     generate_get!(scope, Arc<RwLock<Scope>>, get_scope);
 }
 
+impl GlobalIdentifier for LogicUnion {
+    generate_access!(parent_scope, Option<Arc<RwLock<Scope>>>, get_parent_scope, set_parent_scope);
+    generate_access!(id_in_scope, Option<String>, get_id_in_scope, set_id_in_scope);
+}
+
 impl LogicUnion {
     pub fn new(name: String, parent_scope: Arc<RwLock<Scope>>) -> Arc<RwLock<Self>> {
         let output = Self {
@@ -61,6 +72,8 @@ impl LogicUnion {
             location_define: CodeLocation::new_unknown(),
             document: None,
             template_args: None,
+            parent_scope: None,
+            id_in_scope: None,
         };
         return Arc::new(RwLock::new(output));
     }
@@ -72,6 +85,8 @@ impl LogicUnion {
             location_define: CodeLocation::new_unknown(),
             document: None,
             template_args: None,
+            parent_scope: None,
+            id_in_scope: None,
         };
         return Arc::new(RwLock::new(output));
     }

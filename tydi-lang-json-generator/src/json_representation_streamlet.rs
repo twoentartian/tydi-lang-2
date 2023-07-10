@@ -2,13 +2,12 @@ use std::sync::{Arc, RwLock};
 use std::collections::BTreeMap;
 
 use serde::{Serialize};
-use tydi_lang_parser::tydi_memory_representation::scope::GetScope;
 
 use crate::json_representation_logic_type::LogicType;
 use crate::json_representation_all::{JsonRepresentation, JsonRepresentation_item_type};
 use crate::name_conversion;
 use crate::util::{generate_init_name, GetName};
-use tydi_lang_parser::tydi_memory_representation::{self, Project, Scope};
+use tydi_lang_parser::tydi_memory_representation::{self, Project, Scope, GlobalIdentifier, GetScope};
 
 
 #[derive(Clone, Debug, Serialize)]
@@ -38,7 +37,7 @@ impl Port {
 
     pub fn translate_from_tydi_project_port(tydi_project: Arc<RwLock<Project>>, target_port: Arc<RwLock<tydi_memory_representation::Port>>, target_var_scope: Arc<RwLock<Scope>>) -> Result<(Port, JsonRepresentation), String> {
         let mut output_port = Port::new();
-        output_port.name = name_conversion::get_global_variable_name_with_scope(target_port.clone(), target_var_scope.clone());
+        output_port.name = name_conversion::get_global_variable_name_with_parent_scope(target_port.clone());
         let target_port_direction = target_port.read().unwrap().get_direction();
         match target_port_direction {
             tydi_memory_representation::PortDirection::In => {
@@ -96,7 +95,7 @@ impl Streamlet {
         let mut output_dependency = JsonRepresentation::new();
         let mut output_streamlet = Streamlet::new();
 
-        let target_var_name = name_conversion::get_global_variable_name_with_scope(target_streamlet.clone(), target_streamlet_scope.clone());
+        let target_var_name = name_conversion::get_global_variable_name_with_parent_scope(target_streamlet.clone());
         output_streamlet.name = target_var_name.clone();
 
         let streamlet_scope = target_streamlet.read().unwrap().get_scope();

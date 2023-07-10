@@ -8,7 +8,7 @@ pub use package::Package;
 
 pub mod scope;
 pub(in crate) use scope::*;
-pub use scope::{Scope, ScopeType, ScopeRelationType, ScopeRelationship};
+pub use scope::{Scope, ScopeType, ScopeRelationType, ScopeRelationship, GlobalIdentifier, GetScope};
 
 pub mod typed_value;
 pub(in crate) use typed_value::*;

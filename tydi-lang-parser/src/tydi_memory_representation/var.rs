@@ -6,9 +6,9 @@ use serde::{Serialize, Serializer, Deserialize};
 use crate::deep_clone::{DeepClone, DeepClone_ArcLock};
 use crate::tydi_memory_representation::{TypedValue, TypeIndication, CodeLocation, TraitCodeLocationAccess, Streamlet, LogicType, Port, Implementation, Instance};
 use crate::trait_common::GetName;
-use crate::{generate_get_pub, generate_access_pub, generate_set_pub, generate_name};
+use crate::{generate_get_pub, generate_access_pub, generate_set_pub, generate_access, generate_set, generate_get, generate_name};
 
-use super::{Net, Scope};
+use super::{Net, Scope, GlobalIdentifier};
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub enum EvaluationStatus {
@@ -46,6 +46,8 @@ pub struct Variable {
     is_property_of_scope: bool,
     declare_location: CodeLocation,
     parent_scope: Option<Arc<RwLock<Scope>>>,
+    id_in_scope: Option<String>,
+    is_name_user_defined: bool,
     template_args: Option<BTreeMap<usize, String>>,
     template_arg_values: Option<BTreeMap<usize, TypedValue>>,
 }
@@ -68,6 +70,8 @@ impl DeepClone for Variable {
             is_property_of_scope: self.is_property_of_scope.deep_clone(),
             declare_location: self.declare_location.deep_clone(),
             parent_scope: self.parent_scope.clone(),    //clone should be enough here
+            id_in_scope: self.id_in_scope.deep_clone(),
+            is_name_user_defined: self.is_name_user_defined.deep_clone(),
             template_args: self.template_args.deep_clone(),
             template_arg_values: self.template_arg_values.deep_clone(),
         };
@@ -102,7 +106,7 @@ impl Serialize for Variable {
             // }
         }
         else {
-            let mut state = serializer.serialize_struct("Variable", 9)?;
+            let mut state = serializer.serialize_struct("Variable", 14)?;
             state.serialize_field("name", &self.name)?;
             state.serialize_field("exp", &self.exp)?;
             state.serialize_field("value", &self.value)?;
@@ -114,7 +118,18 @@ impl Serialize for Variable {
             state.serialize_field("type_indication", &self.type_indication)?;
             state.serialize_field("is_property_of_scope", &self.is_property_of_scope)?;
             state.serialize_field("declare_location", &self.declare_location)?;
+            match &self.parent_scope {
+                Some(parent_scope) => {
+                    state.serialize_field("parent_scope", &parent_scope.read().unwrap().get_name())?;
+                },
+                None => {
+                    state.serialize_field("parent_scope", "none")?;
+                },
+            }
+            state.serialize_field("id_in_scope", &self.id_in_scope)?;
+            state.serialize_field("is_name_user_defined", &self.is_name_user_defined)?;
             state.serialize_field("template_args", &self.template_args)?;
+            state.serialize_field("template_arg_values", &self.template_arg_values)?;
             state.end()
         }
     }
@@ -142,6 +157,8 @@ impl Variable {
             is_property_of_scope: false,
             declare_location: CodeLocation::new_unknown(),
             parent_scope: None,
+            id_in_scope: None,
+            is_name_user_defined: false,
             template_args: None,
             template_arg_values: None,
         };
@@ -159,6 +176,8 @@ impl Variable {
             is_property_of_scope: false,
             declare_location: CodeLocation::new_unknown(),
             parent_scope: None,
+            id_in_scope: None,
+            is_name_user_defined: false,
             template_args: None,
             template_arg_values: None,
         };
@@ -176,6 +195,8 @@ impl Variable {
             is_property_of_scope: false,
             declare_location: CodeLocation::new_unknown(),
             parent_scope: None,
+            id_in_scope: None,
+            is_name_user_defined: false,
             template_args: None,
             template_arg_values: None,
         };
@@ -193,6 +214,8 @@ impl Variable {
             is_property_of_scope: false,
             declare_location: CodeLocation::new_unknown(),
             parent_scope: None,
+            id_in_scope: None,
+            is_name_user_defined: false,
             template_args: None,
             template_arg_values: None,
         };
@@ -211,6 +234,8 @@ impl Variable {
             is_property_of_scope: false,
             declare_location: CodeLocation::new_unknown(),
             parent_scope: None,
+            id_in_scope: None,
+            is_name_user_defined: false,
             template_args: None,
             template_arg_values: None,
         };
@@ -229,6 +254,8 @@ impl Variable {
             is_property_of_scope: false,
             declare_location: CodeLocation::new_unknown(),
             parent_scope: None,
+            id_in_scope: None,
+            is_name_user_defined: false,
             template_args: None,
             template_arg_values: None,
         };
@@ -247,6 +274,8 @@ impl Variable {
             is_property_of_scope: false,
             declare_location: CodeLocation::new_unknown(),
             parent_scope: None,
+            id_in_scope: None,
+            is_name_user_defined: false,
             template_args: None,
             template_arg_values: None,
         };
@@ -265,6 +294,8 @@ impl Variable {
             is_property_of_scope: false,
             declare_location: CodeLocation::new_unknown(),
             parent_scope: None,
+            id_in_scope: None,
+            is_name_user_defined: false,
             template_args: None,
             template_arg_values: None,
         };
@@ -283,6 +314,8 @@ impl Variable {
             is_property_of_scope: false,
             declare_location: CodeLocation::new_unknown(),
             parent_scope: None,
+            id_in_scope: None,
+            is_name_user_defined: false,
             template_args: None,
             template_arg_values: None,
         };
@@ -301,6 +334,8 @@ impl Variable {
             is_property_of_scope: false,
             declare_location: CodeLocation::new_unknown(),
             parent_scope: None,
+            id_in_scope: None,
+            is_name_user_defined: false,
             template_args: None,
             template_arg_values: None,
         };
@@ -318,6 +353,8 @@ impl Variable {
             is_property_of_scope: false,
             declare_location: CodeLocation::new_unknown(),
             parent_scope: None,
+            id_in_scope: None,
+            is_name_user_defined: false,
             template_args: None,
             template_arg_values: None,
         };
@@ -335,6 +372,8 @@ impl Variable {
             is_property_of_scope: false,
             declare_location: CodeLocation::new_unknown(),
             parent_scope: None,
+            id_in_scope: None,
+            is_name_user_defined: false,
             template_args: None,
             template_arg_values: None,
         };
@@ -352,6 +391,8 @@ impl Variable {
             is_property_of_scope: false,
             declare_location: CodeLocation::new_unknown(),
             parent_scope: None,
+            id_in_scope: None,
+            is_name_user_defined: false,
             template_args: None,
             template_arg_values: None,
         };
@@ -390,11 +431,16 @@ impl Variable {
     generate_access_pub!(array_size, Option<Arc<RwLock<Variable>>>, get_array_size, set_array_size);
     generate_access_pub!(is_property_of_scope, bool, get_is_property_of_scope, set_is_property_of_scope);
     generate_access_pub!(evaluated, EvaluationStatus, get_evaluated, set_evaluated);
-    generate_access_pub!(parent_scope, Option<Arc<RwLock<Scope>>>, get_parent_scope, set_parent_scope);
     generate_access_pub!(template_args, Option<BTreeMap<usize, String>>, get_template_args, set_template_args);
     generate_access_pub!(template_arg_values, Option<BTreeMap<usize, TypedValue>>, get_template_arg_values, set_template_arg_values);
+    generate_access_pub!(is_name_user_defined, bool, get_is_name_user_defined, set_is_name_user_defined);
 }
 
+impl GlobalIdentifier for Variable {
+    generate_access!(parent_scope, Option<Arc<RwLock<Scope>>>, get_parent_scope, set_parent_scope);
+
+    generate_access!(id_in_scope, Option<String>, get_id_in_scope, set_id_in_scope);
+}
 
 #[cfg(test)]
 mod test_var {

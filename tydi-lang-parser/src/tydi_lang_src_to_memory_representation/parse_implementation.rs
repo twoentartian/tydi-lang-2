@@ -5,7 +5,7 @@ use crate::error::TydiLangError;
 use crate::generate_name::{generate_init_value, generate_built_in_variable_name_from_span};
 use crate::trait_common::HasDocument;
 use crate::tydi_lang_src_to_memory_representation::parse_type::{parse_ArraySizeIndicator};
-use crate::tydi_memory_representation::{Scope, GetScope, Variable, TraitCodeLocationAccess, CodeLocation, Implementation, Instance, Net, TypeIndication, ImplementationType};
+use crate::tydi_memory_representation::{Scope, GetScope, Variable, TraitCodeLocationAccess, CodeLocation, Implementation, Instance, Net, TypeIndication, ImplementationType, GlobalIdentifier};
 use crate::tydi_parser::*;
 
 use crate::tydi_lang_src_to_memory_representation::{parse_template, parse_miscellaneous, parse_file};
@@ -58,6 +58,8 @@ pub fn parse_Implementation(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src:
         output_implementation_write.set_document(document);
         output_implementation_write.set_attributes(attributes);
         output_implementation_write.set_code_location(CodeLocation::new_from_pest_rule(&src, raw_src.clone()));
+        output_implementation_write.set_parent_scope(Some(scope.clone()));
+        output_implementation_write.set_id_in_scope(Some(name.clone()));
         output_implementation_write.set_derived_streamlet_exp(streamlet_exp, streamlet_exp_code_location);
     }
 
@@ -113,6 +115,8 @@ pub fn parse_Instance(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<S
         output_instance_write.set_document(document);
         output_instance_write.set_attributes(attributes);
         output_instance_write.set_code_location(CodeLocation::new_from_pest_rule(&src, raw_src.clone()));
+        output_instance_write.set_parent_scope(Some(scope.clone()));
+        output_instance_write.set_id_in_scope(Some(name.clone()));
     }
 
     let output_instance_var = Variable::new_instance(name.clone(), output_instance);
@@ -120,6 +124,7 @@ pub fn parse_Instance(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<S
         let mut output_instance_var_write = output_instance_var.write().unwrap();
         output_instance_var_write.set_code_location(CodeLocation::new_from_pest_rule(&src, raw_src.clone()));
         output_instance_var_write.set_array_size(array_size_indicator);
+        output_instance_var_write.set_is_name_user_defined(true);
     }
 
     return Ok(output_instance_var);

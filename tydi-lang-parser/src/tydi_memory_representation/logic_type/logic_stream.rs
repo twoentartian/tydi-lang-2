@@ -3,8 +3,8 @@ use std::sync::{Arc, RwLock};
 use serde::{Serialize};
 
 use crate::deep_clone::DeepClone;
-use crate::{generate_get_pub, generate_set_pub};
-use crate::tydi_memory_representation::{TypeIndication, CodeLocation, TraitCodeLocationAccess, Variable, TypedValue, LogicType};
+use crate::{generate_get_pub, generate_set_pub, generate_access, generate_set, generate_get};
+use crate::tydi_memory_representation::{TypeIndication, CodeLocation, TraitCodeLocationAccess, Variable, TypedValue, LogicType, Scope, GlobalIdentifier};
 
 use crate::trait_common::{GetName, AccessProperty};
 
@@ -124,6 +124,10 @@ pub struct LogicStream {
 
     location_define: CodeLocation,
 
+    #[serde(with = "crate::serde_serialization::use_name_for_optional_arc_rwlock")]
+    parent_scope: Option<Arc<RwLock<Scope>>>,
+    id_in_scope: Option<String>,
+
     // stream properties
     /// d, default: 1. Candidate: int > 0
     #[serde(with = "crate::serde_serialization::serialize_variable_value_only")]
@@ -160,6 +164,8 @@ impl DeepClone for LogicStream {
             name: self.name.deep_clone(),
             stream_type: self.stream_type.deep_clone(),
             location_define: self.location_define.deep_clone(),
+            parent_scope: self.parent_scope.clone(),
+            id_in_scope: self.id_in_scope.deep_clone(),
             dimension: self.dimension.deep_clone(),
             user_type: self.user_type.deep_clone(),
             throughput: self.throughput.deep_clone(),
@@ -194,6 +200,11 @@ impl AccessProperty for LogicStream {
     }
 }
 
+impl GlobalIdentifier for LogicStream {
+    generate_access!(parent_scope, Option<Arc<RwLock<Scope>>>, get_parent_scope, set_parent_scope);
+    generate_access!(id_in_scope, Option<String>, get_id_in_scope, set_id_in_scope);
+}
+
 impl LogicStream {
     pub fn new(name: String, stream_type: Option<String>) -> Arc<RwLock<Self>> {
         let name: &String = &name;
@@ -206,6 +217,8 @@ impl LogicStream {
             name: name.clone(),
             stream_type: stream_type_var,
             location_define: CodeLocation::new_unknown(),
+            parent_scope: None,
+            id_in_scope: None,
             dimension: Variable::new_predefined(format!("{}_{name}", DIMENSION_VAR_NAME), TypedValue::IntValue(1)),
             user_type: Variable::new_predefined(format!("{}_{name}", USERTYPE_VAR_NAME), TypedValue::LogicTypeValue(Arc::new(RwLock::new(LogicType::LogicNullType)))),
             throughput: Variable::new_predefined(format!("{}_{name}", THROUGHPUT_VAR_NAME), TypedValue::FloatValue(1.0)),

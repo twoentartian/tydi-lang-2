@@ -4,7 +4,7 @@ use crate::error::TydiLangError;
 use crate::generate_name::generate_init_value;
 use crate::trait_common::HasDocument;
 use crate::tydi_lang_src_to_memory_representation::{parse_template::parse_TemplateArgs, parse_file::parse_Scope_WithoutBracket};
-use crate::tydi_memory_representation::{Scope, LogicType, LogicBit, Variable, TraitCodeLocationAccess, CodeLocation, GetScope, LogicGroup, LogicUnion, LogicStream, LogicStreamProperty};
+use crate::tydi_memory_representation::{Scope, LogicType, LogicBit, Variable, TraitCodeLocationAccess, CodeLocation, GetScope, LogicGroup, LogicUnion, LogicStream, LogicStreamProperty, GlobalIdentifier};
 use crate::{tydi_parser::*, generate_name};
 
 #[allow(non_snake_case)]
@@ -70,12 +70,15 @@ pub fn parse_LogicalGroup(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: A
         output_logic_group_write.set_code_location(CodeLocation::new_from_pest_rule(&src, raw_src.clone()));
         output_logic_group_write.set_document(document);
         output_logic_group_write.set_template_args(template_args);
+        output_logic_group_write.set_parent_scope(Some(scope.clone()));
+        output_logic_group_write.set_id_in_scope(Some(group_name.clone()));
     }
 
     let logic_group_var = Variable::new_logic_type(group_name.clone(), Arc::new(RwLock::new(LogicType::LogicGroupType(output_logic_group))));
     {
         let mut logic_group_var_write = logic_group_var.write().unwrap();
         logic_group_var_write.set_code_location(CodeLocation::new_from_pest_rule(&src, raw_src.clone()));
+        logic_group_var_write.set_is_name_user_defined(true);
     }
 
     return Ok(logic_group_var);
@@ -113,12 +116,15 @@ pub fn parse_LogicalUnion(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: A
         output_logic_union_write.set_code_location(CodeLocation::new_from_pest_rule(&src, raw_src.clone()));
         output_logic_union_write.set_document(document);
         output_logic_union_write.set_template_args(template_args);
+        output_logic_union_write.set_parent_scope(Some(scope.clone()));
+        output_logic_union_write.set_id_in_scope(Some(union_name.clone()));
     }
 
     let logic_union_var = Variable::new_logic_type(union_name.clone(), Arc::new(RwLock::new(LogicType::LogicUnionType(output_logic_union))));
     {
         let mut logic_union_var_write = logic_union_var.write().unwrap();
         logic_union_var_write.set_code_location(CodeLocation::new_from_pest_rule(&src, raw_src.clone()));
+        logic_union_var_write.set_is_name_user_defined(true);
     }
 
     return Ok(logic_union_var);
@@ -184,6 +190,7 @@ pub fn parse_LogicalStream(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: 
         }
 
         output_logic_stream_write.set_code_location(CodeLocation::new_from_pest_rule(&src, raw_src.clone()));
+        output_logic_stream_write.set_parent_scope(Some(scope.clone()));
         for stream_property in stream_properties {
             let result = output_logic_stream_write.apply_property_var(stream_property);
             if result.is_err() {
@@ -191,6 +198,7 @@ pub fn parse_LogicalStream(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: 
             }
         }
     }
+
     // set stream variable
     let logic_stream_var = Variable::new_logic_type(logic_stream_var_name, Arc::new(RwLock::new(LogicType::LogicStreamType(output_logic_stream))));
     {
