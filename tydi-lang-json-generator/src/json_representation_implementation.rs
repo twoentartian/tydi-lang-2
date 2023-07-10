@@ -9,7 +9,7 @@ use tydi_lang_parser::tydi_memory_representation::{self, Project, TypedValue, Sc
 use crate::json_representation_all::{JsonRepresentation};
 use crate::json_representation_value::Value;
 use crate::json_representation_streamlet::Streamlet;
-use crate::name_conversion::{self, get_global_variable_name_with_scope, get_global_variable_name_with_parent_scope};
+use crate::name_conversion::{self, get_global_variable_name_with_parent_scope, get_global_variable_name_with_scope};
 use crate::util::generate_init_name;
 
 #[derive(Clone, Debug, Serialize)]
@@ -146,7 +146,7 @@ impl Implementation {
                         if inst_name == "self" {
                             continue;   //ignore self
                         }
-                        let inst_name = get_global_variable_name_with_scope(inst.clone(), implementation_scope.clone());
+                        let inst_name = get_global_variable_name_with_parent_scope(inst.clone());
                         let inst_impl = inst.read().unwrap().get_derived_impl().expect("bug: instance without derived implementation");
                         let (instance_impl, mut dependencies) = Self::translate_from_tydi_project_implementation(tydi_project.clone(), inst_impl.clone(), implementation_scope.clone())?;
                         output_dependency.append(&mut dependencies);
@@ -179,7 +179,7 @@ impl Implementation {
                             return match owner {
                                 PortOwner::Unknown => unreachable!(),
                                 PortOwner::ImplSelf => String::from("self"),
-                                PortOwner::ImplInstance(impl_inst) => get_global_variable_name_with_scope(impl_inst.clone(), implementation_scope.clone()),
+                                PortOwner::ImplInstance(impl_inst) => get_global_variable_name_with_parent_scope(impl_inst.clone()),
                             };
                         };
 
