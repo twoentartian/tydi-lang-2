@@ -35,7 +35,7 @@ pub fn parse_StreamLet(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<
                 attributes.push(attr);
             }
             Rule::Scope_WithoutBracket => {
-                output_streamlet = Streamlet::new(generate_built_in_variable_name_from_span(&src), scope.clone());
+                output_streamlet = Streamlet::new(name.clone(), scope.clone());
                 parse_file::parse_Scope_WithoutBracket(element, output_streamlet.read().unwrap().get_scope(), raw_src.clone())?;
             }
             _ => unreachable!()
