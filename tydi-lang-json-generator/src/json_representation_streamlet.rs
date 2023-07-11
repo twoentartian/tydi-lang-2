@@ -2,6 +2,7 @@ use std::sync::{Arc, RwLock};
 use std::collections::BTreeMap;
 
 use serde::{Serialize};
+use tydi_lang_parser::trait_common::HasDocument;
 
 use crate::json_representation_logic_type::LogicType;
 use crate::json_representation_all::{JsonRepresentation, JsonRepresentation_item_type};
@@ -22,7 +23,8 @@ pub struct Port {
     #[serde(skip)]
     pub name: String,
     logic_type: LogicType,
-    direction: PortDirection
+    direction: PortDirection,
+    document: Option<String>,
 }
 
 impl Port {
@@ -31,6 +33,7 @@ impl Port {
             name: generate_init_name(),
             logic_type: LogicType::Unknwon,
             direction: PortDirection::Unknown,
+            document: None,
         };
         return output;
     }
@@ -51,6 +54,7 @@ impl Port {
         let target_port_logic_type = target_port.read().unwrap().get_logical_type();
         let (result_logic_type, mut dependencies) = LogicType::translate_from_tydi_project(tydi_project.clone(), target_port_logic_type.clone())?;
         output_port.logic_type = result_logic_type;
+        output_port.document = target_port.read().unwrap().get_document();
         let mut output_json_representation = JsonRepresentation::new();
         output_json_representation.logic_types.append(&mut dependencies);
         return Ok((output_port, output_json_representation));
@@ -62,6 +66,7 @@ pub struct Streamlet {
     #[serde(skip)]
     pub name: String,
     ports: BTreeMap<String, Port>,
+    document: Option<String>,
 }
 
 impl GetName for Streamlet {
@@ -75,6 +80,7 @@ impl Streamlet {
         let output = Self {
             name: generate_init_name(),
             ports: BTreeMap::new(),
+            document: None,
         };
         return output;
     }
@@ -110,6 +116,11 @@ impl Streamlet {
                 },
                 _ => (),
             }
+        }
+
+        //document
+        {
+            output_streamlet.document = target_streamlet.read().unwrap().get_document();
         }
 
         let output_streamlet = Arc::new(RwLock::new(output_streamlet));

@@ -3,7 +3,7 @@ use std::collections::BTreeMap;
 
 use serde::{Serialize};
 
-use tydi_lang_parser::trait_common::GetName;
+use tydi_lang_parser::trait_common::{GetName, HasDocument};
 use tydi_lang_parser::tydi_memory_representation::{self, Project, TypedValue, Scope, GetScope, PortOwner, GlobalIdentifier};
 
 use crate::json_representation_all::{JsonRepresentation};
@@ -29,6 +29,8 @@ pub struct Net {
 
     sink_port_name: String,
     sink_port_owner_name: String,
+
+    document: Option<String>,
 }
 
 impl Net {
@@ -39,6 +41,7 @@ impl Net {
             src_port_owner_name: generate_init_name(),
             sink_port_name: generate_init_name(),
             sink_port_owner_name: generate_init_name(),
+            document: None,
         };
         return output;
     }
@@ -49,6 +52,7 @@ pub struct ImplementationInstance {
     #[serde(skip)]
     name: String,
     derived_implementation: String,
+    document: Option<String>,
 }
 
 impl ImplementationInstance {
@@ -56,6 +60,7 @@ impl ImplementationInstance {
         let output = Self {
             name: generate_init_name(),
             derived_implementation: generate_init_name(),
+            document: None,
         };
         return output;
     }
@@ -70,6 +75,7 @@ pub struct Implementation {
     derived_streamlet: Arc<RwLock<Streamlet>>,
     nets: BTreeMap<String, Net>,
     implementation_instances: BTreeMap<String, ImplementationInstance>,
+    document: Option<String>,
 }
 
 impl Implementation {
@@ -80,6 +86,7 @@ impl Implementation {
             derived_streamlet: Arc::new(RwLock::new(Streamlet::new())),
             nets: BTreeMap::new(),
             implementation_instances: BTreeMap::new(),
+            document: None,
         };
         return output;
     }
@@ -135,6 +142,11 @@ impl Implementation {
             output_implementation.derived_streamlet = streamlet.clone();
         }
 
+        //document
+        {
+            output_implementation.document = target_impl.read().unwrap().get_document();
+        }
+
         //instances and nets
         {
             let all_variables = implementation_scope.read().unwrap().get_variables();
@@ -154,12 +166,14 @@ impl Implementation {
                         let mut output_instance = ImplementationInstance::new();
                         output_instance.name = inst_name.clone();
                         output_instance.derived_implementation = instance_impl.read().unwrap().name.clone();
+                        output_instance.document = inst.read().unwrap().get_document();
                         output_implementation.implementation_instances.insert(output_instance.name.clone(), output_instance);
                     },
                     TypedValue::Net(net) => {
                         let mut output_net = Net::new();
                         let net_name = get_global_variable_name_with_scope(net.clone(), implementation_scope.clone());
                         output_net.name = net_name;
+                        output_net.document = net.read().unwrap().get_document();
 
                         {
                             let src_port = net.read().unwrap().get_source_port().expect("bug: src port not available");

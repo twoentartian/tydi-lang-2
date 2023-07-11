@@ -109,6 +109,7 @@ fn sample_project_streamlet_impl_0() {
         bit_8 = Bit(8);
         bit_16 = Bit(16);
 
+        #this is an union size#
         Union size {
             small : bit_4;
             mid : bit_8;
@@ -122,18 +123,25 @@ fn sample_project_streamlet_impl_0() {
         package pack1;
         use pack0;
 
+        #this is a streamlet#
         streamlet bypass_s {
+            # this is port_in #
             port_in: pack0.stream_size in;
+            
+            # this is port_out #
             port_out: pack0.stream_size out;
         }
 
+        #this is an implementation#
         impl bypass_i_inner of bypass_s {
             self.port_in => self.port_out;
         }
 
         impl bypass_i of bypass_s {
+            # this instance is used to test using an implementation without template expansion #
             instance test_inst(bypass_i_inner);
 
+            # ports on self have "opposite" direction #
             self.port_in => test_inst.port_in;
             test_inst.port_out => self.port_out;
         }

@@ -6,7 +6,7 @@ use serde::ser::SerializeStruct;
 
 use tydi_lang_parser::tydi_memory_representation::{self, Project, TypedValue};
 use tydi_lang_parser::tydi_memory_representation::scope::GetScope;
-use tydi_lang_parser::trait_common::GetName;
+use tydi_lang_parser::trait_common::{GetName, HasDocument};
 
 use crate::name_conversion::{self, get_global_variable_name_with_parent_scope};
 use crate::util::generate_random_str;
@@ -134,6 +134,7 @@ impl LogicType {
 #[derive(Clone, Debug, Serialize)]
 pub struct LogicGroup {
     elements: BTreeMap<String, LogicType>,
+    document: Option<String>,
 }
 
 impl LogicGroup {
@@ -141,6 +142,7 @@ impl LogicGroup {
         let mut output_dependency = BTreeMap::new();
         let mut output_group = LogicGroup {
             elements: BTreeMap::new(),
+            document: tydi_target.read().unwrap().get_document(),
         };
         let scope = tydi_target.read().unwrap().get_scope();
         let variables = scope.read().unwrap().get_variables();
@@ -164,6 +166,7 @@ impl LogicGroup {
 #[derive(Clone, Debug, Serialize)]
 pub struct LogicUnion {
     elements: BTreeMap<String, LogicType>,
+    document: Option<String>,
 }
 
 impl LogicUnion {
@@ -171,6 +174,7 @@ impl LogicUnion {
         let mut output_dependency = BTreeMap::new();
         let mut output_group = LogicUnion {
             elements: BTreeMap::new(),
+            document: tydi_target.read().unwrap().get_document(),
         };
         let scope = tydi_target.read().unwrap().get_scope();
         let variables = scope.read().unwrap().get_variables();
