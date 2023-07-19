@@ -14,9 +14,6 @@ pub (in crate) use parse_type::parse_LogicalType_Basic;
 mod parse_logic_type;
 use parse_logic_type::*;
 
-mod parse_var;
-use parse_var::*;
-
 mod parse_template;
 use parse_template::*;
 

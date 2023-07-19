@@ -5,7 +5,7 @@ use crate::tydi_memory_representation::{Package, Scope, Variable, TypeIndication
 use crate::tydi_parser::*;
 
 #[allow(non_snake_case)]
-pub fn parse_PackageStatement(src: Pair<Rule>, package: Arc<RwLock<Package>>, raw_src: Arc<String>) -> Result<Arc<RwLock<Package>>, TydiLangError> {
+pub fn parse_PackageStatement(src: Pair<Rule>, package: Arc<RwLock<Package>>, _: Arc<String>) -> Result<Arc<RwLock<Package>>, TydiLangError> {
     for element in src.into_inner().into_iter() {
         match element.as_rule() {
             Rule::ID => {

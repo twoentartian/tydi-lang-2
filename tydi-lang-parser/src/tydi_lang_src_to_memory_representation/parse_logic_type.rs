@@ -131,7 +131,7 @@ pub fn parse_LogicalUnion(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: A
 }
 
 #[allow(non_snake_case)]
-pub fn parse_StreamProperty(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<String>) -> Result<Arc<RwLock<Variable>>, TydiLangError> {
+pub fn parse_StreamProperty(src: Pair<Rule>, _scope: Arc<RwLock<Scope>>, raw_src: Arc<String>) -> Result<Arc<RwLock<Variable>>, TydiLangError> {
     let mut name = generate_init_value();
     let mut exp = generate_init_value();
     for element in src.clone().into_inner().into_iter() {

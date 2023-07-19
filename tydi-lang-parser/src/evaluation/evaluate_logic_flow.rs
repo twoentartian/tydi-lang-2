@@ -118,6 +118,7 @@ pub fn evaluate_for(for_target: Arc<RwLock<For>>, parent_scope: Arc<RwLock<Scope
                     target_for.write().unwrap().set_name(format!("{}_for{}", current_name, for_evaluation_count));
                 },
                 TypedValue::Array(_) => (),
+                TypedValue::Function(_) => (),
                 TypedValue::RefToVar(_) => (),
                 TypedValue::Identifier(_) => unreachable!(),
             }
@@ -131,7 +132,7 @@ pub fn evaluate_for(for_target: Arc<RwLock<For>>, parent_scope: Arc<RwLock<Scope
 }
 
 
-pub fn evaluate_if(if_target: Arc<RwLock<If>>, parent_scope: Arc<RwLock<Scope>>, scope_type: &ScopeType, scope_owner: &ScopeOwner, scope: Arc<RwLock<Scope>>, evaluator: Arc<RwLock<Evaluator>>) -> Result<(), TydiLangError> {
+pub fn evaluate_if(if_target: Arc<RwLock<If>>, parent_scope: Arc<RwLock<Scope>>, scope_type: &ScopeType, scope_owner: &ScopeOwner, _scope: Arc<RwLock<Scope>>, evaluator: Arc<RwLock<Evaluator>>) -> Result<(), TydiLangError> {
     let if_var = if_target.read().unwrap().get_if_exp();
     let value = evaluate_var(if_var.clone(), parent_scope.clone(), evaluator.clone())?;
     let if_exp_value = match &value {

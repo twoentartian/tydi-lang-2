@@ -4,16 +4,7 @@ use std::collections::BTreeMap;
 use crate::trait_common::GetName;
 use crate::{tydi_parser::*, util, tydi_memory_representation::{Variable, TypedValue}};
 
-static mut generate_counter: AtomicUsize = AtomicUsize::new(0);
-
-pub fn generate_built_in_variable_name(start_pos: usize, end_pos: usize) -> String {
-    let counter;
-    unsafe {
-        generate_counter.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
-        counter = generate_counter.load(std::sync::atomic::Ordering::SeqCst);
-    }
-    format!("generated_{}_{}_{}_{}", start_pos, end_pos, util::generate_random_str(8), counter)
-}
+static mut GENERATE_COUNTER: AtomicUsize = AtomicUsize::new(0);
 
 pub fn generate_built_in_variable_name_from_span(src: &Pair<Rule>) -> String {
     let src_span = src.as_span();
@@ -21,8 +12,8 @@ pub fn generate_built_in_variable_name_from_span(src: &Pair<Rule>) -> String {
     let end_pos = src_span.end_pos().pos();
     let counter;
     unsafe {
-        generate_counter.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
-        counter = generate_counter.load(std::sync::atomic::Ordering::SeqCst);
+        GENERATE_COUNTER.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+        counter = GENERATE_COUNTER.load(std::sync::atomic::Ordering::SeqCst);
     }
     format!("generated_{}_{}_{}_{}", start_pos, end_pos, util::generate_random_str(8), counter)
 }

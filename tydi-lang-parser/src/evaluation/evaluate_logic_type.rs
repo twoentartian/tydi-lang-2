@@ -1,9 +1,7 @@
 use std::sync::{RwLock, Arc};
-
 use crate::generate_name::generate_init_value;
-use crate::trait_common::GetName;
 use crate::tydi_lang_src_to_memory_representation;
-use crate::tydi_memory_representation::{Scope, TypedValue, TypeIndication, LogicType, LogicStream, LogicUnion, LogicGroup, LogicBit, TraitCodeLocationAccess, GetScope, ScopeType, Variable};
+use crate::tydi_memory_representation::{Scope, TypedValue, TypeIndication, LogicType, LogicStream, LogicUnion, LogicGroup, LogicBit, TraitCodeLocationAccess, GetScope, ScopeType};
 use crate::tydi_parser::*;
 use crate::error::TydiLangError;
 
@@ -31,10 +29,10 @@ pub fn evaluate_LogicalType(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, evaluato
                         evaluate_var(var.clone(), scope.clone(), evaluator.clone())?;
                         output = TypedValue::RefToVar(var.clone());
                     },
-                    TypeIndication::LogicGroup(var) => {
+                    TypeIndication::LogicGroup(_) => {
                         unreachable!()
                     },
-                    TypeIndication::LogicUnion(var) => {
+                    TypeIndication::LogicUnion(_) => {
                         unreachable!()
                     },
                     _ => unreachable!(),
@@ -169,7 +167,7 @@ pub fn evaluate_LogicStream(target: Arc<RwLock<LogicStream>>, scope: Arc<RwLock<
         let keep = target.read().unwrap().get_keep();
         let value = evaluate_var(keep, scope.clone(), evaluator.clone())?;
         match &value {
-            TypedValue::BoolValue(x) => (),
+            TypedValue::BoolValue(_) => (),
             _ => return Err(TydiLangError::new(format!("the keep {:?} must be a bool", value), target.read().unwrap().get_code_location()))
         }
     }
@@ -202,7 +200,7 @@ pub fn evaluate_LogicBit(target: Arc<RwLock<LogicBit>>, scope: Arc<RwLock<Scope>
 }
 
 #[allow(non_snake_case)]
-pub fn evaluate_LogicGroup(target: Arc<RwLock<LogicGroup>>, scope: Arc<RwLock<Scope>>, evaluator: Arc<RwLock<Evaluator>>) -> Result<TypedValue, TydiLangError> {
+pub fn evaluate_LogicGroup(target: Arc<RwLock<LogicGroup>>, _scope: Arc<RwLock<Scope>>, evaluator: Arc<RwLock<Evaluator>>) -> Result<TypedValue, TydiLangError> {
     evaluator.write().unwrap().increase_deepth();
 
     let logic_group_scope = target.read().unwrap().get_scope();
@@ -215,7 +213,7 @@ pub fn evaluate_LogicGroup(target: Arc<RwLock<LogicGroup>>, scope: Arc<RwLock<Sc
 }
 
 #[allow(non_snake_case)]
-pub fn evaluate_LogicUnion(target: Arc<RwLock<LogicUnion>>, scope: Arc<RwLock<Scope>>, evaluator: Arc<RwLock<Evaluator>>) -> Result<TypedValue, TydiLangError> {
+pub fn evaluate_LogicUnion(target: Arc<RwLock<LogicUnion>>, _scope: Arc<RwLock<Scope>>, evaluator: Arc<RwLock<Evaluator>>) -> Result<TypedValue, TydiLangError> {
     evaluator.write().unwrap().increase_deepth();
 
     let logic_union_scope = target.read().unwrap().get_scope();

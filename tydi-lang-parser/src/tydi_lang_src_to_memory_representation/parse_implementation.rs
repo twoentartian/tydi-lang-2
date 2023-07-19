@@ -4,7 +4,7 @@ use crate::error::TydiLangError;
 
 use crate::generate_name::{generate_init_value, generate_built_in_variable_name_from_span};
 use crate::trait_common::HasDocument;
-use crate::tydi_lang_src_to_memory_representation::parse_type::{parse_ArraySizeIndicator};
+use crate::tydi_lang_src_to_memory_representation::parse_type::parse_ArraySizeIndicator;
 use crate::tydi_memory_representation::{Scope, GetScope, Variable, TraitCodeLocationAccess, CodeLocation, Implementation, Instance, Net, TypeIndication, ImplementationType, GlobalIdentifier};
 use crate::tydi_parser::*;
 
@@ -199,7 +199,7 @@ pub fn parse_Net(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<String
 }
 
 #[allow(non_snake_case)]
-pub fn parse_Netname(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<String>) -> Result<Option<Arc<RwLock<Variable>>>, TydiLangError> {
+pub fn parse_Netname(src: Pair<Rule>, _scope: Arc<RwLock<Scope>>, raw_src: Arc<String>) -> Result<Option<Arc<RwLock<Variable>>>, TydiLangError> {
     for element in src.clone().into_inner().into_iter() {
         let rule = element.as_rule();
         match rule {

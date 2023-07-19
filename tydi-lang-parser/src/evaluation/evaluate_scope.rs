@@ -1,9 +1,7 @@
 use std::sync::{Arc, RwLock};
 use std::vec;
 
-use crate::deep_clone::DeepClone_ArcLock;
-use crate::trait_common::GetName;
-use crate::tydi_memory_representation::{Streamlet, Scope, TypedValue, TypeIndication, EvaluationStatus, ScopeType, Implementation, LogicGroup, LogicUnion, TraitCodeLocationAccess, GetScope, If, For, Variable, ScopeRelationType};
+use crate::tydi_memory_representation::{Streamlet, Scope, TypedValue, TypeIndication, EvaluationStatus, ScopeType, Implementation, LogicGroup, LogicUnion};
 
 use crate::error::TydiLangError;
 
@@ -17,8 +15,6 @@ pub enum ScopeOwner {
     Implementation(Arc<RwLock<Implementation>>),
     LogicGroup(Arc<RwLock<LogicGroup>>),
     LogicUnion(Arc<RwLock<LogicUnion>>),
-    If(Arc<RwLock<If>>),
-    For(Arc<RwLock<For>>),
 }
 
 pub fn evaluate_scope(target_scope: Arc<RwLock<Scope>>, scope_type: &ScopeType, scope_owner: &ScopeOwner, scope: Arc<RwLock<Scope>>, evaluator: Arc<RwLock<Evaluator>>) -> Result<(), TydiLangError> {

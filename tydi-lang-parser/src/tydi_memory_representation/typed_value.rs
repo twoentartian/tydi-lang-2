@@ -1,14 +1,13 @@
 use std::sync::{Arc, RwLock};
 
-use serde::{Serialize};
+use serde::Serialize;
 use serde::ser::SerializeStruct;
 
 use crate::deep_clone::DeepClone;
+use crate::error::TydiLangError;
 use crate::{tydi_memory_representation::{Package, LogicType}, trait_common::GetName};
 
-use crate::tydi_memory_representation::{Variable, Streamlet, Port, Implementation, Instance, Net, If, For};
-
-use super::{Identifier, GetScope};
+use crate::tydi_memory_representation::{Variable, Streamlet, Port, Implementation, Instance, Net, If, For, Identifier, GetScope, Function};
 
 #[derive(Clone, Debug, Serialize)]
 pub enum TypeIndication {
@@ -48,6 +47,8 @@ pub enum TypeIndication {
 
     PackageReference,
 
+    Function,
+
     Array(Box<TypeIndication>),
 }
 
@@ -75,6 +76,7 @@ impl DeepClone for TypeIndication {
             TypeIndication::AnyInstance => self.clone(),
             TypeIndication::AnyNet => self.clone(),
             TypeIndication::PackageReference => self.clone(),
+            TypeIndication::Function => self.clone(),
             TypeIndication::Array(v) => TypeIndication::Array(Box::new(v.deep_clone())),
         };
         return output;
@@ -105,6 +107,7 @@ impl std::string::ToString for TypeIndication {
             TypeIndication::AnyInstance => format!("any_instance"),
             TypeIndication::AnyNet => format!("any_net"),
             TypeIndication::PackageReference => format!("package_reference"),
+            TypeIndication::Function => format!("function"),
             TypeIndication::Array(v) => format!("array({})", v.to_string()),
         }
     }
@@ -154,6 +157,8 @@ impl TypeIndication {
                     TypeIndication::Array(Box::new(Self::infer_from_typed_value(&v[0]))) //maybe we should have TypeIndication::Array?
                 }
             },
+
+            TypedValue::Function(_) => TypeIndication::Function,
 
             //TypedValue during evaluation phase only
             TypedValue::RefToVar(var) => Self::infer_from_typed_value(&var.read().unwrap().get_value()),
@@ -243,6 +248,8 @@ pub enum TypedValue {
 
     Array(Vec<TypedValue>),
 
+    Function(Arc<RwLock<Function>>),
+
     //special TypedValue during evaluation
     RefToVar(Arc<RwLock<Variable>>),
     Identifier(Arc<RwLock<Identifier>>),
@@ -302,6 +309,7 @@ impl DeepClone for TypedValue {
             TypedValue::Array(v) => TypedValue::Array(v.deep_clone()),
             TypedValue::RefToVar(v) => TypedValue::RefToVar(v.deep_clone()),
             TypedValue::Identifier(v) => TypedValue::Identifier(v.deep_clone()),
+            TypedValue::Function(v) => TypedValue::Function(v.deep_clone()),
         };
         return output;
     }
@@ -346,26 +354,30 @@ impl Serialize for TypedValue {
             TypedValue::Implementation(v) => {
                 let v = v.read().unwrap();
                 state.serialize_field("value", &*v)?;
-            }
+            },
             TypedValue::Instance(v) => {
                 let v = v.read().unwrap();
                 state.serialize_field("value", &*v)?;
-            }
+            },
             TypedValue::Net(v) => {
                 let v = v.read().unwrap();
                 state.serialize_field("value", &*v)?;
-            }
+            },
             TypedValue::If(v) => {
                 let v = v.read().unwrap();
                 state.serialize_field("value", &*v)?;
-            }
+            },
             TypedValue::For(v) => {
                 let v = v.read().unwrap();
                 state.serialize_field("value", &*v)?;
-            }
+            },
             TypedValue::Array(v) => {
                 state.serialize_field("value", &*v)?;
-            }
+            },
+            TypedValue::Function(v) => {
+                let v = v.read().unwrap();
+                state.serialize_field("value", &*v)?;
+            },
 
             //TypedValue during evaluation phase only
             TypedValue::RefToVar(v) => {
@@ -433,6 +445,7 @@ impl TypedValue {
             TypedValue::If(_) => todo!(),
             TypedValue::For(_) => todo!(),
             TypedValue::Array(array) => return format!("Array({})", array.iter().map(|i| i.get_brief_info()).collect::<Vec<_>>().join(", ")),
+            TypedValue::Function(v) => return format!("Fcuntion:{}({})", v.read().unwrap().get_function_id(), v.read().unwrap().get_function_arg_exps().iter().map(|(key,value)| value.read().unwrap().get_name()).collect::<Vec<_>>().join(", ")),
             TypedValue::RefToVar(v) => return format!("RefToVar({})", v.read().unwrap().get_name()),
             TypedValue::Identifier(v) => return format!("Identifier({})", v.read().unwrap().get_brief_info()),
         }

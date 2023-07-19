@@ -11,7 +11,7 @@ use crate::error::TydiLangError;
 use super::{Evaluator, evaluate_var, evaluate_scope, ScopeOwner, evaluate_expression};
 
 
-pub fn evaluate_impl(target: Arc<RwLock<Implementation>>, scope: Arc<RwLock<Scope>>, evaluator: Arc<RwLock<Evaluator>>) -> Result<TypedValue, TydiLangError> {
+pub fn evaluate_impl(target: Arc<RwLock<Implementation>>, _scope: Arc<RwLock<Scope>>, evaluator: Arc<RwLock<Evaluator>>) -> Result<TypedValue, TydiLangError> {
     let impl_scope = target.read().unwrap().get_scope();
 
     //find derived streamlet
@@ -102,7 +102,7 @@ pub fn evaluate_net(target: Arc<RwLock<Net>>, scope: Arc<RwLock<Scope>>, evaluat
     target.write().unwrap().set_sink_port(Some(rhs_port.clone()));
 
     let get_port_owner_from_exp = |port_var: Arc<RwLock<Variable>>| -> Result<PortOwner, TydiLangError> {
-        use crate::pest::{Parser};
+        use crate::pest::Parser;
         use crate::tydi_parser::{Rule, TydiLangSrc};
         let port_owner_exp = port_var.read().unwrap().get_exp();
         let port_owner_exp = match port_owner_exp {
@@ -111,11 +111,15 @@ pub fn evaluate_net(target: Arc<RwLock<Net>>, scope: Arc<RwLock<Scope>>, evaluat
         };
         let port_owner_pest = TydiLangSrc::parse(Rule::Exp,&port_owner_exp).unwrap();
         let mut port_owner_name = generate_init_value();
+        let mut counter = 0;
         for ele_exp in port_owner_pest.into_iter() {
             for element in ele_exp.into_inner().into_iter(){
                 match element.as_rule() {
                     Rule::Term => {     //we only care about the first term because it's the port owner
-                        port_owner_name = element.as_str().to_string();
+                        if counter == 0 {
+                            port_owner_name = element.as_str().to_string();
+                        }
+                        counter += 1;
                         break;
                     },
                     _ => (),    //ignore
@@ -123,7 +127,7 @@ pub fn evaluate_net(target: Arc<RwLock<Net>>, scope: Arc<RwLock<Scope>>, evaluat
             }
         }
         assert!(port_owner_name != generate_init_value());
-        let port_owner = if port_owner_name == String::from("self") {
+        let port_owner = if port_owner_name == String::from("self") || counter == 1 {
             PortOwner::ImplSelf
         }
         else {

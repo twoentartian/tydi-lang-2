@@ -5,7 +5,7 @@ use crate::deep_clone::DeepClone;
 use crate::error::TydiLangError;
 use crate::generate_name::{generate_init_value, generate_template_instance_name, generate_template_instance_name_based_on_old_name};
 use crate::trait_common::GetName;
-use crate::tydi_memory_representation::{Variable, TypedValue, Scope, TraitCodeLocationAccess, LogicType, GetScope, TypeIndication, EvaluationStatus, ScopeRelationType, ImplementationType, Attribute};
+use crate::tydi_memory_representation::{Variable, TypedValue, Scope, TraitCodeLocationAccess, LogicType, GetScope, EvaluationStatus, ScopeRelationType, ImplementationType};
 use crate::evaluation::{evaluate_id_in_typed_value, evaluate_var, Evaluator};
 
 
@@ -134,10 +134,10 @@ pub fn try_template_expansion(template_var: Arc<RwLock<Variable>>, template_exps
     {
         let new_instance_var_type = new_instance_var.read().unwrap().get_value();
         match &new_instance_var_type {
-            TypedValue::LogicTypeValue(logic_type) =>{
+            TypedValue::LogicTypeValue(_) =>{
                 () //nothing to do
             },
-            TypedValue::Streamlet(streamlet) => {
+            TypedValue::Streamlet(_) => {
                 () //nothing to do
             },
             TypedValue::Implementation(implementation) => {

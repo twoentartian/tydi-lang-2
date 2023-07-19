@@ -3,7 +3,7 @@ use std::sync::{Arc, RwLock};
 use crate::error::TydiLangError;
 use crate::trait_common::GetName;
 use crate::tydi_memory_representation::{Scope, Variable, TraitCodeLocationAccess, CodeLocation, TypeIndication};
-use crate::tydi_parser::*;
+use crate::{tydi_parser::*, generate_name};
 use crate::tydi_lang_src_to_memory_representation::{parse_type, parse_logic_type, parse_streamlet, parse_implementation};
 
 use super::parse_logic_flow::{parse_If, parse_For};
@@ -217,7 +217,14 @@ pub fn parse_StatementFunction(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_s
         let rule = element.as_rule();
         match rule {
             Rule::FunctionExp => {
-                todo!();
+                let function_exp = element.as_str().to_string();
+                let function_var_name = generate_name::generate_built_in_variable_name_from_span(&element);
+                let function_var = Variable::new_function_var(function_var_name, function_exp);
+                {
+                    let mut function_var_write = function_var.write().unwrap();
+                    function_var_write.set_code_location(CodeLocation::new_from_pest_rule(&element, raw_src.clone()));
+                }
+                scope.write().unwrap().add_var(function_var)?;
             }
             _ => unreachable!()
         }

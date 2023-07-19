@@ -1,16 +1,17 @@
 use std::sync::{Arc, RwLock};
 use std::collections::BTreeMap;
 
-use serde::{Serialize};
+use serde::Serialize;
 
+use crate::deep_clone::DeepClone;
 use crate::generate_name::generate_init_value;
-use crate::tydi_memory_representation::{TemplateArg, CodeLocation, Scope, ScopeType, GetScope, Attribute, TraitCodeLocationAccess, Variable, TypeIndication};
-use crate::trait_common::{GetName, HasDocument};
-use crate::{generate_access, generate_get, generate_set, generate_access_pub, generate_get_pub, generate_set_pub, generate_name};
+use crate::tydi_memory_representation::{CodeLocation, TraitCodeLocationAccess, Variable};
+use crate::trait_common::GetName;
+use crate::{generate_access, generate_get, generate_set, generate_access_pub, generate_get_pub, generate_set_pub};
 
 
 #[derive(Clone, Debug, Serialize)]
-pub struct FunctionCall {
+pub struct Function {
     name: String,
 
     function_id: String,
@@ -21,17 +22,29 @@ pub struct FunctionCall {
     location_define: CodeLocation,
 }
 
-impl GetName for FunctionCall {
+impl GetName for Function {
     fn get_name(&self) -> String {
         return self.name.clone();
     }
 }
 
-impl TraitCodeLocationAccess for FunctionCall {
+impl TraitCodeLocationAccess for Function {
     generate_access!(location_define, CodeLocation, get_code_location, set_code_location);
 }
 
-impl FunctionCall {
+impl DeepClone for Function {
+    fn deep_clone(&self) -> Self {
+        let output = Self {
+            name: self.name.deep_clone(),
+            function_id: self.function_id.deep_clone(),
+            function_arg_exps: self.function_arg_exps.deep_clone(),
+            location_define: self.location_define.deep_clone(),
+        };
+        return output;
+    }
+}
+
+impl Function {
     pub fn new(name: String) -> Arc<RwLock<Self>> {
         let output = Self {
             name: name.clone(),

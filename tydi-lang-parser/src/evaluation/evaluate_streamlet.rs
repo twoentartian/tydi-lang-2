@@ -1,13 +1,13 @@
 use std::sync::{Arc, RwLock};
 
-use crate::tydi_memory_representation::{Streamlet, Scope, TypedValue, GetScope, Port, EvaluationStatus};
+use crate::tydi_memory_representation::{Streamlet, Scope, TypedValue, GetScope, Port};
 
 use crate::error::TydiLangError;
 
 use super::{Evaluator, evaluate_var, evaluate_scope, ScopeOwner};
 
 
-pub fn evaluate_streamlet(target: Arc<RwLock<Streamlet>>, scope: Arc<RwLock<Scope>>, evaluator: Arc<RwLock<Evaluator>>) -> Result<TypedValue, TydiLangError> {
+pub fn evaluate_streamlet(target: Arc<RwLock<Streamlet>>, _scope: Arc<RwLock<Scope>>, evaluator: Arc<RwLock<Evaluator>>) -> Result<TypedValue, TydiLangError> {
     let streamlet_scope = target.read().unwrap().get_scope();
 
     evaluate_scope(streamlet_scope.clone(), &crate::tydi_memory_representation::ScopeType::StreamletScope, &ScopeOwner::Streamlet(target.clone()), streamlet_scope.clone(), evaluator.clone())?;

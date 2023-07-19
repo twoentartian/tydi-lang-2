@@ -424,6 +424,25 @@ impl Variable {
         return Ok(self);
     }
 
+    pub fn new_function_var(name: String, function_exp: String) -> Arc<RwLock<Variable>> {
+        let output = Self {
+            name: name,
+            exp: Some(function_exp),
+            evaluated: EvaluationStatus::NotEvaluated,
+            value: TypedValue::UnknwonValue,
+            array_size: None,
+            type_indication: TypeIndication::Function,
+            is_property_of_scope: false,
+            declare_location: CodeLocation::new_unknown(),
+            parent_scope: None,
+            id_in_scope: None,
+            is_name_user_defined: false,
+            template_args: None,
+            template_arg_values: None,
+        };
+        return Arc::new(RwLock::new(output));
+    }
+
     generate_set_pub!(name, String, set_name);
     generate_access_pub!(exp, Option<String>, get_exp, set_exp);
     generate_access_pub!(value, TypedValue, get_value, set_value);

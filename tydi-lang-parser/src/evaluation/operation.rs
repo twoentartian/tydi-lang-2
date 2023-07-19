@@ -1,11 +1,12 @@
-use std::{sync::{Arc, RwLock}, clone};
+use std::sync::{Arc, RwLock};
 
-use crate::{tydi_memory_representation::{TypedValue, CodeLocation, Scope, ScopeRelationType, GetScope, streamlet, EvaluationStatus, Variable}, trait_common::AccessProperty};
-use crate::{error::TydiLangError, trait_common::GetName};
+use crate::{tydi_memory_representation::{TypedValue, CodeLocation, Scope, ScopeRelationType, GetScope, Variable}, trait_common::AccessProperty};
+use crate::error::TydiLangError;
 
 use super::{Expression, Operator, Evaluator, evaluate_var, evaluate_id_in_typed_value, evaluate_value_with_identifier_type, evaluate_template_exps_of_var};
 
 
+#[allow(non_snake_case)]
 pub fn evaluate_BinaryOperation(lhs: &Box<Expression>, op: &Operator, rhs: &Box<Expression>, scope: Arc<RwLock<Scope>>, evaluator: Arc<RwLock<Evaluator>>) -> Result<(TypedValue, Option<Arc<RwLock<Variable>>>), TydiLangError> {
     match op {
         Operator::Unknown => unreachable!(),
@@ -155,7 +156,7 @@ pub fn perform_AccessInner(lhs: &Box<Expression>, rhs: &Box<Expression>, scope: 
             let streamlet_scope = v.read().unwrap().get_scope();
             (streamlet_scope, ScopeRelationType::resolve_id_default())
         },
-        TypedValue::Implementation(v) => {
+        TypedValue::Implementation(_) => {
             todo!()
         },
         TypedValue::Instance(inst) => {

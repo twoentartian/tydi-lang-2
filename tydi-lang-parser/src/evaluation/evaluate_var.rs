@@ -3,16 +3,14 @@ use std::sync::{Arc, RwLock};
 
 use crate::evaluation::{evaluate_LogicBit, evaluate_LogicGroup, evaluate_LogicUnion, evaluate_LogicStream, evaluate_expression};
 use crate::trait_common::GetName;
-use crate::tydi_memory_representation::{CodeLocation, IdentifierType, Variable, TypedValue, Scope, EvaluationStatus, TraitCodeLocationAccess, TypeIndication, LogicType, ScopeRelationType, template_args};
+use crate::tydi_memory_representation::{CodeLocation, IdentifierType, Variable, TypedValue, Scope, EvaluationStatus, TraitCodeLocationAccess, TypeIndication, LogicType, ScopeRelationType};
 use crate::error::TydiLangError;
 
 use super::{Evaluator, evaluate_streamlet, evaluate_impl, evaluate_instance};
 
 pub fn evaluate_value_with_identifier_type(id_name: &String, id_value: TypedValue, id_type: IdentifierType, scope: Arc<RwLock<Scope>>, evaluator: Arc<RwLock<Evaluator>>) -> Result<TypedValue, TydiLangError> {
     match &id_type {
-        IdentifierType::FunctionExp(function_args) => {
-            todo!()
-        },
+        IdentifierType::FunctionExp(_) => unreachable!(),  //function expression should be evaluated before this point
         IdentifierType::IndexExp(index_exp) => {
             if let TypedValue::Array(array) = id_value {  //get array value
                 let value = evaluate_expression(index_exp.clone(), scope.clone(), evaluator.clone())?;
@@ -46,13 +44,23 @@ pub fn evaluate_id_in_typed_value(id_in_typed_value: TypedValue, relationships: 
     //if the output_value is an identifier
     match &id_in_typed_value {
         TypedValue::Identifier(id) => {
-            let id_name = id.read().unwrap().get_id();
             let id_type = id.read().unwrap().get_id_type();
-            let id_template_args = id.read().unwrap().get_template_args();
-            let id_template_arg_exps = evaluate_template_exps_of_var(&id_template_args, scope.clone(), evaluator.clone())?;
-            let (id_var, id_var_scope) = Scope::resolve_identifier(&id_name, &id_template_arg_exps, &CodeLocation::new_unknown(), scope.clone(), scope.clone(), relationships, evaluator.clone())?;
-            let id_typed_value = evaluate_var(id_var.clone(), id_var_scope.clone(), evaluator.clone())?;
-            output_value = evaluate_value_with_identifier_type(&id_name, id_typed_value, id_type, scope.clone(), evaluator.clone())?;
+            match &id_type {
+                IdentifierType::Unknown => unreachable!(),
+                IdentifierType::FunctionExp(_) => {
+                    todo!()
+                },
+                IdentifierType::IndexExp(_) | IdentifierType::IdentifierExp => {
+                    let id_name = id.read().unwrap().get_id();
+                    let id_type = id.read().unwrap().get_id_type();
+                    let id_template_args = id.read().unwrap().get_template_args();
+                    let id_template_arg_exps = evaluate_template_exps_of_var(&id_template_args, scope.clone(), evaluator.clone())?;
+                    let (id_var, id_var_scope) = Scope::resolve_identifier(&id_name, &id_template_arg_exps, &CodeLocation::new_unknown(), scope.clone(), scope.clone(), relationships, evaluator.clone())?;
+                    let id_typed_value = evaluate_var(id_var.clone(), id_var_scope.clone(), evaluator.clone())?;
+                    output_value = evaluate_value_with_identifier_type(&id_name, id_typed_value, id_type, scope.clone(), evaluator.clone())?;
+                },
+            }
+
         },
         _ => (),
     }

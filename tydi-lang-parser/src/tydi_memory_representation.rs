@@ -56,7 +56,7 @@ pub use net::{Net, PortOwner};
 
 pub mod function;
 pub(in crate) use function::*;
-pub use function::{FunctionCall};
+pub use function::{Function};
 
 pub mod if_for;
 pub(in crate) use if_for::*;

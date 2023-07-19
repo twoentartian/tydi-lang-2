@@ -3,8 +3,7 @@ use std::sync::{RwLock, Arc};
 use pest::pratt_parser::PrattParser;
 
 use crate::evaluation::evaluate_LogicalType;
-use crate::tydi_lang_src_to_memory_representation;
-use crate::tydi_memory_representation::{Scope, TypedValue, TypeIndication, LogicType};
+use crate::tydi_memory_representation::{Scope, TypedValue};
 use crate::tydi_parser::*;
 use crate::error::TydiLangError;
 
@@ -47,6 +46,7 @@ impl Expression {
 
 #[derive(Clone, PartialEq, Debug)]
 pub enum Operator {
+    #[allow(unused)]
     Unknown,
 
     AccessInner,
@@ -77,7 +77,9 @@ pub enum Operator {
 pub enum UnaryOperator {
     Unknown,
 
+    #[allow(non_camel_case_types)]
     OP_UnaryMinus,
+    #[allow(non_camel_case_types)]
     OP_UnaryNot,
 }
 
