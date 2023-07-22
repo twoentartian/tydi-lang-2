@@ -120,7 +120,6 @@ pub fn evaluate_net(target: Arc<RwLock<Net>>, scope: Arc<RwLock<Scope>>, evaluat
                             port_owner_name = element.as_str().to_string();
                         }
                         counter += 1;
-                        break;
                     },
                     _ => (),    //ignore
                 }
