@@ -2,7 +2,7 @@
 mod all_parse_test
 {
     use std::{collections::HashMap, sync::{Arc, RwLock}};
-    use crate::tydi_memory_representation::Project;
+    use crate::{tydi_memory_representation::Project, post_compile};
 
     #[test]
     fn sample_project_0() {
@@ -1363,7 +1363,7 @@ mod all_parse_test
 
 
     #[test]
-    fn sample_project_simple_function_1() {
+    fn sample_project_assertion_0() {
         let project = Project::new(format!("sample_project"));
         {
             let mut project_write = project.write().unwrap();
@@ -1378,7 +1378,7 @@ mod all_parse_test
             package pack1;
             use pack0;
             
-            assert(pack0.data == 8);
+            assert(pack0.data*2-2*2 == 12, "assertion failed");
             data = pack0.data;
 
             "#);
@@ -1408,5 +1408,141 @@ mod all_parse_test
         std::fs::write("./output.json", &json_output).unwrap();
     
         println!("{}", evaluator.read().unwrap().print_evaluation_record());
+
+        let check_result = post_compile::check_assert::check_project(project.clone(), evaluator.clone());
+        match check_result {
+            Ok(_) => (),
+            Err(e) => {
+                println!("{}", e.print());
+                return;
+            },
+        }
+        println!("");
+        println!("{}", evaluator.read().unwrap().print_evaluation_record());
     }
+
+    #[test]
+    fn sample_project_assertion_1() {
+        let project = Project::new(format!("sample_project"));
+        {
+            let mut project_write = project.write().unwrap();
+    
+            let src_pack0 = String::from(r#"
+            package pack0;
+            
+            Group bitn<n: int> {
+                bits: Bit(n);
+                assert(n % 8 ==0);
+            }
+            bit8_stream = Stream(bitn<8>);
+            bit16_stream = Stream(bitn<16>);
+            
+            "#);
+            let src_pack1 = String::from(r#"
+            package pack1;
+            use pack0;
+            
+            streamlet bypass <logic_type: type> {
+                in_port: logic_type in;
+                out_port: logic_type out;
+            }
+
+            impl i_bypass <logic_type: type> of bypass<logic_type> {
+                in_port => out_port;
+            }
+
+            bypass_bit8 = i_bypass<pack0.bit8_stream>;
+            bypass_bit16 = i_bypass<pack0.bit16_stream>;
+
+            "#);
+            
+            let status = project_write.add_package(format!("./pack0.td"), src_pack0);
+            if status.is_err() {
+                panic!("{}", status.err().unwrap().print());
+            }
+            let status = project_write.add_package(format!("./pack1.td"), src_pack1);
+            if status.is_err() {
+                panic!("{}", status.err().unwrap().print());
+            }
+        }
+        let evaluator = project.read().unwrap().evaluate_target(format!("bypass_bit8"), format!("pack1"));
+        let evaluator = match evaluator {
+            Ok(e) => e,
+            Err(e) => {
+                let json_output = project.read().unwrap().get_pretty_json();
+                std::fs::write("./output.json", &json_output).unwrap();
+                println!("{}", e.print());
+                return;
+            },
+        };
+    
+        let json_output = project.read().unwrap().get_pretty_json();
+    
+        std::fs::write("./output.json", &json_output).unwrap();
+    
+        let check_result = post_compile::check_assert::check_project(project.clone(), evaluator.clone());
+        match check_result {
+            Ok(_) => (),
+            Err(e) => {
+                println!("{}", e.print());
+                return;
+            },
+        }
+        println!("{}", evaluator.read().unwrap().print_evaluation_record());
+    }
+
+    #[test]
+    fn sample_project_assertion_2() {
+        let project = Project::new(format!("sample_project"));
+        {
+            let mut project_write = project.write().unwrap();
+    
+            let src_pack0 = String::from(r#"
+            package pack0;
+    
+            Union any_bit<n: int> {
+                bit_8: Bit(8);
+                for i in [1,2,3]
+                {
+                    assert(i - 4 < 0);
+                    data: Bit(i);
+                }
+            }
+    
+            "#);
+            let src_pack1 = String::from(r#"
+            package pack1;
+            use pack0;
+    
+            bit8 = pack0.any_bit<8>;
+            bit8_data_index0 = pack0.any_bit<8>.data[0];
+            "#);
+    
+            let status = project_write.add_package(format!("./pack0.td"), src_pack0);
+            if status.is_err() {
+                panic!("{}", status.err().unwrap().print());
+            }
+            let status = project_write.add_package(format!("./pack1.td"), src_pack1);
+            if status.is_err() {
+                panic!("{}", status.err().unwrap().print());
+            }
+        }
+        let evaluator = project.read().unwrap().evaluate_target(format!("bit8_data_index0"), format!("pack1"));
+        let evaluator = match evaluator {
+            Ok(e) => e,
+            Err(e) => {
+                let json_output = project.read().unwrap().get_pretty_json();
+                std::fs::write("./output.json", &json_output).unwrap();
+                println!("{}", e.print());
+                return;
+            },
+        };
+    
+        let json_output = project.read().unwrap().get_pretty_json();
+    
+        std::fs::write("./output.json", &json_output).unwrap();
+    
+        println!("{}", evaluator.read().unwrap().print_evaluation_record());
+    }
+
 }

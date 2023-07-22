@@ -71,7 +71,8 @@ pub fn evaluate_for(for_target: Arc<RwLock<For>>, parent_scope: Arc<RwLock<Scope
             }
             //rename the new var value, if possible
             match &var_value {
-                TypedValue::UnknwonValue => unreachable!(),
+                TypedValue::UnknwonValue => (),
+                TypedValue::Null => (),
                 TypedValue::PackageReferenceValue(_) => unreachable!(),
                 TypedValue::IntValue(_) => (),
                 TypedValue::StringValue(_) => (),
@@ -125,6 +126,9 @@ pub fn evaluate_for(for_target: Arc<RwLock<For>>, parent_scope: Arc<RwLock<Scope
             existing_array.push(var_value);
             outside_var.write().unwrap().set_value(TypedValue::Array(existing_array));
         }
+
+        //post scope expansion check
+        crate::post_compile::check_assert::check_scope(for_scope_deepcloned.clone(), evaluator.clone())?;
 
         for_evaluation_count += 1;
     }

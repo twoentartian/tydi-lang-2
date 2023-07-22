@@ -6,6 +6,8 @@ use crate::generate_get_pub;
 #[derive(Clone, Debug, PartialEq)]
 pub enum EvaluationTraceType {
     Unknwon,
+    BeginRegion(String),
+    EndRegion(String),
     StartEvaluation,
     FinishEvaluation,
 }
@@ -29,12 +31,44 @@ impl EvaluationTrace {
         return output;
     }
 
+    pub fn new_region_begin(region_name: String) -> Self {
+        let output = Self {
+            evaluated_target_name: String::from("???"),
+            evaluated_value: None,
+            trace_type: EvaluationTraceType::BeginRegion(region_name),
+            deepth: 0,
+        };
+        return output;
+    }
+
+    pub fn new_region_end(region_name: String) -> Self {
+        let output = Self {
+            evaluated_target_name: String::from("???"),
+            evaluated_value: None,
+            trace_type: EvaluationTraceType::EndRegion(region_name),
+            deepth: 0,
+        };
+        return output;
+    }
+
     pub fn print_line(&self) -> String {
         let mut output = String::new();
         for _ in 0..self.deepth {output.push_str(" ");}
-        match &self.evaluated_value {
-            Some(evaluated_value) => output.push_str(&format!("{} --> {} ({:?})\n", &self.evaluated_target_name, evaluated_value.get_brief_info(), self.trace_type)),
-            None => output.push_str(&format!("{} --> ??? ({:?})\n", &self.evaluated_target_name, self.trace_type)),
+
+        match &self.trace_type {
+            EvaluationTraceType::Unknwon => unreachable!(),
+            EvaluationTraceType::BeginRegion(region_name) => {
+                output.push_str(&format!("region [{}] begins\n", region_name));
+            },
+            EvaluationTraceType::EndRegion(region_name) => {
+                output.push_str(&format!("region [{}] ends\n\n", region_name));
+            },
+            EvaluationTraceType::StartEvaluation | EvaluationTraceType::FinishEvaluation => {
+                match &self.evaluated_value {
+                    Some(evaluated_value) => output.push_str(&format!("{} --> {} ({:?})\n", &self.evaluated_target_name, evaluated_value.get_brief_info(), self.trace_type)),
+                    None => output.push_str(&format!("{} --> ??? ({:?})\n", &self.evaluated_target_name, self.trace_type)),
+                }
+            },
         }
 
         return output;
@@ -56,8 +90,12 @@ impl EvaluationRecord {
         return output;
     }
 
-    pub fn add_trace(&mut self, evaluated_target_name: String, evaluated_value: Option<TypedValue>, trace_type: EvaluationTraceType) {
+    pub fn add_evaluation_trace(&mut self, evaluated_target_name: String, evaluated_value: Option<TypedValue>, trace_type: EvaluationTraceType) {
         self.traces.push(EvaluationTrace::new(evaluated_target_name, evaluated_value, trace_type, self.current_deepth));
+    }
+
+    pub fn add_trace(&mut self, trace: EvaluationTrace) {
+        self.traces.push(trace);
     }
 
     pub fn increase_deepth(&mut self){
@@ -87,7 +125,11 @@ impl Evaluator {
     }
 
     pub fn add_evaluation_trace(&mut self, evaluated_target_name: String, evaluated_value: Option<TypedValue>, trace_type: EvaluationTraceType) {
-        self.evaluation_record.add_trace(evaluated_target_name, evaluated_value, trace_type);
+        self.evaluation_record.add_evaluation_trace(evaluated_target_name, evaluated_value, trace_type);
+    }
+
+    pub fn add_trace(&mut self, trace: EvaluationTrace) {
+        self.evaluation_record.add_trace(trace);
     }
 
     pub fn increase_deepth(&mut self){

@@ -79,7 +79,7 @@ pub fn try_template_expansion(template_var: Arc<RwLock<Variable>>, template_exps
         for i in 0..template_args.len() {
             let template_arg_type = template_args.get(&i).expect("bug: template arg index not from 0 to n").get_type_indication();
             let template_arg_exp = template_exps.get(&i).expect("bug: template exp index not from 0 to n").clone();
-            let template_arg_exp = evaluate_id_in_typed_value(template_arg_exp, ScopeRelationType::resolve_id_default(), scope.clone(), evaluator.clone())?;
+            let template_arg_exp = evaluate_id_in_typed_value(template_arg_exp, None, ScopeRelationType::resolve_id_default(), scope.clone(), evaluator.clone())?;
             let real_value = match template_arg_exp.try_get_referenced_variable() {
                 Some(real_var) => {
                     evaluate_var(real_var.clone(), scope.clone(), evaluator.clone())?
@@ -114,7 +114,7 @@ pub fn try_template_expansion(template_var: Arc<RwLock<Variable>>, template_exps
         for i in 0..template_args.len() {
             let exp = template_exps.get(&i).unwrap().clone();
             let arg = template_args.get(&i).unwrap();
-            let exp = evaluate_id_in_typed_value(exp, ScopeRelationType::resolve_id_default(), scope.clone(), evaluator.clone())?;
+            let exp = evaluate_id_in_typed_value(exp, None, ScopeRelationType::resolve_id_default(), scope.clone(), evaluator.clone())?;
             let real_value = match exp.try_get_referenced_variable() {
                 Some(real_var) => {
                     evaluate_var(real_var.clone(), scope.clone(), evaluator.clone())?

@@ -4,7 +4,7 @@ use std::collections::BTreeMap;
 use serde::{Serialize};
 
 use crate::error::TydiLangError;
-use crate::evaluation::{Evaluator, evaluate_var};
+use crate::evaluation::{Evaluator, evaluate_var, EvaluationTrace};
 use crate::generate_get_pub;
 use crate::tydi_memory_representation::{Package, CodeLocation, GetScope, Scope, ScopeRelationType, Variable};
 
@@ -61,9 +61,11 @@ impl Project {
             None => unreachable!(),
         };
 
+        evaluator.write().unwrap().add_trace(EvaluationTrace::new_region_begin(format!("evaluation")));
         let (target_var, target_var_scope) = Scope::resolve_identifier(&target_name, &None, &CodeLocation::new_unknown(), target_package_scope.clone(), target_package_scope.clone(), ScopeRelationType::resolve_id_default(), evaluator.clone())?;
-        
         evaluate_var(target_var.clone(), target_var_scope.clone(), evaluator.clone())?;
+        evaluator.write().unwrap().add_trace(EvaluationTrace::new_region_end(format!("evaluation")));
+
         return Ok(evaluator);
     }
 

@@ -130,6 +130,7 @@ impl TypeIndication {
     pub fn infer_from_typed_value(value: &TypedValue) -> Self {
         return match value {
             TypedValue::UnknwonValue => TypeIndication::Any,
+            TypedValue::Null => TypeIndication::Any,
             TypedValue::PackageReferenceValue(_) => TypeIndication::ComplierBuiltin,
 
             TypedValue::IntValue(_) => TypeIndication::Int,
@@ -225,6 +226,7 @@ impl TypeIndication {
 #[derive(Clone, Debug, strum::IntoStaticStr)]
 pub enum TypedValue {
     UnknwonValue,
+    Null,
 
     PackageReferenceValue(Arc<RwLock<Package>>),
     
@@ -260,6 +262,7 @@ impl DeepClone for TypedValue {
         let output = match self {
             // basic type starts
             TypedValue::UnknwonValue => self.clone(),
+            TypedValue::Null => self.clone(),
             TypedValue::PackageReferenceValue(_) => self.clone(),
             TypedValue::IntValue(_) => self.clone(),
             TypedValue::StringValue(_) => self.clone(),
@@ -327,6 +330,10 @@ impl Serialize for TypedValue {
                 let v = format!("???");
                 state.serialize_field("value", &v)?;
             },
+            TypedValue::Null => {
+                let v = format!("Null");
+                state.serialize_field("value", &v)?;
+            },
             TypedValue::PackageReferenceValue(package_ref) => {
                 let package = package_ref.read().unwrap();
                 state.serialize_field("value", &package.get_name())?;
@@ -383,7 +390,7 @@ impl Serialize for TypedValue {
             TypedValue::RefToVar(v) => {
                 state.serialize_field("value", &v.read().unwrap().get_name())?;
             },
-            TypedValue::Identifier(_) => unreachable!(),
+            TypedValue::Identifier(iden) => unreachable!("identifier {:?} should be evaluated", iden),
         };
         state.end()
     }
@@ -423,6 +430,7 @@ impl TypedValue {
     pub fn get_brief_info(&self) -> String {
         match self {
             TypedValue::UnknwonValue => return String::from("???"),
+            TypedValue::Null => return String::from("Null"),
             TypedValue::PackageReferenceValue(package_ref) => return format!("Package({})", package_ref.read().unwrap().get_name()),
             TypedValue::IntValue(v) => return format!("Int({})", v),
             TypedValue::StringValue(v) => return format!("String({})", v),
@@ -445,7 +453,7 @@ impl TypedValue {
             TypedValue::If(_) => todo!(),
             TypedValue::For(_) => todo!(),
             TypedValue::Array(array) => return format!("Array({})", array.iter().map(|i| i.get_brief_info()).collect::<Vec<_>>().join(", ")),
-            TypedValue::Function(v) => return format!("Fcuntion:{}({})", v.read().unwrap().get_function_id(), v.read().unwrap().get_function_arg_exps().iter().map(|(key,value)| value.read().unwrap().get_name()).collect::<Vec<_>>().join(", ")),
+            TypedValue::Function(v) => return format!("Fcuntion:{}({})", v.read().unwrap().get_function_id(), v.read().unwrap().get_function_arg_exps().iter().map(|(key, value)| value.clone()).collect::<Vec<_>>().join(" ,")),
             TypedValue::RefToVar(v) => return format!("RefToVar({})", v.read().unwrap().get_name()),
             TypedValue::Identifier(v) => return format!("Identifier({})", v.read().unwrap().get_brief_info()),
         }

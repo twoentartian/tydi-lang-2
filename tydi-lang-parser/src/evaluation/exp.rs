@@ -3,7 +3,7 @@ use std::sync::{RwLock, Arc};
 use pest::pratt_parser::PrattParser;
 
 use crate::evaluation::evaluate_LogicalType;
-use crate::tydi_memory_representation::{Scope, TypedValue};
+use crate::tydi_memory_representation::{Scope, TypedValue, CodeLocation};
 use crate::tydi_parser::*;
 use crate::error::TydiLangError;
 
@@ -104,7 +104,7 @@ lazy_static::lazy_static! {
     };
 }
 
-pub fn evaluate_expression_pest(exp: Pair<Rule>, scope: Arc<RwLock<Scope>>, evaluator: Arc<RwLock<Evaluator>>) -> Result<Expression, TydiLangError> {
+pub fn evaluate_expression_pest(exp: Pair<Rule>, location: Option<CodeLocation>, scope: Arc<RwLock<Scope>>, evaluator: Arc<RwLock<Evaluator>>) -> Result<Expression, TydiLangError> {
     let result = PRATT_PARSER
     .map_primary(|primary| match primary.as_rule() {
         Rule::Term => {
@@ -116,7 +116,7 @@ pub fn evaluate_expression_pest(exp: Pair<Rule>, scope: Arc<RwLock<Scope>>, eval
             return Expression::Term(result);
         },
         Rule::InfixOp => {
-            let result = evaluate_expression_pest(primary, scope.clone(), evaluator.clone());
+            let result = evaluate_expression_pest(primary, location.clone(), scope.clone(), evaluator.clone());
             return result.ok().unwrap()
         },
         Rule::LogicalType => {
@@ -166,13 +166,13 @@ pub fn evaluate_expression_pest(exp: Pair<Rule>, scope: Arc<RwLock<Scope>>, eval
     return Ok(result);
 }
 
-pub fn evaluate_expression(exp: String, scope: Arc<RwLock<Scope>>, evaluator: Arc<RwLock<Evaluator>>) -> Result<TypedValue, TydiLangError> {
+pub fn evaluate_expression(exp: String, location: Option<CodeLocation>, scope: Arc<RwLock<Scope>>, evaluator: Arc<RwLock<Evaluator>>) -> Result<TypedValue, TydiLangError> {
     let parse_result = TydiLangSrc::parse(Rule::Exp,&exp);
     if parse_result.is_err() {
         unreachable!("because the exp should have already been parsed before, we should never reach here");
     }
     let mut parse_result = parse_result.ok().unwrap();
-    let expresssion = evaluate_expression_pest(parse_result.next().unwrap(), scope.clone(), evaluator.clone())?;
+    let expresssion = evaluate_expression_pest(parse_result.next().unwrap(), location, scope.clone(), evaluator.clone())?;
     return expresssion.evaluate_TypedValue(scope.clone(), evaluator.clone());
 }
 

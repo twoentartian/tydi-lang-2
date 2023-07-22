@@ -1,6 +1,6 @@
-use std::{sync::{Arc, RwLock}, usize};
+use std::{sync::Arc, usize};
 
-use serde::{Serialize};
+use serde::Serialize;
 
 use crate::{tydi_parser::*, generate_name::generate_init_value, deep_clone::DeepClone};
 
@@ -117,7 +117,7 @@ impl CodeLocation {
             for current_line in begin_line .. end_line+1 {
                 let line_str = current_line.to_string();
                 let space_padding = line_digit - line_str.len();
-                for i in 0..space_padding {
+                for _ in 0..space_padding {
                     output.push_str(" ");
                 }
                 output.push_str(&current_line.to_string());

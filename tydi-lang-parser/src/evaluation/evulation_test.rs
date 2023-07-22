@@ -9,14 +9,14 @@ mod test_expression_parser {
     fn check_exp(exp: String, val: TypedValue) {
         let scope = Scope::new_place_holder();
         let evaluator = Evaluator::new(Project::new(format!("test")));
-        let output = evaluate_expression(exp, scope.clone(), evaluator.clone()).expect("evaluation fail");
+        let output = evaluate_expression(exp, None, scope.clone(), evaluator.clone()).expect("evaluation fail");
         assert_eq!(output, val);
     }
 
     fn get_exp_value(exp: String) -> TypedValue {
         let scope = Scope::new_place_holder();
         let evaluator = Evaluator::new(Project::new(format!("test")));
-        let output = evaluate_expression(exp, scope.clone(), evaluator.clone()).expect("evaluation fail");
+        let output = evaluate_expression(exp, None, scope.clone(), evaluator.clone()).expect("evaluation fail");
         return output;
     }
 

@@ -16,7 +16,7 @@ pub fn evaluate_Term(term: Pair<Rule>, scope: Arc<RwLock<Scope>>, evaluator: Arc
         let rule = element.as_rule();
         match rule {
             Rule::Exp => {
-                let exp = evaluate_expression_pest(element, scope.clone(), evaluator.clone())?;
+                let exp = evaluate_expression_pest(element, None, scope.clone(), evaluator.clone())?;
                 let exp_typed_value = exp.evaluate_TypedValue(scope.clone(), evaluator.clone())?;
                 return Ok(exp_typed_value);
             }
@@ -136,9 +136,9 @@ pub fn evaluate_ArrayExp(exps: Pair<Rule>, scope: Arc<RwLock<Scope>>, evaluator:
         let rule = element.as_rule();
         match rule {
             Rule::Exp => {
-                let element_exp = evaluate_expression_pest(element, scope.clone(), evaluator.clone())?;
+                let element_exp = evaluate_expression_pest(element, None, scope.clone(), evaluator.clone())?;
                 let element_typed_value = element_exp.evaluate_TypedValue(scope.clone(), evaluator.clone())?;
-                let element_typed_value = evaluate_id_in_typed_value(element_typed_value, ScopeRelationType::resolve_id_default(), scope.clone(), evaluator.clone())?;
+                let element_typed_value = evaluate_id_in_typed_value(element_typed_value, None, ScopeRelationType::resolve_id_default(), scope.clone(), evaluator.clone())?;
                 output.push(element_typed_value);
             }
             _ => unreachable!()
@@ -202,7 +202,7 @@ pub fn evaluate_UnaryExp(exp: Pair<Rule>, scope: Arc<RwLock<Scope>>, evaluator: 
 }
 
 #[allow(non_snake_case)]
-pub fn parse_IdentifierWithArgExp(id: Pair<Rule>, scope: Arc<RwLock<Scope>>, evaluator: Arc<RwLock<Evaluator>>) -> Result<TypedValue, TydiLangError> {
+pub fn parse_IdentifierWithArgExp(id: Pair<Rule>, _scope: Arc<RwLock<Scope>>, _evaluator: Arc<RwLock<Evaluator>>) -> Result<TypedValue, TydiLangError> {
     let mut id_type = IdentifierType::Unknown;
     let mut id_name = generate_init_value();
     let mut template_exps = BTreeMap::new();

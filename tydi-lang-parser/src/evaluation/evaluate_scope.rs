@@ -160,5 +160,10 @@ pub fn evaluate_scope(target_scope: Arc<RwLock<Scope>>, scope_type: &ScopeType, 
         _ => unreachable!()
     }
 
+
+    //post evaluation steps
+    //assertion
+    crate::post_compile::check_assert::check_scope(target_scope.clone(), evaluator.clone())?;
+
     return Ok(());
 }

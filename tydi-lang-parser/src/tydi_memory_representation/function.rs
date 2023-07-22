@@ -16,8 +16,7 @@ pub struct Function {
 
     function_id: String,
 
-    #[serde(with = "crate::serde_serialization::arc_rwlock_in_btree_map_value")]
-    function_arg_exps: BTreeMap<usize, Arc<RwLock<Variable>>>,
+    function_arg_exps: BTreeMap<usize, String>,
 
     location_define: CodeLocation,
 }
@@ -55,12 +54,12 @@ impl Function {
         return Arc::new(RwLock::new(output));
     }
 
-    pub fn add_function_arg_exp(&mut self, arg_exp: Arc<RwLock<Variable>>) {
+    pub fn add_function_arg_exp(&mut self, arg_exp: String) {
         let current_index = self.function_arg_exps.len();
         self.function_arg_exps.insert(current_index, arg_exp);
     }
 
     generate_access_pub!(function_id, String, get_function_id, set_function_id);
-    generate_access_pub!(function_arg_exps, BTreeMap<usize, Arc<RwLock<Variable>>>, get_function_arg_exps, set_function_arg_exps);
+    generate_access_pub!(function_arg_exps, BTreeMap<usize, String>, get_function_arg_exps, set_function_arg_exps);
 }
 
