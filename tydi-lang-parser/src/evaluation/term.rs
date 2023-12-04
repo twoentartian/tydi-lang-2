@@ -25,8 +25,7 @@ pub fn evaluate_Term(term: Pair<Rule>, scope: Arc<RwLock<Scope>>, evaluator: Arc
                 return Ok(value);
             }
             Rule::IntExp => {
-                let int_exp = element.as_str().to_string();
-                let value = evaluate_IntExp(int_exp)?;
+                let value = evaluate_Int(element)?;
                 return Ok(TypedValue::IntValue(value));
             }
             Rule::StringExp => {
@@ -60,37 +59,65 @@ pub fn evaluate_Term(term: Pair<Rule>, scope: Arc<RwLock<Scope>>, evaluator: Arc
     return Ok(output_value);
 }
 
+#[allow(non_snake_case)]
+pub fn evaluate_Int(term: Pair<Rule>) -> Result<i128, TydiLangError> {
+    for element in term.clone().into_inner().into_iter() {
+        let rule = element.as_rule();
+        match rule {
+            Rule::INT => {
+                return evaluate_IntExp(element);
+            }
+            _ => unreachable!()
+        }
+    }
+    unreachable!()
+}
 
 #[allow(non_snake_case)]
-pub fn evaluate_IntExp(exp: String) -> Result<i128, TydiLangError> {
-    let n_exp = exp.trim().to_string();
-    let n_exp = n_exp.replace("_", "");
-    if n_exp.contains("0x") {
-        let n_exp = n_exp.replace("0x", "");
-        match i128::from_str_radix(&n_exp, 16) {
-            Ok(val) => return Ok(val),
-            Err(_) => return Err(TydiLangError::new(format!("{} is not a hex integer", exp), CodeLocation::new_unknown())),
+pub fn evaluate_IntExp(term: Pair<Rule>) -> Result<i128, TydiLangError> {
+    for element in term.clone().into_inner().into_iter() {
+        let rule = element.as_rule();
+        match rule {
+            Rule::INT_RAW_BIN => {
+                let element_str = element.as_str().trim().to_string();
+                let n_exp = element_str.replace("_", "");
+                let n_exp = n_exp.replace("0b", "");
+                match i128::from_str_radix(&n_exp, 2) {
+                    Ok(val) => return Ok(val),
+                    Err(_) => return Err(TydiLangError::new(format!("{} is not a bin integer", element_str), CodeLocation::new_unknown())),
+                }
+            }
+            Rule::INT_RAW_OCT => {
+                let element_str = element.as_str().trim().to_string();
+                let n_exp = element_str.replace("_", "");
+                let n_exp = n_exp.replace("0o", "");
+                match i128::from_str_radix(&n_exp, 8) {
+                    Ok(val) => return Ok(val),
+                    Err(_) => return Err(TydiLangError::new(format!("{} is not an oct integer", element_str), CodeLocation::new_unknown())),
+                }
+            }
+            Rule::INT_RAW_HEX => {
+                let element_str = element.as_str().trim().to_string();
+                let n_exp = element_str.replace("_", "");
+                let n_exp = n_exp.replace("0x", "");
+                match i128::from_str_radix(&n_exp, 16) {
+                    Ok(val) => return Ok(val),
+                    Err(_) => return Err(TydiLangError::new(format!("{} is not a hex integer", element_str), CodeLocation::new_unknown())),
+                }
+            }
+            Rule::INT_RAW_NORAML => {
+                let element_str = element.as_str().trim().to_string();
+                let n_exp = element_str.replace("_", "");
+                match i128::from_str_radix(&n_exp, 10) {
+                    Ok(val) => return Ok(val),
+                    Err(_) => return Err(TydiLangError::new(format!("{} is not a normal integer", element_str), CodeLocation::new_unknown())),
+                }
+            }
+            _ => unreachable!()
         }
+
     }
-    if n_exp.contains("0b") {
-        let n_exp = n_exp.replace("0b", "");
-        match i128::from_str_radix(&n_exp, 2) {
-            Ok(val) => return Ok(val),
-            Err(_) => return Err(TydiLangError::new(format!("{} is not a bin integer", exp), CodeLocation::new_unknown())),
-        }
-    }
-    if n_exp.contains("0o") {
-        let n_exp = n_exp.replace("0o", "");
-        match i128::from_str_radix(&n_exp, 8) {
-            Ok(val) => return Ok(val),
-            Err(_) => return Err(TydiLangError::new(format!("{} is not an oct integer", exp), CodeLocation::new_unknown())),
-        }
-    }
-    let normal_int_parse_result = n_exp.parse::<i128>();
-    if normal_int_parse_result.is_err() {
-        return Err(TydiLangError::new(format!("{} is not an integer", exp), CodeLocation::new_unknown()));
-    }
-    return Ok(normal_int_parse_result.unwrap());
+    unreachable!("parser says there is an int but no int found")
 }
 
 #[allow(non_snake_case)]
