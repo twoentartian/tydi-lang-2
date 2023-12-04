@@ -230,3 +230,111 @@ fn sample_project_stdlib_0() {
     std::fs::write("./json_output.json", &json_output).unwrap();
     println!("{}", json_output);
 }
+
+
+#[test]
+fn sample_project_nested_stream_0() {
+    let project = Project::new(format!("sample_project"));
+    {
+        let mut project_write = project.write().unwrap();
+
+        let src_pack0 = String::from(r#"
+        package pack0;
+
+        chars = Stream(Bit(8),t=2.0,d=1,c=1); /*synchronicity: Sync*/
+        
+        Group timestamped_group {
+            time: Bit(64);
+            message: chars;
+        }
+        
+        timestamped_message = Stream(timestamped_group,t=2.0,d=1,c=1 /*synchronicity: Sync*/ ); 
+        
+        streamlet child {
+            timestamped_message_in: timestamped_message in;
+            timestamped_message_out: timestamped_message out;
+        }
+        
+        streamlet example {
+            timestamped_message_in: timestamped_message in;
+            timestamped_message_out: timestamped_message out;
+        }
+        
+        impl ChildImpl of child {}
+        
+        impl ExampleImpl of example {
+            instance a(ChildImpl);
+            instance b(ChildImpl);
+            self.timestamped_message_in => a.timestamped_message_in;
+            a.timestamped_message_out => b.timestamped_message_in;
+            b.timestamped_message_out => self.timestamped_message_out;
+        }
+
+        "#);
+        let src_pack1 = String::from(r#"
+        package pack1;
+        use pack0;
+
+
+
+        "#);
+
+        let status = project_write.add_package(format!("./pack0.td"), src_pack0);
+        if status.is_err() {
+            panic!("{}", status.err().unwrap().print());
+        }
+        let status = project_write.add_package(format!("./pack1.td"), src_pack1);
+        if status.is_err() {
+            panic!("{}", status.err().unwrap().print());
+        }
+    }
+    project.read().unwrap().evaluate_target(format!("ExampleImpl"), format!("pack0")).expect("fail to evaluate");
+
+    let code_structure = project.read().unwrap().get_pretty_json();
+    std::fs::write("./code_structure.json", &code_structure).unwrap();
+
+    let json_output = generate_json_representation_from_tydi_project(project.clone(), format!("ExampleImpl"), format!("pack0")).expect("fail to generate json");
+    std::fs::write("./json_output.json", &json_output).unwrap();
+    println!("{}", json_output);
+}
+
+
+#[test]
+fn sample_project_comment_bug() {
+    let project = Project::new(format!("sample_project"));
+    {
+        let mut project_write = project.write().unwrap();
+
+        let src_pack0 = String::from(r#"
+        package pack0;
+
+        chars = Stream(Bit(8) /*synchronicity: Sync*/ ,c=1 /*synchronicity: Sync*/ ); 
+        "#);
+        let src_pack1 = String::from(r#"
+        package pack1;
+        use pack0;
+
+
+
+        "#);
+
+        let status = project_write.add_package(format!("./pack0.td"), src_pack0);
+        if status.is_err() {
+            panic!("{}", status.err().unwrap().print());
+        }
+        let status = project_write.add_package(format!("./pack1.td"), src_pack1);
+        if status.is_err() {
+            panic!("{}", status.err().unwrap().print());
+        }
+    }
+    std::fs::write("./code_structure_before_evaluation.json", &project.read().unwrap().get_pretty_json()).unwrap();
+
+    project.read().unwrap().evaluate_target(format!("chars"), format!("pack0")).expect("fail to evaluate");
+
+    let code_structure = project.read().unwrap().get_pretty_json();
+    std::fs::write("./code_structure.json", &code_structure).unwrap();
+
+    let json_output = generate_json_representation_from_tydi_project(project.clone(), format!("chars"), format!("pack0")).expect("fail to generate json");
+    std::fs::write("./json_output.json", &json_output).unwrap();
+    println!("{}", json_output);
+}
