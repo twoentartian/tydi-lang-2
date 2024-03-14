@@ -76,6 +76,7 @@ pub struct Implementation {
     nets: BTreeMap<String, Net>,
     implementation_instances: BTreeMap<String, ImplementationInstance>,
     document: Option<String>,
+    attributes: Vec<String>,
 }
 
 impl Implementation {
@@ -87,6 +88,7 @@ impl Implementation {
             nets: BTreeMap::new(),
             implementation_instances: BTreeMap::new(),
             document: None,
+            attributes: vec![],
         };
         return output;
     }
@@ -145,6 +147,14 @@ impl Implementation {
         //document
         {
             output_implementation.document = target_impl.read().unwrap().get_document();
+        }
+
+        //attributes
+        {
+            let all_attributes = target_impl.read().unwrap().get_attributes();
+            for attr in all_attributes {
+                output_implementation.attributes.push(String::try_from(attr).unwrap());
+            }
         }
 
         //instances and nets

@@ -32,3 +32,14 @@ impl std::convert::TryFrom<String> for Attribute {
         return Err(());
     }
 }
+
+impl std::convert::TryFrom<Attribute> for String {
+    type Error = ();
+    fn try_from(value: Attribute) -> Result<Self, Self::Error> {
+        match value {
+            Attribute::NoStrictTypeChecking => Ok(String::from("NoStrictTypeChecking")),
+            Attribute::External => Ok(String::from("External")),
+            Attribute::NoTemplateExpansion => Ok(String::from("NoTemplateExpansion")),
+        }
+    }
+}

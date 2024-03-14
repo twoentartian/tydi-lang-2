@@ -200,7 +200,7 @@ fn sample_project_stdlib_0() {
             port_out: bypass_type out;
         }
 
-        impl bypass_i<bypass_type: type> of bypass_s<bypass_type> @NoTemplateExpansion {
+        impl bypass_i<bypass_type: type> of bypass_s<bypass_type> @NoTemplateExpansion @External {
             
         }
 
