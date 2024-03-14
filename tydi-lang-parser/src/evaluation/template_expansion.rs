@@ -5,7 +5,7 @@ use crate::deep_clone::DeepClone;
 use crate::error::TydiLangError;
 use crate::generate_name::{generate_init_value, generate_template_instance_name, generate_template_instance_name_based_on_old_name};
 use crate::trait_common::GetName;
-use crate::tydi_memory_representation::{Variable, TypedValue, Scope, TraitCodeLocationAccess, LogicType, GetScope, EvaluationStatus, ScopeRelationType, ImplementationType};
+use crate::tydi_memory_representation::{Variable, TypedValue, Scope, TraitCodeLocationAccess, LogicType, GetScope, EvaluationStatus, ScopeRelationType, ImplementationType, GlobalIdentifier, typed_value};
 use crate::evaluation::{evaluate_id_in_typed_value, evaluate_var, Evaluator};
 
 
@@ -143,6 +143,34 @@ pub fn try_template_expansion(template_var: Arc<RwLock<Variable>>, template_exps
             TypedValue::Implementation(implementation) => {
                 //set instance of template implementation 
                 implementation.write().unwrap().set_impl_type(ImplementationType::TemplateInstance(implementation.clone(), template_exps.clone().unwrap()));
+            },
+            _ => unreachable!(),
+        }
+    }
+
+    //change id_in_scope for var and inner TypedValue
+    {
+        let new_id = new_instance_var.read().unwrap().get_name();
+        new_instance_var.write().unwrap().set_id_in_scope(Some(new_id.clone()));
+        let typed_value = new_instance_var.read().unwrap().get_value();
+        match &typed_value {
+            TypedValue::LogicTypeValue(logic_type) =>{
+                let logic_type = logic_type.read().unwrap().clone();
+                match logic_type {
+                    LogicType::LogicGroupType(group_type) => {
+                        group_type.write().unwrap().set_id_in_scope(Some(new_id.clone()))
+                    },
+                    LogicType::LogicUnionType(union_type) => {
+                        union_type.write().unwrap().set_id_in_scope(Some(new_id.clone()))
+                    },
+                    _ => unreachable!(),
+                }
+            },
+            TypedValue::Streamlet(streamlet) => {
+                streamlet.write().unwrap().set_id_in_scope(Some(new_id.clone()))
+            },
+            TypedValue::Implementation(implementation) => {
+                implementation.write().unwrap().set_id_in_scope(Some(new_id.clone()))
             },
             _ => unreachable!(),
         }
