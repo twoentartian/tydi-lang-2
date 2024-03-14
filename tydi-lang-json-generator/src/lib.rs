@@ -14,7 +14,7 @@ mod test_project;
 
 use std::sync::{Arc, RwLock};
 
-use tydi_lang_parser::tydi_memory_representation::{Project, scope::GetScope};
+use tydi_lang_parser::tydi_memory_representation::Project;
 
 pub fn generate_json_representation_from_tydi_project(project: Arc<RwLock<Project>>, target_name: String, package_name: String) -> Result<String, String> {
     let result_json_representation = generate_json_target_from_tydi_project(project, target_name, package_name).expect("fail to generate JsonRepresentation");
@@ -23,8 +23,8 @@ pub fn generate_json_representation_from_tydi_project(project: Arc<RwLock<Projec
 }
 
 pub fn generate_json_target_from_tydi_project(project: Arc<RwLock<Project>>, target_name: String, package_name: String) -> Result<json_representation_all::JsonRepresentation, String> {
-    let mut project_json = json_representation_all::JsonRepresentation::new();
+    let _project_json = json_representation_all::JsonRepresentation::new();
     let target_var = project.read().unwrap().get_variable(package_name, target_name)?;
-    let (top_level_type, result_json_representation) = json_representation_all::translate_from_tydi_project(project, target_var.clone())?;
+    let (_top_level_type, result_json_representation) = json_representation_all::translate_from_tydi_project(project, target_var.clone())?;
     return Ok(result_json_representation);
 }

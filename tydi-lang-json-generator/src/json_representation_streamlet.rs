@@ -1,11 +1,11 @@
 use std::sync::{Arc, RwLock};
 use std::collections::BTreeMap;
 
-use serde::{Serialize};
+use serde::Serialize;
 use tydi_lang_parser::trait_common::HasDocument;
 
 use crate::json_representation_logic_type::LogicType;
-use crate::json_representation_all::{JsonRepresentation, JsonRepresentation_item_type};
+use crate::json_representation_all::JsonRepresentation;
 use crate::name_conversion;
 use crate::util::{generate_init_name, GetName};
 use tydi_lang_parser::tydi_memory_representation::{self, Project, Scope, GlobalIdentifier, GetScope};

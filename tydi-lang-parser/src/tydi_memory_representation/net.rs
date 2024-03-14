@@ -1,9 +1,9 @@
 use std::sync::{Arc, RwLock};
 
-use serde::{Serialize};
+use serde::Serialize;
 
 use crate::deep_clone::{DeepClone, DeepClone_ArcLock};
-use crate::tydi_memory_representation::{CodeLocation, Attribute, TraitCodeLocationAccess, Variable, Instance, Streamlet, Implementation, Port};
+use crate::tydi_memory_representation::{CodeLocation, Attribute, TraitCodeLocationAccess, Variable, Instance, Implementation, Port};
 use crate::trait_common::{GetName, HasDocument};
 use crate::{generate_access, generate_get, generate_set, generate_access_pub, generate_get_pub, generate_set_pub};
 

@@ -1,6 +1,6 @@
 use std::sync::{Arc, RwLock};
 
-use crate::tydi_memory_representation::{Variable, Scope};
+use crate::tydi_memory_representation::Variable;
 
 pub trait GetName {
     fn get_name(&self) -> String;

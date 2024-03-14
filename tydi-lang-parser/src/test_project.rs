@@ -1,7 +1,6 @@
 #[cfg(test)]
 mod all_parse_test
 {
-    use std::{collections::HashMap, sync::{Arc, RwLock}};
     use crate::{tydi_memory_representation::Project, post_compile};
 
     #[test]

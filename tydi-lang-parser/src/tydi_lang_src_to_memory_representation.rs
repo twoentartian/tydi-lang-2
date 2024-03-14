@@ -4,29 +4,37 @@ mod parse_file;
 use parse_file::*;
 
 mod parse_statement;
+#[allow(unused_imports)]
 use parse_statement::*;
 
 mod parse_type;
+#[allow(unused_imports)]
 use parse_type::*;
 pub (in crate) use parse_type::parse_LogicalType_Basic;
 
 
 mod parse_logic_type;
+#[allow(unused_imports)]
 use parse_logic_type::*;
 
 mod parse_template;
+#[allow(unused_imports)]
 use parse_template::*;
 
 mod parse_streamlet;
+#[allow(unused_imports)]
 use parse_streamlet::*;
 
 mod parse_miscellaneous;
+#[allow(unused_imports)]
 use parse_miscellaneous::*;
 
 mod parse_implementation;
+#[allow(unused_imports)]
 use parse_implementation::*;
 
 mod parse_logic_flow;
+#[allow(unused_imports)]
 use parse_logic_flow::*;
 
 
@@ -86,7 +94,7 @@ pub fn tydi_lang_src_to_memory_representation(src: String) -> Result<Arc<RwLock<
 #[cfg(test)]
 mod test_tydi_lang_src_to_memory_representation {
     use super::*;
-    use serde_json::{Value};
+    use serde_json::Value;
 
     fn get_logic_type<'a>(target: &'a Value, name: & str) -> &'a Value {
         let logic_type_var_name = target[name]["exp"].as_str().unwrap().to_string();
@@ -118,7 +126,6 @@ mod test_tydi_lang_src_to_memory_representation {
         package test;
         i = 10;
         "#);
-        let src_ptr = Some(Arc::new(RwLock::new(src.clone())));
         let result = tydi_lang_src_to_memory_representation(src);
         if result.is_err() {
             let result = result.err().unwrap();
@@ -145,7 +152,6 @@ mod test_tydi_lang_src_to_memory_representation {
         package test;
         i:int = 10;
         "#);
-        let src_ptr = Some(Arc::new(RwLock::new(src.clone())));
         let result = tydi_lang_src_to_memory_representation(src);
         if result.is_err() {
             let result = result.err().unwrap();
@@ -173,7 +179,6 @@ mod test_tydi_lang_src_to_memory_representation {
         i:[int] = {10, 20, 30};
         i2 = {10, 20, 30};
         "#);
-        let src_ptr = Some(Arc::new(RwLock::new(src.clone())));
         let result = tydi_lang_src_to_memory_representation(src);
         if result.is_err() {
             let result = result.err().unwrap();
@@ -207,7 +212,6 @@ mod test_tydi_lang_src_to_memory_representation {
         package test;
         i = {10, 20, 30.0};
         "#);
-        let src_ptr = Some(Arc::new(RwLock::new(src.clone())));
         let result = tydi_lang_src_to_memory_representation(src);
         if result.is_err() {
             let result = result.err().unwrap();
@@ -235,7 +239,6 @@ mod test_tydi_lang_src_to_memory_representation {
         i:[int] = {10, 20, 30};
         i0 = i[0] + func(i);
         "#);
-        let src_ptr = Some(Arc::new(RwLock::new(src.clone())));
         let result = tydi_lang_src_to_memory_representation(src);
         if result.is_err() {
             let result = result.err().unwrap();
@@ -267,7 +270,6 @@ mod test_tydi_lang_src_to_memory_representation {
         package test;
         type_null: type = Null;
         "#);
-        let src_ptr = Some(Arc::new(RwLock::new(src.clone())));
         let result = tydi_lang_src_to_memory_representation(src);
         if result.is_err() {
             let result = result.err().unwrap();
@@ -294,7 +296,6 @@ mod test_tydi_lang_src_to_memory_representation {
         package test;
         type_null: [type] = {Null, Null, Null};
         "#);
-        let src_ptr = Some(Arc::new(RwLock::new(src.clone())));
         let result = tydi_lang_src_to_memory_representation(src);
         if result.is_err() {
             let result = result.err().unwrap();
@@ -323,7 +324,6 @@ mod test_tydi_lang_src_to_memory_representation {
         bit_8_type0: Bit(8);
         bit_8_type1: Bit(x);
         "#);
-        let src_ptr = Some(Arc::new(RwLock::new(src.clone())));
         let result = tydi_lang_src_to_memory_representation(src);
         if result.is_err() {
             let result = result.err().unwrap();
@@ -363,7 +363,6 @@ mod test_tydi_lang_src_to_memory_representation {
             bit_8_type1: Bit(8);
         }
         "#);
-        let src_ptr = Some(Arc::new(RwLock::new(src.clone())));
         let result = tydi_lang_src_to_memory_representation(src);
         if result.is_err() {
             let result = result.err().unwrap();
@@ -396,7 +395,6 @@ mod test_tydi_lang_src_to_memory_representation {
             bit_8_type1: Bit(8);
         }
         "#);
-        let src_ptr = Some(Arc::new(RwLock::new(src.clone())));
         let result = tydi_lang_src_to_memory_representation(src);
         if result.is_err() {
             let result = result.err().unwrap();
@@ -415,7 +413,7 @@ mod test_tydi_lang_src_to_memory_representation {
             assert!(!group_x_variable.is_null());
             let group_x_variable_bit_8_type0 = &group_x_variable["scope"]["variables"]["bit_8_type0"];
             assert_eq!(group_x_variable_bit_8_type0["name"], format!("bit_8_type0"));
-            let logic_type = get_logic_type(&group_x_variable["scope"]["variables"], "bit_8_type0");
+            let _ = get_logic_type(&group_x_variable["scope"]["variables"], "bit_8_type0");
         }
     }
 
@@ -427,7 +425,6 @@ mod test_tydi_lang_src_to_memory_representation {
         bit8 = Bit(8);
         bit8_stream : Stream(Bit(8), d=2, throughput=2.0, s="Sync");
         "#);
-        let src_ptr = Some(Arc::new(RwLock::new(src.clone())));
         let result = tydi_lang_src_to_memory_representation(src);
         if result.is_err() {
             let result = result.err().unwrap();
@@ -453,7 +450,6 @@ mod test_tydi_lang_src_to_memory_representation {
 
         use test1;
         "#);
-        let src_ptr = Some(Arc::new(RwLock::new(src.clone())));
         let result = tydi_lang_src_to_memory_representation(src);
         if result.is_err() {
             let result = result.err().unwrap();
@@ -487,7 +483,6 @@ mod test_tydi_lang_src_to_memory_representation {
             port_1: bit_8_stream out;
         }
         "#);
-        let src_ptr = Some(Arc::new(RwLock::new(src.clone())));
         let result = tydi_lang_src_to_memory_representation(src);
         if result.is_err() {
             let result = result.err().unwrap();
@@ -498,10 +493,7 @@ mod test_tydi_lang_src_to_memory_representation {
         let json_output = serde_json::to_string_pretty(&*result.read().unwrap()).ok().unwrap();
         println!("{json_output}");
 
-        let target: Value = serde_json::from_str(&json_output).unwrap();
-        {
-            
-        }
+        let _: Value = serde_json::from_str(&json_output).unwrap();
     }
 
     #[test]
@@ -522,7 +514,6 @@ mod test_tydi_lang_src_to_memory_representation {
         }
 
         "#);
-        let src_ptr = Some(Arc::new(RwLock::new(src.clone())));
         let result = tydi_lang_src_to_memory_representation(src);
         if result.is_err() {
             let result = result.err().unwrap();
@@ -534,10 +525,7 @@ mod test_tydi_lang_src_to_memory_representation {
         println!("{json_output}");
         std::fs::write("./output.json", &json_output).unwrap();
 
-        let target: Value = serde_json::from_str(&json_output).unwrap();
-        {
-            
-        }
+        let _: Value = serde_json::from_str(&json_output).unwrap();
     }
 
     #[test]
@@ -560,7 +548,6 @@ mod test_tydi_lang_src_to_memory_representation {
             }
         }
         "#);
-        let src_ptr = Some(Arc::new(RwLock::new(src.clone())));
         let result = tydi_lang_src_to_memory_representation(src);
         if result.is_err() {
             let result = result.err().unwrap();
@@ -572,10 +559,7 @@ mod test_tydi_lang_src_to_memory_representation {
         println!("{json_output}");
         std::fs::write("./output.json", &json_output).unwrap();
 
-        let target: Value = serde_json::from_str(&json_output).unwrap();
-        {
-            
-        }
+        let _: Value = serde_json::from_str(&json_output).unwrap();
     }
 
     #[test]
@@ -589,7 +573,6 @@ mod test_tydi_lang_src_to_memory_representation {
             }
         }
         "#);
-        let src_ptr = Some(Arc::new(RwLock::new(src.clone())));
         let result = tydi_lang_src_to_memory_representation(src);
         if result.is_err() {
             let result = result.err().unwrap();
@@ -601,15 +584,12 @@ mod test_tydi_lang_src_to_memory_representation {
         println!("{json_output}");
         std::fs::write("./output.json", &json_output).unwrap();
 
-        let target: Value = serde_json::from_str(&json_output).unwrap();
-        {
-            
-        }
+        let _: Value = serde_json::from_str(&json_output).unwrap();
     }
 
 
 
-    // #[test]
+    #[test]
     fn declare_function_0() {
         let src = String::from(r#"
         package test;
@@ -617,7 +597,6 @@ mod test_tydi_lang_src_to_memory_representation {
         function(0, Bit(1));
 
         "#);
-        let src_ptr = Some(Arc::new(RwLock::new(src.clone())));
         let result = tydi_lang_src_to_memory_representation(src);
         if result.is_err() {
             let result = result.err().unwrap();
@@ -628,7 +607,7 @@ mod test_tydi_lang_src_to_memory_representation {
         let json_output = serde_json::to_string_pretty(&*result.read().unwrap()).ok().unwrap();
         println!("{json_output}");
 
-        let target: Value = serde_json::from_str(&json_output).unwrap();
+        let _: Value = serde_json::from_str(&json_output).unwrap();
         {
             
         }

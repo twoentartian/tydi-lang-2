@@ -20,7 +20,7 @@ mod tydi_lang_src_to_memory_representation;
 mod evaluation;
 
 extern crate strum;
-#[macro_use]
+
 extern crate strum_macros;
 
 mod post_compile;

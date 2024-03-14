@@ -1,7 +1,7 @@
 use std::sync::{Arc, RwLock};
 use std::collections::BTreeMap;
 
-use serde::{Serialize};
+use serde::Serialize;
 use serde::ser::SerializeStruct;
 
 use tydi_lang_parser::tydi_memory_representation::{self, Project, TypedValue};
@@ -9,7 +9,6 @@ use tydi_lang_parser::tydi_memory_representation::scope::GetScope;
 use tydi_lang_parser::trait_common::{GetName, HasDocument};
 
 use crate::name_conversion::{self, get_global_variable_name_with_parent_scope};
-use crate::util::generate_random_str;
 
 #[derive(Clone, Debug, strum::IntoStaticStr)]
 pub enum LogicType {
@@ -57,7 +56,7 @@ impl serde::Serialize for LogicType {
 
 impl LogicType {
     pub fn translate_from_tydi_project(tydi_project: Arc<RwLock<Project>>, target_var: Arc<RwLock<tydi_memory_representation::Variable>>) -> Result<(LogicType, BTreeMap<String, Arc<RwLock<LogicType>>>), String> {
-        let mut target_var_name = name_conversion::get_global_variable_name(target_var.clone());
+        let target_var_name = name_conversion::get_global_variable_name(target_var.clone());
         let var_value = target_var.read().unwrap().get_value();
 
         return Self::translate_from_tydi_project_type_value(tydi_project.clone(), &var_value, target_var_name);

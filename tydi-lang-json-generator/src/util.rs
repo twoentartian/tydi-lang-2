@@ -4,7 +4,7 @@ pub trait GetName {
     fn get_name(&self) -> String;
 }
 
-static mut generate_counter: AtomicUsize = AtomicUsize::new(0);
+static mut GENERATE_COUNTER: AtomicUsize = AtomicUsize::new(0);
 
 pub fn generate_random_str(length: usize) -> String {
     use rand::{thread_rng, Rng};
@@ -16,8 +16,8 @@ pub fn generate_random_str(length: usize) -> String {
             .collect();
     let counter;
     unsafe {
-        generate_counter.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
-        counter = generate_counter.load(std::sync::atomic::Ordering::SeqCst);
+        GENERATE_COUNTER.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+        counter = GENERATE_COUNTER.load(std::sync::atomic::Ordering::SeqCst);
     }
     return format!("{}_{}", rand_string, counter);
 }

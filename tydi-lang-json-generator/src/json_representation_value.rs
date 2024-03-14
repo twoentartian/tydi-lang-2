@@ -1,6 +1,6 @@
 use std::sync::{Arc, RwLock};
 
-use serde::{Serialize};
+use serde::Serialize;
 use tydi_lang_parser::tydi_memory_representation::{TypedValue, Project};
 
 use crate::{json_representation_logic_type::LogicType, json_representation_all::JsonRepresentation, util::generate_random_str};

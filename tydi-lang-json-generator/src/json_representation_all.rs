@@ -1,14 +1,12 @@
-use std::clone;
 use std::sync::{Arc, RwLock};
 use std::collections::BTreeMap;
 
-use serde::{Serialize};
-use serde::ser::SerializeStruct;
+use serde::Serialize;
 
-use tydi_lang_parser::tydi_memory_representation::{self, Project, logic_type, Variable, TypedValue};
+use tydi_lang_parser::tydi_memory_representation::{self, Project};
 
 use crate::json_representation_implementation::Implementation;
-use crate::json_representation_logic_type::{LogicType};
+use crate::json_representation_logic_type::LogicType;
 use crate::json_representation_streamlet::Streamlet;
 use crate::name_conversion;
 

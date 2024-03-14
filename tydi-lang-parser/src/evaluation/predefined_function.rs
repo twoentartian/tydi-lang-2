@@ -23,7 +23,7 @@ pub fn get_function(function: Arc<RwLock<Function>>) -> Result<Box<dyn FunctionT
 struct FunctionAssert {}
 
 impl FunctionAssert {
-    const ID: &str = "assert";
+    const ID: &'static str = "assert";
 }
 
 impl FunctionTrait for FunctionAssert {

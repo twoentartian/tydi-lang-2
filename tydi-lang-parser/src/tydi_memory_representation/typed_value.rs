@@ -4,7 +4,6 @@ use serde::Serialize;
 use serde::ser::SerializeStruct;
 
 use crate::deep_clone::DeepClone;
-use crate::error::TydiLangError;
 use crate::{tydi_memory_representation::{Package, LogicType}, trait_common::GetName};
 
 use crate::tydi_memory_representation::{Variable, Streamlet, Port, Implementation, Instance, Net, If, For, Identifier, GetScope, Function};
@@ -453,7 +452,7 @@ impl TypedValue {
             TypedValue::If(_) => todo!(),
             TypedValue::For(_) => todo!(),
             TypedValue::Array(array) => return format!("Array({})", array.iter().map(|i| i.get_brief_info()).collect::<Vec<_>>().join(", ")),
-            TypedValue::Function(v) => return format!("Fcuntion:{}({})", v.read().unwrap().get_function_id(), v.read().unwrap().get_function_arg_exps().iter().map(|(key, value)| value.clone()).collect::<Vec<_>>().join(" ,")),
+            TypedValue::Function(v) => return format!("Fcuntion:{}({})", v.read().unwrap().get_function_id(), v.read().unwrap().get_function_arg_exps().iter().map(|(_key, value)| value.clone()).collect::<Vec<_>>().join(" ,")),
             TypedValue::RefToVar(v) => return format!("RefToVar({})", v.read().unwrap().get_name()),
             TypedValue::Identifier(v) => return format!("Identifier({})", v.read().unwrap().get_brief_info()),
         }

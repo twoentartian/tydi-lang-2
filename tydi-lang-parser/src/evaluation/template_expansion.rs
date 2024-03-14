@@ -5,7 +5,7 @@ use crate::deep_clone::DeepClone;
 use crate::error::TydiLangError;
 use crate::generate_name::{generate_init_value, generate_template_instance_name, generate_template_instance_name_based_on_old_name};
 use crate::trait_common::GetName;
-use crate::tydi_memory_representation::{Variable, TypedValue, Scope, TraitCodeLocationAccess, LogicType, GetScope, EvaluationStatus, ScopeRelationType, ImplementationType, GlobalIdentifier, typed_value};
+use crate::tydi_memory_representation::{Variable, TypedValue, Scope, TraitCodeLocationAccess, LogicType, GetScope, EvaluationStatus, ScopeRelationType, ImplementationType, GlobalIdentifier};
 use crate::evaluation::{evaluate_id_in_typed_value, evaluate_var, Evaluator};
 
 

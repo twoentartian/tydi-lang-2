@@ -5,7 +5,7 @@ use serde::Serialize;
 
 use crate::deep_clone::DeepClone;
 use crate::generate_name::generate_init_value;
-use crate::tydi_memory_representation::{CodeLocation, TraitCodeLocationAccess, Variable};
+use crate::tydi_memory_representation::{CodeLocation, TraitCodeLocationAccess};
 use crate::trait_common::GetName;
 use crate::{generate_access, generate_get, generate_set, generate_access_pub, generate_get_pub, generate_set_pub};
 

@@ -1,11 +1,11 @@
 use std::sync::{RwLock, Arc};
 use std::collections::BTreeMap;
 
-use serde::{Serialize};
+use serde::Serialize;
 
 use crate::deep_clone::DeepClone;
 use crate::generate_get_pub;
-use crate::tydi_memory_representation::{CodeLocation};
+use crate::tydi_memory_representation::CodeLocation;
 
 #[derive(Clone, Debug, Serialize)]
 pub enum IdentifierType {

@@ -89,7 +89,7 @@ impl Serialize for Variable {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
         where S: Serializer,
     {
-        use serde::ser::{SerializeStruct, SerializeSeq};
+        use serde::ser::SerializeStruct;
         if self.evaluated == EvaluationStatus::Evaluated || self.evaluated == EvaluationStatus::Predefined {
             TypedValue::serialize(&self.value, serializer)
 

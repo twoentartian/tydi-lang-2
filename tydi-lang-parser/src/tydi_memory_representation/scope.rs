@@ -7,8 +7,8 @@ use crate::deep_clone::{DeepClone, DeepClone_ArcLock};
 use crate::error::TydiLangError;
 use crate::evaluation::{Evaluator, template_expansion};
 use crate::{generate_get, generate_name, generate_get_ref_pub, generate_get_pub, generate_set_pub, generate_access_pub};
-use crate::trait_common::{GetName};
-use crate::tydi_memory_representation::{Variable, CodeLocation, TraitCodeLocationAccess, template_args, identifier, TypedValue, LogicType};
+use crate::trait_common::GetName;
+use crate::tydi_memory_representation::{Variable, CodeLocation, TraitCodeLocationAccess, TypedValue, LogicType};
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize, Hash)]
 pub enum ScopeRelationType {
@@ -37,7 +37,7 @@ impl ScopeRelationType {
     }
 
     pub fn resolve_id_in_current_scope() -> HashSet<ScopeRelationType> {
-        let mut output = HashSet::new();
+        let output = HashSet::new();
         return output;
     }
 

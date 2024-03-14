@@ -1,12 +1,12 @@
 use std::sync::{Arc, RwLock};
 use std::collections::BTreeMap;
 
-use serde::{Serialize};
+use serde::Serialize;
 
 use tydi_lang_parser::trait_common::{GetName, HasDocument};
 use tydi_lang_parser::tydi_memory_representation::{self, Project, TypedValue, Scope, GetScope, PortOwner, GlobalIdentifier};
 
-use crate::json_representation_all::{JsonRepresentation};
+use crate::json_representation_all::JsonRepresentation;
 use crate::json_representation_value::Value;
 use crate::json_representation_streamlet::Streamlet;
 use crate::name_conversion::{self, get_global_variable_name_with_parent_scope, get_global_variable_name_with_scope};

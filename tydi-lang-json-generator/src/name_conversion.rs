@@ -1,6 +1,6 @@
 use std::sync::{Arc, RwLock};
 
-use tydi_lang_parser::{tydi_memory_representation::{Variable, Port, Scope, GlobalIdentifier, Streamlet}, trait_common::GetName};
+use tydi_lang_parser::{tydi_memory_representation::{Variable, Scope, GlobalIdentifier}, trait_common::GetName};
 
 use crate::util;
 
@@ -16,7 +16,7 @@ pub fn get_global_variable_name(var: Arc<RwLock<Variable>>) -> String {
     };
     let variable_part = var.read().unwrap().get_name();
     let output_name = format!("{}__{}", scope_part, variable_part);
-    return remove_unaccepted_char(output_name);;
+    return remove_unaccepted_char(output_name);
 }
 
 pub fn get_global_variable_name_with_scope<T: GetName>(var: Arc<RwLock<T>>, scope: Arc<RwLock<Scope>>) -> String {
@@ -45,5 +45,5 @@ fn remove_unaccepted_char(src: String) -> String {
     output_name = output_name.replace(")", "");
     output_name = output_name.replace("<", "");
     output_name = output_name.replace(">", "");
-    return output_name;;
+    return output_name;
 }

@@ -4,12 +4,14 @@ pub mod use_inner_for_arc_rwlock {
     use serde::ser::Serializer;
     use std::sync::{Arc, RwLock};
     
+    #[allow(dead_code)]
     pub fn serialize<S, T>(val: &Arc<RwLock<T>>, s: S) -> Result<S::Ok, S::Error>
         where S: Serializer, T: Serialize,
     {
         T::serialize(&*val.read().unwrap(), s)
     }
     
+    #[allow(dead_code, unused)]
     pub fn deserialize<'de, D, T>(d: D) -> Result<Arc<RwLock<T>>, D::Error>
             where D: Deserializer<'de>, T: Deserialize<'de>,
     {
@@ -23,6 +25,7 @@ pub mod use_inner_for_optional_arc_rwlock {
     use serde::ser::Serializer;
     use std::sync::{Arc, RwLock};
     
+    #[allow(dead_code)]
     pub fn serialize<S, T>(val: &Option<Arc<RwLock<T>>>, s: S) -> Result<S::Ok, S::Error>
         where S: Serializer, T: Serialize,
     {
@@ -32,6 +35,7 @@ pub mod use_inner_for_optional_arc_rwlock {
         }
     }
     
+    #[allow(dead_code, unused)]
     pub fn deserialize<'de, D, T>(d: D) -> Result<Arc<RwLock<T>>, D::Error>
             where D: Deserializer<'de>, T: Deserialize<'de>,
     {
@@ -47,12 +51,14 @@ pub mod use_name_for_arc_rwlock {
 
     use crate::trait_common::GetName;
 
+    #[allow(dead_code)]
     pub fn serialize<S, T>(val: &Arc<RwLock<T>>, s: S) -> Result<S::Ok, S::Error>
             where S: Serializer, T: Serialize + GetName,
     {
         String::serialize(&val.read().unwrap().get_name(), s)
     }
     
+    #[allow(dead_code, unused)]
     pub fn deserialize<'de, D, T>(d: D) -> Result<Arc<RwLock<T>>, D::Error>
             where D: Deserializer<'de>, T: Deserialize<'de>,
     {
@@ -68,6 +74,7 @@ pub mod use_name_for_optional_arc_rwlock {
 
     use crate::trait_common::GetName;
     
+    #[allow(dead_code)]
     pub fn serialize<S, T>(val: &Option<Arc<RwLock<T>>>, s: S) -> Result<S::Ok, S::Error>
         where S: Serializer, T: Serialize + GetName,
     {
@@ -77,6 +84,7 @@ pub mod use_name_for_optional_arc_rwlock {
         }
     }
     
+    #[allow(dead_code, unused)]
     pub fn deserialize<'de, D, T>(d: D) -> Result<Arc<RwLock<T>>, D::Error>
             where D: Deserializer<'de>, T: Deserialize<'de>,
     {
@@ -91,6 +99,7 @@ pub mod arc_rwlock_in_hash_map_value {
     use serde::ser::{Serializer, SerializeMap};
     use std::sync::{Arc, RwLock};
 
+    #[allow(dead_code)]
     pub fn serialize<S, T, K>(val: &HashMap<K, Arc<RwLock<T>>>, s: S) -> Result<S::Ok, S::Error>
             where S: Serializer, T: Serialize, K: Serialize,
     {
@@ -102,6 +111,7 @@ pub mod arc_rwlock_in_hash_map_value {
         variables_map.end()
     }
     
+    #[allow(dead_code, unused)]
     pub fn deserialize<'de, D, T>(d: D) -> Result<Arc<RwLock<T>>, D::Error>
             where D: Deserializer<'de>, T: Deserialize<'de>,
     {
@@ -116,6 +126,7 @@ pub mod arc_rwlock_in_btree_map_value {
     use serde::ser::{Serializer, SerializeMap};
     use std::sync::{Arc, RwLock};
 
+    #[allow(dead_code)]
     pub fn serialize<S, T, K>(val: &BTreeMap<K, Arc<RwLock<T>>>, s: S) -> Result<S::Ok, S::Error>
             where S: Serializer, T: Serialize, K: Serialize,
     {
@@ -127,6 +138,7 @@ pub mod arc_rwlock_in_btree_map_value {
         variables_map.end()
     }
     
+    #[allow(dead_code, unused)]
     pub fn deserialize<'de, D, T>(d: D) -> Result<Arc<RwLock<T>>, D::Error>
             where D: Deserializer<'de>, T: Deserialize<'de>,
     {
@@ -140,6 +152,7 @@ pub mod arc_rwlock_in_vec_value {
     use serde::ser::{Serializer, SerializeSeq};
     use std::sync::{Arc, RwLock};
 
+    #[allow(dead_code)]
     pub fn serialize<S, T>(val: &Vec<Arc<RwLock<T>>>, s: S) -> Result<S::Ok, S::Error>
             where S: Serializer, T: Serialize,
     {
@@ -151,6 +164,7 @@ pub mod arc_rwlock_in_vec_value {
         variables_vec.end()
     }
     
+    #[allow(dead_code, unused)]
     pub fn deserialize<'de, D, T>(d: D) -> Result<Arc<RwLock<T>>, D::Error>
             where D: Deserializer<'de>, T: Deserialize<'de>,
     {
@@ -159,7 +173,7 @@ pub mod arc_rwlock_in_vec_value {
 }
 
 pub mod serialize_variable_detail {
-    use serde::{Deserialize};
+    use serde::Deserialize;
     use serde::de::Deserializer;
     use serde::ser::{Serializer, SerializeStruct};
     use std::sync::{Arc, RwLock};
@@ -167,6 +181,7 @@ pub mod serialize_variable_detail {
     use crate::trait_common::GetName;
     use crate::tydi_memory_representation::{Variable, TraitCodeLocationAccess};
 
+    #[allow(dead_code)]
     pub fn serialize<S>(val: &Arc<RwLock<Variable>>, serializer: S) -> Result<S::Ok, S::Error>
             where S: Serializer
     {
@@ -180,6 +195,7 @@ pub mod serialize_variable_detail {
         state.end()
     }
     
+    #[allow(dead_code, unused)]
     pub fn deserialize<'de, D, T>(d: D) -> Result<Arc<RwLock<T>>, D::Error>
             where D: Deserializer<'de>, T: Deserialize<'de>,
     {
@@ -190,11 +206,12 @@ pub mod serialize_variable_detail {
 pub mod serialize_variable_value_only {
     use serde::{Deserialize, Serialize};
     use serde::de::Deserializer;
-    use serde::ser::{Serializer, SerializeSeq};
+    use serde::ser::Serializer;
     use std::sync::{Arc, RwLock};
 
     use crate::tydi_memory_representation::{Variable, EvaluationStatus, TypedValue};
 
+    #[allow(dead_code)]
     pub fn serialize<S>(val: &Arc<RwLock<Variable>>, serializer: S) -> Result<S::Ok, S::Error>
             where S: Serializer
     {
@@ -223,6 +240,7 @@ pub mod serialize_variable_value_only {
         }
     }
     
+    #[allow(dead_code, unused)]
     pub fn deserialize<'de, D, T>(d: D) -> Result<Arc<RwLock<T>>, D::Error>
             where D: Deserializer<'de>, T: Deserialize<'de>,
     {
