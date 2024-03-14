@@ -5,6 +5,7 @@ use crate::trait_common::GetName;
 use crate::{tydi_parser::*, util, tydi_memory_representation::{Variable, TypedValue}};
 
 static mut GENERATE_COUNTER: AtomicUsize = AtomicUsize::new(0);
+static mut TEMPLATE_INSTANCE_COUNTER: AtomicUsize = AtomicUsize::new(0);
 
 pub fn generate_built_in_variable_name_from_span(src: &Pair<Rule>) -> String {
     let src_span = src.as_span();
@@ -24,8 +25,12 @@ pub fn generate_template_instance_name(template_var: Arc<RwLock<Variable>>, temp
     for index in 0..template_exps.len() {
         arg_part.push_str(&template_exps.get(&index).unwrap().get_brief_info());
     }
-
-    format!("instance_{}_{}", template_var_name, arg_part)
+    let counter;
+    unsafe {
+        TEMPLATE_INSTANCE_COUNTER.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+        counter = TEMPLATE_INSTANCE_COUNTER.load(std::sync::atomic::Ordering::SeqCst);
+    }
+    format!("instance_{}_{}_{}", template_var_name, arg_part, counter)
 }
 
 pub fn generate_template_instance_name_based_on_old_name(old_name: String, template_exps: &BTreeMap<usize, TypedValue>) -> String {

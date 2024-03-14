@@ -4,6 +4,7 @@ use std::sync::{Arc, RwLock};
 
 use crate::project_description::*;
 use tydi_lang_parser::tydi_memory_representation::*;
+use tydi_lang_json_generator::generate_json_representation_from_tydi_project;
 
 pub struct TydiProject {
     name: String,
@@ -66,6 +67,12 @@ impl TydiProject {
                 return Err(err.print());
             }
         }
+    }
+
+    pub fn generate_json_IR(&self, target_name: String, package_name: String) -> Result<String, String> {
+        let tydi_project = self.project.clone();
+        let json_output = generate_json_representation_from_tydi_project(tydi_project, target_name, package_name);
+        return json_output;
     }
 
     pub fn get_pretty_json(&self) -> String {
