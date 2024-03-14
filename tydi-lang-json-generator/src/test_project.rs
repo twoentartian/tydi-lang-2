@@ -263,7 +263,7 @@ fn sample_project_nested_stream_0() {
         
         impl ChildImpl of child {}
         
-        impl ExampleImpl of example {
+        impl ExampleImpl of example @External {
             instance a(ChildImpl);
             instance b(ChildImpl);
             self.timestamped_message_in => a.timestamped_message_in;
@@ -309,7 +309,7 @@ fn sample_project_comment_bug() {
         let src_pack0 = String::from(r#"
         package pack0;
 
-        chars = Stream(Bit(8) /*synchronicity: Sync*/ ,c=1 /*synchronicity: Sync*/ ); 
+        chars = Stream(Bit(8) /*synchronicity: Sync*/ ,c=8 /*synchronicity: Sync*/ ); 
         "#);
         let src_pack1 = String::from(r#"
         package pack1;

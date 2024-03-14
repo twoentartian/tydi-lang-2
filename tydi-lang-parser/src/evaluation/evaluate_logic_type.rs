@@ -140,8 +140,8 @@ pub fn evaluate_LogicStream(target: Arc<RwLock<LogicStream>>, scope: Arc<RwLock<
         let value = evaluate_var(complexity, scope.clone(), evaluator.clone())?;
         match &value {
             TypedValue::IntValue(x) => {
-                if !(*x >= 1 && *x <= 7) {
-                    return Err(TydiLangError::new(format!("the complexity {:?} must be in the range 1~7", value), target.read().unwrap().get_code_location()))
+                if !(*x >= 1 && *x <= 8) {
+                    return Err(TydiLangError::new(format!("the complexity {:?} must be in the range 1~8", value), target.read().unwrap().get_code_location()))
                 }
             },
             _ => return Err(TydiLangError::new(format!("the complexity {:?} must be an integer", value), target.read().unwrap().get_code_location()))
