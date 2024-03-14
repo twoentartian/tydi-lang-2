@@ -338,3 +338,103 @@ fn sample_project_comment_bug() {
     std::fs::write("./json_output.json", &json_output).unwrap();
     println!("{}", json_output);
 }
+
+
+#[test]
+fn casper_wrong_error_line_bug() {
+    let project = Project::new(format!("sample_project"));
+    {
+        let mut project_write = project.write().unwrap();
+
+        let src_pack0 = String::from(r#"
+            package snappy;
+
+            byte = Bit(8);
+            
+            byte_stream = Stream(byte, t=8.0, d=1, c=1);
+            
+            streamlet decompressor {
+                # Compressed data #
+                co: byte_stream in;
+                # Decompressed data #
+                de: byte_stream out;
+            }
+            
+            impl VhSnUnzipUnbufferedWrap of decompressor {}
+            
+            base_d = 2;
+            
+            JSONStream = Stream(
+                byte,
+                throughput = 4.0,
+                dimension = base_d,
+                synchronicity = "Sync",
+                complexity = 7
+            );
+            
+            IntParserStream = Stream(
+                Bit(64),
+                throughput = 1.0,
+                dimension = base_d+2,
+                synchronicity = "Sync",
+                complexity = 2
+            );
+            
+            BoolParserStream = Stream(
+                Bit(1),
+                throughput = 1.0,
+                dimension = base_d,
+                synchronicity = "Sync",
+                complexity = 2
+            );
+            
+            streamlet schema_0_parser_0_top {
+                input: JSONStream in;
+                output_int_parser_L4_00_inst: IntParserStream out;
+                output_bool_parser_L2_00_inst: BoolParserStream out;
+                output_int_parser_L4_01_inst: IntParserStream out;
+            }
+            
+            impl schema_0_parser_0_top_com of schema_0_parser_0_top {}
+            
+            
+            streamlet TydiDemoTop_Interface {
+                # Compressed data #
+                input: byte_stream in;
+            }
+            
+            impl TydiDemoTop of TydiDemoTop_Interface {
+                instance decompressor(VhSnUnzipUnbufferedWrap);
+                instance json_parser(schema_0_parser_0_top_com);
+            
+                input => decompressor.co;
+                decompressor.de => json_parser.input;
+            }
+        
+        "#);
+        let src_pack1 = String::from(r#"
+        package pack1;
+        use pack0;
+
+        "#);
+
+        let status = project_write.add_package(format!("./pack0.td"), src_pack0);
+        if status.is_err() {
+            panic!("{}", status.err().unwrap().print());
+        }
+        let status = project_write.add_package(format!("./pack1.td"), src_pack1);
+        if status.is_err() {
+            panic!("{}", status.err().unwrap().print());
+        }
+    }
+    std::fs::write("./code_structure_before_evaluation.json", &project.read().unwrap().get_pretty_json()).unwrap();
+
+    project.read().unwrap().evaluate_target(format!("TydiDemoTop"), format!("snappy")).expect("fail to evaluate");
+
+    let code_structure = project.read().unwrap().get_pretty_json();
+    std::fs::write("./code_structure.json", &code_structure).unwrap();
+
+    let json_output = generate_json_representation_from_tydi_project(project.clone(), format!("TydiDemoTop"), format!("snappy")).expect("fail to generate json");
+    std::fs::write("./json_output.json", &json_output).unwrap();
+    println!("{}", json_output);
+}

@@ -130,7 +130,7 @@ impl CodeLocation {
         }
         if self.begin.is_some() {
             let begin_line = CodeLocation::count_lines(&src[0..self.begin.unwrap()].to_string());
-            let code_span = CodeLocation::get_line(&*src, begin_line);
+            let code_span = CodeLocation::get_line(&*src, begin_line+1);
             return format!("{}: {}", begin_line, code_span);
         }
         unreachable!()
