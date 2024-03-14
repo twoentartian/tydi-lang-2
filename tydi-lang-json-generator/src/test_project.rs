@@ -339,6 +339,63 @@ fn sample_project_comment_bug() {
     println!("{}", json_output);
 }
 
+#[test]
+fn sample_project_impl_of_template() {
+    let project = Project::new(format!("sample_project"));
+    {
+        let mut project_write = project.write().unwrap();
+
+        let src_pack0 = String::from(r#"
+        package pack0;
+    
+        Group t {
+            a: Bit(8);
+        }
+        t_stream = Stream(t);
+
+        streamlet bypass_s {
+            port_in: t_stream in;
+            port_out: t_stream out;
+        }
+
+        impl bypass_i of bypass_s {
+            port_in => port_out;
+        }
+
+        impl bypass_external<inner: impl of bypass_s> of bypass_s {
+            instance i(inner);
+            port_in => i.port_in;
+            i.port_out => port_out;
+        }
+
+        start = bypass_external<bypass_i>;
+        "#);
+        let src_pack1 = String::from(r#"
+        package pack1;
+        use pack0;
+
+        "#);
+
+        let status = project_write.add_package(format!("./pack0.td"), src_pack0);
+        if status.is_err() {
+            panic!("{}", status.err().unwrap().print());
+        }
+        let status = project_write.add_package(format!("./pack1.td"), src_pack1);
+        if status.is_err() {
+            panic!("{}", status.err().unwrap().print());
+        }
+    }
+    std::fs::write("./code_structure_before_evaluation.json", &project.read().unwrap().get_pretty_json()).unwrap();
+
+    project.read().unwrap().evaluate_target(format!("start"), format!("pack0")).expect("fail to evaluate");
+
+    let code_structure = project.read().unwrap().get_pretty_json();
+    std::fs::write("./code_structure.json", &code_structure).unwrap();
+
+    let json_output = generate_json_representation_from_tydi_project(project.clone(), format!("start"), format!("pack0")).expect("fail to generate json");
+    std::fs::write("./json_output.json", &json_output).unwrap();
+    println!("{}", json_output);
+}
 
 #[test]
 fn casper_wrong_error_line_bug() {

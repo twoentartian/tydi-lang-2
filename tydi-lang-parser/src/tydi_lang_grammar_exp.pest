@@ -35,7 +35,7 @@ FloatTypeKeyword = { "float" }
 ClockDomainTypeKeyword = { "clock" }
 LogicalTypeKeyword = { "type" }
 StreamletKeyword = { "streamlet" }
-ImplementationKeyword = {"impl" ~ "of" ~ Exp }
+ImplementationKeyword = {"impl" ~ "of" ~ GlobalIdentifier }  //BUG here
 
 BasicTypeKeyword = { IntTypeKeyword | StringTypeKeyword | BoolTypeKeyword | FloatTypeKeyword | ClockDomainTypeKeyword | LogicalTypeKeyword }
 BasicTypeKeywordArray = { "[" ~ BasicTypeKeyword ~ "]" }
@@ -67,6 +67,7 @@ Term = { ( "(" ~ Exp ~ ")" ) |
             IdentifierWithArgExp | 
             UnaryExp }
 
+GlobalIdentifier = { (Term ~ (OP_AccessInner  ~ Term)*) }
 Exp = { LogicalExp | (Term ~ (InfixOp  ~ Term)*) }
 InfixOp = _{ 
     OP_AccessInner | OP_AccessProperty |
