@@ -269,7 +269,10 @@ fn sample_project_nested_stream_0() {
             self.timestamped_message_in => a.timestamped_message_in;
             a.timestamped_message_out => b.timestamped_message_in;
             b.timestamped_message_out => self.timestamped_message_out;
+            data = 10;
         }
+
+        entry = ExampleImpl.data;
 
         "#);
         let src_pack1 = String::from(r#"
@@ -289,7 +292,7 @@ fn sample_project_nested_stream_0() {
             panic!("{}", status.err().unwrap().print());
         }
     }
-    project.read().unwrap().evaluate_target(format!("ExampleImpl"), format!("pack0")).expect("fail to evaluate");
+    project.read().unwrap().evaluate_target(format!("entry"), format!("pack0")).expect("fail to evaluate");
 
     let code_structure = project.read().unwrap().get_pretty_json();
     std::fs::write("./code_structure.json", &code_structure).unwrap();

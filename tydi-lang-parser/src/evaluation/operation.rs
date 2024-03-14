@@ -156,8 +156,9 @@ pub fn perform_AccessInner(lhs: &Box<Expression>, rhs: &Box<Expression>, scope: 
             let streamlet_scope = v.read().unwrap().get_scope();
             (streamlet_scope, ScopeRelationType::resolve_id_default())
         },
-        TypedValue::Implementation(_) => {
-            todo!()
+        TypedValue::Implementation(v) => {
+            let streamlet_scope = v.read().unwrap().get_scope();
+            (streamlet_scope, ScopeRelationType::resolve_id_default())
         },
         TypedValue::Instance(inst) => {
             let derived_impl_var = inst.read().unwrap().get_derived_impl_var();
