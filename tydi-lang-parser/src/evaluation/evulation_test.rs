@@ -31,9 +31,9 @@ mod test_expression_parser {
         check_exp(format!("1*1"), TypedValue::IntValue(1));
         check_exp(format!("10%3"), TypedValue::IntValue(1));
         check_exp(format!("\"hello, \" + \"world\""), TypedValue::StringValue(format!("hello, world")));
-        check_exp(format!("{{1,2,3}}"), TypedValue::Array(vec![TypedValue::IntValue(1),TypedValue::IntValue(2),TypedValue::IntValue(3)]));
-        check_exp(format!("{{1,2,3.0}}"), TypedValue::Array(vec![TypedValue::IntValue(1),TypedValue::IntValue(2),TypedValue::FloatValue(3.0)]));
-        check_exp(format!("{{1,2,\"3.0\"}}"), TypedValue::Array(vec![TypedValue::IntValue(1),TypedValue::IntValue(2),TypedValue::StringValue(String::from("3.0"))]));
+        check_exp(format!("[1,2,3]"), TypedValue::Array(vec![TypedValue::IntValue(1),TypedValue::IntValue(2),TypedValue::IntValue(3)]));
+        check_exp(format!("[1,2,3.0]"), TypedValue::Array(vec![TypedValue::IntValue(1),TypedValue::IntValue(2),TypedValue::FloatValue(3.0)]));
+        check_exp(format!("[1,2,\"3.0\"]"), TypedValue::Array(vec![TypedValue::IntValue(1),TypedValue::IntValue(2),TypedValue::StringValue(String::from("3.0"))]));
 
     }
 
@@ -53,11 +53,11 @@ mod test_expression_parser {
 
     #[test]
     fn array_operation() {
-        check_exp(format!("{{1,2}} + {{3,4}}"), TypedValue::Array(vec![TypedValue::IntValue(1),TypedValue::IntValue(2),TypedValue::IntValue(3),TypedValue::IntValue(4)]));
-        check_exp(format!("1 + {{2,3,4}}"), TypedValue::Array(vec![TypedValue::IntValue(1),TypedValue::IntValue(2),TypedValue::IntValue(3),TypedValue::IntValue(4)]));
-        check_exp(format!("{{1,2,3}} + 4"), TypedValue::Array(vec![TypedValue::IntValue(1),TypedValue::IntValue(2),TypedValue::IntValue(3),TypedValue::IntValue(4)]));
-        check_exp(format!("{{1,2,3}} + 4.0"), TypedValue::Array(vec![TypedValue::IntValue(1),TypedValue::IntValue(2),TypedValue::IntValue(3),TypedValue::FloatValue(4.0)]));
-        check_exp(format!("{{1,2,3}} + 4.0*5"), TypedValue::Array(vec![TypedValue::IntValue(1),TypedValue::IntValue(2),TypedValue::IntValue(3),TypedValue::FloatValue(20.0)]));
+        check_exp(format!("[1,2] + [3,4]"), TypedValue::Array(vec![TypedValue::IntValue(1),TypedValue::IntValue(2),TypedValue::IntValue(3),TypedValue::IntValue(4)]));
+        check_exp(format!("1 + [2,3,4]"), TypedValue::Array(vec![TypedValue::IntValue(1),TypedValue::IntValue(2),TypedValue::IntValue(3),TypedValue::IntValue(4)]));
+        check_exp(format!("[1,2,3] + 4"), TypedValue::Array(vec![TypedValue::IntValue(1),TypedValue::IntValue(2),TypedValue::IntValue(3),TypedValue::IntValue(4)]));
+        check_exp(format!("[1,2,3] + 4.0"), TypedValue::Array(vec![TypedValue::IntValue(1),TypedValue::IntValue(2),TypedValue::IntValue(3),TypedValue::FloatValue(4.0)]));
+        check_exp(format!("[1,2,3] + 4.0*5"), TypedValue::Array(vec![TypedValue::IntValue(1),TypedValue::IntValue(2),TypedValue::IntValue(3),TypedValue::FloatValue(20.0)]));
     }
 
     #[test]
@@ -65,12 +65,12 @@ mod test_expression_parser {
         check_exp(format!("1==1 && 2==2"), TypedValue::BoolValue(true));
         check_exp(format!("1 < 1 && 2==2"), TypedValue::BoolValue(false));
         check_exp(format!("1 < 1 || 2==2"), TypedValue::BoolValue(true));
-        check_exp(format!("{{1,2,3}} == {{1,2,3}}"), TypedValue::BoolValue(true));
-        check_exp(format!("{{1,2,3}} == {{1,2,3,4}}"), TypedValue::BoolValue(false));
-        check_exp(format!("{{1,2,3}} == {{1,2,4}}"), TypedValue::BoolValue(false));
-        check_exp(format!("{{1,2,3}} == {{1,2,4.0}}"), TypedValue::BoolValue(false));
-        check_exp(format!("{{1.0,2.0,3.0,4.0}} == {{1.0,2.0}} + 3.0 + 4.0"), TypedValue::BoolValue(true));
-        check_exp(format!("{{1.0,2.0,\"3.0\",4.0}} == {{1.0,2.0}} + \"3.0\" + 4.0"), TypedValue::BoolValue(true));
+        check_exp(format!("[1,2,3] == [1,2,3]"), TypedValue::BoolValue(true));
+        check_exp(format!("[1,2,3] == [1,2,3,4]"), TypedValue::BoolValue(false));
+        check_exp(format!("[1,2,3] == [1,2,4]"), TypedValue::BoolValue(false));
+        check_exp(format!("[1,2,3] == [1,2,4.0]"), TypedValue::BoolValue(false));
+        check_exp(format!("[1.0,2.0,3.0,4.0] == [1.0,2.0] + 3.0 + 4.0"), TypedValue::BoolValue(true));
+        check_exp(format!("[1.0,2.0,\"3.0\",4.0] == [1.0,2.0] + \"3.0\" + 4.0"), TypedValue::BoolValue(true));
     }
 
     #[test]
@@ -81,6 +81,6 @@ mod test_expression_parser {
         assert!(get_exp_value(format!("false")) == get_exp_value(format!("false")));
         assert!(get_exp_value(format!("false||true")) == get_exp_value(format!("true")));
         assert!(get_exp_value(format!("(1+2)*9")) == get_exp_value(format!("27")));
-        assert!(get_exp_value(format!("{{1,2+3, 4.0*9, 0 + {{1,2,3}} + 1}}")) == get_exp_value(format!("{{1,5,36.0,{{0,1,2,3,1}}}}")));
+        assert!(get_exp_value(format!("[1,2+3, 4.0*9, 0 + [1,2,3] + 1]")) == get_exp_value(format!("[1,5,36.0,[0,1,2,3,1]]")));
     }
 }
