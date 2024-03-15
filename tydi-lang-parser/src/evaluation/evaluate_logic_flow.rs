@@ -100,11 +100,13 @@ pub fn evaluate_for(for_target: Arc<RwLock<For>>, parent_scope: Arc<RwLock<Scope
                 TypedValue::Port(port) => {
                     let current_name = port.read().unwrap().get_name();
                     port.write().unwrap().set_name(format!("{}_for{}", current_name, for_evaluation_count));
+                    port.write().unwrap().set_id_in_scope(Some(format!("{}_for{}", current_name, for_evaluation_count)));
                 },
                 TypedValue::Implementation(_) => unreachable!(),
                 TypedValue::Instance(inst) => {
                     let current_name = inst.read().unwrap().get_name();
                     inst.write().unwrap().set_name(format!("{}_for{}", current_name, for_evaluation_count));
+                    inst.write().unwrap().set_id_in_scope(Some(format!("{}_for{}", current_name, for_evaluation_count)));
                 },
                 TypedValue::Net(net) => {
                     let current_name = net.read().unwrap().get_name();

@@ -116,6 +116,7 @@ impl Instance {
     generate_access_pub!(derived_impl_var, Arc<RwLock<Variable>>, get_derived_impl_var, set_derived_impl_var);
     generate_access_pub!(derived_impl, Option<Arc<RwLock<Implementation>>>, get_derived_impl, set_derived_impl);
     generate_access_pub!(inst_type, InstanceType, get_inst_type, set_inst_type);
+    generate_access_pub!(id_in_scope, Option<String>, get_id_in_scope, set_id_in_scope);
 
     pub fn set_derived_implementation_exp(&mut self, derived_implementation_exp: String, code_location: CodeLocation) {
         let streamlet_var = Variable::new(format!("derived_implementation_exp_of_{}", self.name.clone()), Some(derived_implementation_exp));

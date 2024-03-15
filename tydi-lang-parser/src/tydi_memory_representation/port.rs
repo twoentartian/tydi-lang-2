@@ -137,4 +137,5 @@ impl Port {
     generate_access_pub!(parent_streamlet, Option<Arc<RwLock<Streamlet>>>, get_parent_streamlet, set_parent_streamlet);
     generate_access_pub!(direction, PortDirection, get_direction, set_direction);
     generate_access_pub!(attributes, Vec<Attribute>, get_attributes, set_attributes);
+    generate_access_pub!(id_in_scope, Option<String>, get_id_in_scope, set_id_in_scope);
 }

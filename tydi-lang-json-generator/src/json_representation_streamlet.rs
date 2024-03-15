@@ -114,6 +114,18 @@ impl Streamlet {
                     output_dependency.append(&mut dependencies);
                     output_streamlet.ports.insert(port.name.clone(), port);
                 },
+                tydi_memory_representation::TypedValue::Array(array) => {
+                    for single_element in array {
+                        match single_element {
+                            tydi_memory_representation::TypedValue::Port(port) => {
+                                let (port, mut dependencies) = Port::translate_from_tydi_project_port(tydi_project.clone(), port.clone(), streamlet_scope.clone())?;
+                                output_dependency.append(&mut dependencies);
+                                output_streamlet.ports.insert(port.name.clone(), port);
+                            },
+                            _ => (),
+                        }
+                    }
+                }
                 _ => (),
             }
         }
