@@ -567,12 +567,91 @@ fn duplicator_and_voider() {
     }
     std::fs::write("./code_structure_before_evaluation.json", &project.read().unwrap().get_pretty_json()).unwrap();
 
-    project.read().unwrap().evaluate_target(format!("top2"), format!("pack")).expect("fail to evaluate");
+    project.read().unwrap().evaluate_target(format!("top"), format!("pack")).expect("fail to evaluate");
 
     let code_structure = project.read().unwrap().get_pretty_json();
     std::fs::write("./code_structure.json", &code_structure).unwrap();
 
-    let json_output = generate_json_representation_from_tydi_project(project.clone(), format!("top2"), format!("pack")).expect("fail to generate json");
+    let json_output = generate_json_representation_from_tydi_project(project.clone(), format!("top"), format!("pack")).expect("fail to generate json");
     std::fs::write("./json_output.json", &json_output).unwrap();
     println!("{}", json_output);
 }
+
+#[test]
+fn duplicator_and_voider2() {
+    let project = Project::new(format!("sample_project"));
+    {
+        let mut project_write = project.write().unwrap();
+
+        let src_pack0 = String::from(r#"
+            package pack;
+            use std;
+            
+            bit8_stream = Stream(Bit(8));
+            
+            streamlet test_s {
+                in_port: bit8_stream in;
+                out_port: bit8_stream out;
+            }
+            
+            impl test_i of test_s @External {
+            
+            }
+            
+            impl top of test_s {
+                for i in range(3) {
+                    instance c(test_i);
+                }
+                
+                in_port => c[0].in_port;
+                c[0].out_port => c[1].in_port;
+                c[0].out_port => c[2].in_port;
+                c[1].out_port => out_port;
+            }
+            
+            top2 = std.duplicator_i<Stream(Bit(8)), 3>;
+        "#);
+        let src_pack1 = String::from(r#"
+        package std;
+        streamlet void_s<type_in: type> {
+            input_port: type_in in;
+        }
+          
+        impl void_i<type_in: type> of void_s<type_in> @External {
+            
+        }
+
+        streamlet duplicator_s<type_in: type, N: int> {
+            input_port: type_in in;
+            for i in range(N) {
+                output_port: type_in out;
+            }
+        }
+        
+        impl duplicator_i<type_in: type, N: int> of duplicator_s<type_in, N> @External {
+            
+        }
+
+        "#);
+
+        let status = project_write.add_package(format!("./pack0.td"), src_pack0);
+        if status.is_err() {
+            panic!("{}", status.err().unwrap().print());
+        }
+        let status = project_write.add_package(format!("./pack1.td"), src_pack1);
+        if status.is_err() {
+            panic!("{}", status.err().unwrap().print());
+        }
+    }
+    std::fs::write("./code_structure_before_evaluation.json", &project.read().unwrap().get_pretty_json()).unwrap();
+
+    project.read().unwrap().evaluate_target(format!("top"), format!("pack")).expect("fail to evaluate");
+
+    let code_structure = project.read().unwrap().get_pretty_json();
+    std::fs::write("./code_structure.json", &code_structure).unwrap();
+
+    let json_output = generate_json_representation_from_tydi_project(project.clone(), format!("top"), format!("pack")).expect("fail to generate json");
+    std::fs::write("./json_output.json", &json_output).unwrap();
+    println!("{}", json_output);
+}
+

@@ -168,50 +168,28 @@ impl Implementation {
                         if inst_name == "self" {
                             continue;   //ignore self
                         }
-                        let inst_name = get_global_variable_name_with_parent_scope(inst.clone());
-                        let inst_impl = inst.read().unwrap().get_derived_impl().expect("bug: instance without derived implementation");
-                        let (instance_impl, mut dependencies) = Self::translate_from_tydi_project_implementation(tydi_project.clone(), inst_impl.clone(), implementation_scope.clone())?;
-                        output_dependency.append(&mut dependencies);
-                        
-                        let mut output_instance = ImplementationInstance::new();
-                        output_instance.name = inst_name.clone();
-                        output_instance.derived_implementation = instance_impl.read().unwrap().name.clone();
-                        output_instance.document = inst.read().unwrap().get_document();
+                        let output_instance = Self::translate_from_tydi_project_instance(tydi_project.clone(), inst.clone(), &mut output_dependency, implementation_scope.clone())?;
                         output_implementation.implementation_instances.insert(output_instance.name.clone(), output_instance);
                     },
                     TypedValue::Net(net) => {
-                        let mut output_net = Net::new();
-                        let net_name = get_global_variable_name_with_scope(net.clone(), implementation_scope.clone());
-                        output_net.name = net_name;
-                        output_net.document = net.read().unwrap().get_document();
-
-                        {
-                            let src_port = net.read().unwrap().get_source_port().expect("bug: src port not available");
-                            let src_port_parent_streamlet = src_port.read().unwrap().get_parent_streamlet().expect("bug: parent streamlet not available");
-                            let src_port_name = get_global_variable_name_with_parent_scope(src_port.clone());
-                            output_net.src_port_name = src_port_name;
-                        }
-                        {
-                            let sink_port = net.read().unwrap().get_sink_port().expect("bug: sink port not available");
-                            let sink_port_parent_streamlet = sink_port.read().unwrap().get_parent_streamlet().expect("bug: parent streamlet not available");
-                            let sink_port_name = get_global_variable_name_with_parent_scope(sink_port.clone());
-                            output_net.sink_port_name = sink_port_name;
-                        }
-
-                        //set port owner
-                        let convert_port_owner_to_string = |owner: tydi_memory_representation::PortOwner| -> String {
-                            return match owner {
-                                PortOwner::Unknown => unreachable!(),
-                                PortOwner::ImplSelf => String::from("self"),
-                                PortOwner::ImplInstance(impl_inst) => get_global_variable_name_with_parent_scope(impl_inst.clone()),
-                            };
-                        };
-
-                        output_net.src_port_owner_name = convert_port_owner_to_string(net.read().unwrap().get_source_port_owner());
-                        output_net.sink_port_owner_name = convert_port_owner_to_string(net.read().unwrap().get_sink_port_owner());
-
+                        let output_net = Self::translate_from_tydi_project_net(tydi_project.clone(), net.clone(), &mut output_dependency, implementation_scope.clone())?;
                         output_implementation.nets.insert(output_net.name.clone(), output_net);
                     },
+                    TypedValue::Array(array) => {
+                        for single_element in array {
+                            match single_element {
+                                TypedValue::Instance(inst) => {
+                                    let output_instance = Self::translate_from_tydi_project_instance(tydi_project.clone(), inst.clone(), &mut output_dependency, implementation_scope.clone())?;
+                                    output_implementation.implementation_instances.insert(output_instance.name.clone(), output_instance);
+                                },
+                                TypedValue::Net(net) => {
+                                    let output_net = Self::translate_from_tydi_project_net(tydi_project.clone(), net.clone(), &mut output_dependency, implementation_scope.clone())?;
+                                    output_implementation.nets.insert(output_net.name.clone(), output_net);
+                                },
+                                _ => (),
+                            }
+                        }
+                    }
                     _ => (),    //ignore
                 }
             }
@@ -223,4 +201,51 @@ impl Implementation {
         return Ok((output_implementation, output_dependency));
     }
 
+    pub fn translate_from_tydi_project_instance(tydi_project: Arc<RwLock<Project>>, inst: Arc<RwLock<tydi_memory_representation::Instance>>, output_dependency: &mut JsonRepresentation, implementation_scope: Arc<RwLock<Scope>>) -> Result<ImplementationInstance, String> {
+        let inst_name = get_global_variable_name_with_parent_scope(inst.clone());
+        let inst_impl = inst.read().unwrap().get_derived_impl().expect("bug: instance without derived implementation");
+        let (instance_impl, mut dependencies) = Self::translate_from_tydi_project_implementation(tydi_project.clone(), inst_impl.clone(), implementation_scope.clone())?;
+        output_dependency.append(&mut dependencies);
+        
+        let mut output_instance = ImplementationInstance::new();
+        output_instance.name = inst_name.clone();
+        output_instance.derived_implementation = instance_impl.read().unwrap().name.clone();
+        output_instance.document = inst.read().unwrap().get_document();
+
+        return Ok(output_instance);
+    }
+
+    pub fn translate_from_tydi_project_net(tydi_project: Arc<RwLock<Project>>, net: Arc<RwLock<tydi_memory_representation::Net>>, output_dependency: &mut JsonRepresentation, implementation_scope: Arc<RwLock<Scope>>) -> Result<Net, String> {
+        let mut output_net = Net::new();
+        let net_name = get_global_variable_name_with_scope(net.clone(), implementation_scope.clone());
+        output_net.name = net_name;
+        output_net.document = net.read().unwrap().get_document();
+
+        {
+            let src_port = net.read().unwrap().get_source_port().expect("bug: src port not available");
+            let src_port_parent_streamlet = src_port.read().unwrap().get_parent_streamlet().expect("bug: parent streamlet not available");
+            let src_port_name = get_global_variable_name_with_parent_scope(src_port.clone());
+            output_net.src_port_name = src_port_name;
+        }
+        {
+            let sink_port = net.read().unwrap().get_sink_port().expect("bug: sink port not available");
+            let sink_port_parent_streamlet = sink_port.read().unwrap().get_parent_streamlet().expect("bug: parent streamlet not available");
+            let sink_port_name = get_global_variable_name_with_parent_scope(sink_port.clone());
+            output_net.sink_port_name = sink_port_name;
+        }
+
+        //set port owner
+        let convert_port_owner_to_string = |owner: tydi_memory_representation::PortOwner| -> String {
+            return match owner {
+                PortOwner::Unknown => unreachable!(),
+                PortOwner::ImplSelf => String::from("self"),
+                PortOwner::ImplInstance(impl_inst) => get_global_variable_name_with_parent_scope(impl_inst.clone()),
+            };
+        };
+
+        output_net.src_port_owner_name = convert_port_owner_to_string(net.read().unwrap().get_source_port_owner());
+        output_net.sink_port_owner_name = convert_port_owner_to_string(net.read().unwrap().get_sink_port_owner());
+
+        return Ok(output_net);
+    }
 }
