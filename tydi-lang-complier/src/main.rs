@@ -1,8 +1,9 @@
-use std::path::PathBuf;
+use std::{path::PathBuf, sync::{Arc, RwLock}};
 
-use clap::Parser;
+use clap::{Parser, command, ArgAction, Arg};
 
 use project::TydiProject;
+use tydi_lang_parser::post_compile::sugaring_auto_insertion_duplicator_voider;
 
 use crate::project_description::ProjectDescription;
 
@@ -18,7 +19,7 @@ mod test;
 #[command(author, version, about="compile a Tydi project", long_about = None)]
 struct Args {
     /// Name of the Tydi project
-    #[arg(short, long)]
+    #[arg(short='n', long)]
     name: Option<String>,
 
     /// Specify an output path
@@ -40,6 +41,10 @@ struct Args {
     /// Tydi source files, can have multiple values
     #[arg(short='f', long)]
     source: Vec<String>,
+
+    /// Sugaring the project - auto insertions of duplicators and voiders
+    #[arg(short, long)]
+    sugaring: bool,
 }
 
 pub fn main() {
@@ -96,6 +101,9 @@ pub fn main() {
             project_description.files.tydi_src.push(src.clone());
         }
     }
+    if args.sugaring {
+        project_description.properties.sugaring = true;
+    }
 
     // begin to compile
     let output_folder = &PathBuf::from(&project_description.output_path);
@@ -127,6 +135,15 @@ pub fn main() {
         panic!("fail to evaluate project, error:{}", err);
     }
     std::fs::write(output_folder.join("code_structure.json"), tydi_project.get_pretty_json()).expect("cannot write code_structure.json");
+
+    // sugaring?
+    if project_description.properties.sugaring {
+        let result = tydi_project.sugaring(project_description.properties.top_level_implementation.clone(), project_description.properties.top_level_implementation_package.clone());
+        if result.is_err() {
+            let err = result.err().unwrap();
+            panic!("fail to sugaring project, error:{}", err);
+        }
+    }
 
     // generate json IR
     println!("generate json IR");

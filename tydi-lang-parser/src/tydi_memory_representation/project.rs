@@ -87,5 +87,6 @@ impl Project {
     }
 
     generate_get_pub!(packages, BTreeMap<String, Arc<RwLock<Package>>>, get_packages);
+    generate_get_pub!(self_arc, Option<Arc<RwLock<Project>>>, get_self_arc);
 }
 

@@ -107,6 +107,27 @@ impl Net {
         return Arc::new(RwLock::new(output));
     }
 
+    pub fn new_with_known_src_sink(source_port: Arc<RwLock<Port>>, source_port_owner: PortOwner, sink_port: Arc<RwLock<Port>>, sink_port_owner: PortOwner) -> Arc<RwLock<Self>> {
+        let output = Self {
+            name: format!("{}_to_{}", source_port.read().unwrap().get_name(), sink_port.read().unwrap().get_name()),
+
+            source: Variable::new_place_holder(),
+            source_port: Some(source_port.clone()),
+            source_port_owner: source_port_owner,
+            
+            sink: Variable::new_place_holder(),
+            sink_port: Some(sink_port.clone()),
+            sink_port_owner: sink_port_owner,
+
+            net_name: None,
+            parent_impl: None,
+            location_define: CodeLocation::new_unknown(),
+            document: None,
+            attributes: vec![],
+        };
+        return Arc::new(RwLock::new(output));
+    }
+
     generate_set_pub!(name, String, set_name);
     generate_access_pub!(attributes, Vec<Attribute>, get_attributes, set_attributes);
     generate_access_pub!(source, Arc<RwLock<Variable>>, get_source, set_source);

@@ -1,10 +1,11 @@
-use std::path::{PathBuf};
+use std::path::PathBuf;
 
 use std::sync::{Arc, RwLock};
 
 use crate::project_description::*;
 use tydi_lang_parser::tydi_memory_representation::*;
 use tydi_lang_json_generator::generate_json_representation_from_tydi_project;
+use tydi_lang_parser::post_compile::sugaring_auto_insertion_duplicator_voider;
 
 pub struct TydiProject {
     name: String,
@@ -59,6 +60,18 @@ impl TydiProject {
 
     pub fn evaluation(&self, package_name: String, target_name: String) -> Result<String, String> {
         let result = self.project.read().unwrap().evaluate_target(package_name, target_name);
+        match result {
+            Ok(evaluator) => {
+                return Ok(evaluator.read().unwrap().print_evaluation_record());
+            },
+            Err(err) => {
+                return Err(err.print());
+            }
+        }
+    }
+
+    pub fn sugaring(&self, package_name: String, target_name: String) -> Result<String, String> {
+        let result = sugaring_auto_insertion_duplicator_voider::sugaring_add_duplicator_voider(self.project.clone(), package_name, target_name);
         match result {
             Ok(evaluator) => {
                 return Ok(evaluator.read().unwrap().print_evaluation_record());

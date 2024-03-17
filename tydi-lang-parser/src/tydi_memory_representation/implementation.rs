@@ -2,14 +2,14 @@ use std::sync::{Arc, RwLock};
 use std::collections::BTreeMap;
 
 use serde::ser::SerializeStruct;
-use serde::{Serialize};
+use serde::Serialize;
 
 use crate::deep_clone::{DeepClone, DeepClone_ArcLock};
-use crate::tydi_memory_representation::{Streamlet, TemplateArg, CodeLocation, Scope, ScopeType, GetScope, Attribute, TraitCodeLocationAccess, Variable, TypeIndication, TypedValue};
+use crate::error::TydiLangError;
+use crate::tydi_memory_representation::{Streamlet, Net, TemplateArg, CodeLocation, Scope, ScopeType, GetScope, Attribute, TraitCodeLocationAccess, Variable, TypeIndication, TypedValue, Port, GlobalIdentifier, Instance, EvaluationStatus};
 use crate::trait_common::{GetName, HasDocument};
 use crate::{generate_access, generate_get, generate_set, generate_access_pub, generate_get_pub, generate_set_pub, generate_name};
 
-use super::GlobalIdentifier;
 
 #[derive(Clone, Debug, strum::IntoStaticStr)]
 pub enum ImplementationType {
@@ -181,4 +181,95 @@ impl Implementation {
         }
         self.derived_streamlet_var = streamlet_var;
     }
+}
+
+//interfaces for quick access
+impl Implementation {
+    pub fn get_all_ports(&self) -> Vec<Arc<RwLock<Port>>> {
+        let derived_streamlet = self.derived_streamlet.clone();
+        assert!(derived_streamlet.is_some(), "implementation ({}) is not evaluated when getting ports", self.get_name());
+        let derived_streamlet = derived_streamlet.unwrap();
+        return derived_streamlet.read().unwrap().get_all_ports();
+    }
+
+    pub fn get_all_nets(&self) -> Vec<Arc<RwLock<Net>>> {
+        let implementation_scope = self.get_scope();
+        let all_vars_in_implementation = implementation_scope.read().unwrap().get_variables();
+
+        let mut all_nets = vec![];
+        for (var_name, each_var) in &all_vars_in_implementation {
+            {
+                let evaluation_status = each_var.read().unwrap().get_evaluated();
+                assert!(evaluation_status == EvaluationStatus::Evaluated || evaluation_status == EvaluationStatus::Predefined || each_var.read().unwrap().get_name() == "self", "variable ({}) should be evaluated before sugaring", var_name);
+            }
+            let var_value = each_var.read().unwrap().get_value();
+            match &var_value {
+                crate::tydi_memory_representation::TypedValue::Net(net) => all_nets.push(net.clone()),
+                crate::tydi_memory_representation::TypedValue::Array(array) => {
+                    for var_value in array {
+                        match &var_value {
+                            crate::tydi_memory_representation::TypedValue::Net(net) => all_nets.push(net.clone()),
+                            _ => (),
+                        }
+                    }
+                },
+                _ => (),
+            }
+        }
+
+        return all_nets;
+    }
+
+    pub fn add_net(&self, parent_impl_arc: Arc<RwLock<Implementation>>, net: Arc<RwLock<Net>>) -> Result<(), TydiLangError> {
+        let implementation_scope = self.get_scope();
+
+        net.write().unwrap().set_parent_impl(Some(parent_impl_arc.clone()));
+        let new_net_var = Variable::new_net(net.read().unwrap().get_name(), net.clone());
+        new_net_var.write().unwrap().set_evaluated(EvaluationStatus::Evaluated);
+        new_net_var.write().unwrap().set_parent_scope(Some(implementation_scope.clone()));
+        implementation_scope.write().unwrap().add_var(new_net_var.clone())?;
+
+        return Ok(());
+    }
+
+    pub fn add_instance(&self, parent_impl_arc: Arc<RwLock<Implementation>>, inst: Arc<RwLock<Instance>>) -> Result<(), TydiLangError> {
+        let implementation_scope = self.get_scope();
+
+        inst.write().unwrap().set_parent_scope(Some(implementation_scope.clone()));
+        let new_voider_var = Variable::new_instance(inst.read().unwrap().get_name(), inst.clone());
+        new_voider_var.write().unwrap().set_evaluated(EvaluationStatus::Evaluated);
+        new_voider_var.write().unwrap().set_parent_scope(Some(implementation_scope.clone()));
+        implementation_scope.write().unwrap().add_var(new_voider_var.clone())?;
+        
+        return Ok(());
+    }
+
+    pub fn get_all_instances(&self) -> Vec<Arc<RwLock<Instance>>> {
+        let implementation_scope = self.get_scope();
+        let all_vars_in_implementation = implementation_scope.read().unwrap().get_variables();
+
+        let mut all_instances = vec![];
+        for (var_name, each_var) in &all_vars_in_implementation {
+            {
+                let evaluation_status = each_var.read().unwrap().get_evaluated();
+                assert!(evaluation_status == EvaluationStatus::Evaluated || evaluation_status == EvaluationStatus::Predefined || each_var.read().unwrap().get_name() == "self", "variable ({}) should be evaluated before sugaring", var_name);
+            }
+            let var_value = each_var.read().unwrap().get_value();
+            match &var_value {
+                crate::tydi_memory_representation::TypedValue::Instance(inst) => all_instances.push(inst.clone()),
+                crate::tydi_memory_representation::TypedValue::Array(array) => {
+                    for var_value in array {
+                        match &var_value {
+                            crate::tydi_memory_representation::TypedValue::Instance(inst) => all_instances.push(inst.clone()),
+                            _ => (),
+                        }
+                    }
+                },
+                _ => (),
+            }
+        }
+
+        return all_instances;
+    }
+
 }

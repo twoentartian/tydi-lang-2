@@ -23,6 +23,6 @@ extern crate strum;
 
 extern crate strum_macros;
 
-mod post_compile;
+pub mod post_compile;
 
 mod test_project;

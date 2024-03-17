@@ -2,6 +2,7 @@
 use tydi_lang_parser::tydi_memory_representation::Project;
 #[allow(unused_imports)]
 use crate::generate_json_representation_from_tydi_project;
+use tydi_lang_parser::post_compile::sugaring_auto_insertion_duplicator_voider;
 
 
 #[test]
@@ -617,7 +618,7 @@ fn duplicator_and_voider2() {
             input_port: type_in in;
         }
           
-        impl void_i<type_in: type> of void_s<type_in> @External {
+        impl void_i<type_in: type> of void_s<type_in> @External @NoTemplateExpansion {
             
         }
 
@@ -628,7 +629,7 @@ fn duplicator_and_voider2() {
             }
         }
         
-        impl duplicator_i<type_in: type, N: int> of duplicator_s<type_in, N> @External {
+        impl duplicator_i<type_in: type, N: int> of duplicator_s<type_in, N> @External @NoTemplateExpansion {
             
         }
 
@@ -645,10 +646,13 @@ fn duplicator_and_voider2() {
     }
     std::fs::write("./code_structure_before_evaluation.json", &project.read().unwrap().get_pretty_json()).unwrap();
 
-    project.read().unwrap().evaluate_target(format!("top"), format!("pack")).expect("fail to evaluate");
+    let evaluator = project.read().unwrap().evaluate_target(format!("top"), format!("pack")).expect("fail to evaluate");
 
     let code_structure = project.read().unwrap().get_pretty_json();
     std::fs::write("./code_structure.json", &code_structure).unwrap();
+
+    //sugaring
+    sugaring_auto_insertion_duplicator_voider::sugaring_add_duplicator_voider(project.clone(), format!("top"), format!("pack")).expect("error in sugaring");
 
     let json_output = generate_json_representation_from_tydi_project(project.clone(), format!("top"), format!("pack")).expect("fail to generate json");
     std::fs::write("./json_output.json", &json_output).unwrap();

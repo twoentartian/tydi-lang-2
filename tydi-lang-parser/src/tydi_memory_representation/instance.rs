@@ -3,7 +3,7 @@ use std::sync::{Arc, RwLock};
 use serde::{Serialize};
 
 use crate::deep_clone::DeepClone;
-use crate::tydi_memory_representation::{CodeLocation, Attribute, TraitCodeLocationAccess, Variable, TypeIndication, Implementation, Scope, GlobalIdentifier};
+use crate::tydi_memory_representation::{CodeLocation, Attribute, TraitCodeLocationAccess, Variable, TypeIndication, Implementation, Scope, GlobalIdentifier, Port};
 use crate::trait_common::{GetName, HasDocument};
 use crate::{generate_access, generate_get, generate_set, generate_access_pub, generate_get_pub, generate_set_pub, generate_name};
 
@@ -111,6 +111,21 @@ impl Instance {
         return Arc::new(RwLock::new(output));
     }
 
+    pub fn new_with_derived_implementation(name: String, derived_implementation: Arc<RwLock<Implementation>>) -> Arc<RwLock<Self>> {
+        let output = Self {
+            name: name.clone(),
+            derived_impl_var: Variable::new_place_holder(),
+            derived_impl: Some(derived_implementation),
+            inst_type: InstanceType::ExternalInst,
+            location_define: CodeLocation::new_unknown(),
+            document: None,
+            attributes: vec![],
+            parent_scope: None,
+            id_in_scope: None,
+        };
+        return Arc::new(RwLock::new(output));
+    }
+
     generate_set_pub!(name, String, set_name);
     generate_access_pub!(attributes, Vec<Attribute>, get_attributes, set_attributes);
     generate_access_pub!(derived_impl_var, Arc<RwLock<Variable>>, get_derived_impl_var, set_derived_impl_var);
@@ -127,5 +142,14 @@ impl Instance {
         }
         self.derived_impl_var = streamlet_var;
     }
+}
 
+//interfaces for quick access
+impl Instance {
+    pub fn get_all_ports(&self) -> Vec<Arc<RwLock<Port>>> {
+        let derived_miplementation = self.derived_impl.clone();
+        assert!(derived_miplementation.is_some(), "instance ({}) is not evaluated when getting ports", self.get_name());
+        let derived_miplementation = derived_miplementation.unwrap();
+        return derived_miplementation.read().unwrap().get_all_ports();
+    }
 }

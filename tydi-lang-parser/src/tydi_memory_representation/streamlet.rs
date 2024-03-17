@@ -4,11 +4,9 @@ use std::collections::BTreeMap;
 use serde::{Serialize};
 
 use crate::deep_clone::{DeepClone, DeepClone_ArcLock};
-use crate::tydi_memory_representation::{TemplateArg, CodeLocation, Scope, ScopeType, GetScope, Attribute, TraitCodeLocationAccess, TypedValue};
+use crate::tydi_memory_representation::{TemplateArg, CodeLocation, Scope, ScopeType, GetScope, Attribute, TraitCodeLocationAccess, TypedValue, GlobalIdentifier, Port};
 use crate::trait_common::{GetName, HasDocument};
 use crate::{generate_access, generate_get, generate_set, generate_access_pub, generate_get_pub, generate_set_pub, generate_name};
-
-use super::GlobalIdentifier;
 
 #[derive(Clone, Debug, Serialize)]
 pub struct Streamlet {
@@ -120,3 +118,36 @@ impl Streamlet {
     generate_access_pub!(attributes, Vec<Attribute>, get_attributes, set_attributes);
 }
 
+//interfaces for quick access
+impl Streamlet {
+    pub fn get_all_ports(&self) -> Vec<Arc<RwLock<Port>>> {
+        let scope = self.scope.clone();
+        let vars = scope.read().unwrap().get_variables();
+        let mut all_ports = vec![];
+        for (var_name, var) in vars {
+            let var_value = var.read().unwrap().get_value();
+            let mut ports = match &var_value {
+                crate::tydi_memory_representation::TypedValue::Port(p) => Some(vec![p.clone()]),
+                crate::tydi_memory_representation::TypedValue::Array(a) => {
+                    let mut output = vec![];
+                    for v in a {
+                        match v {
+                            crate::tydi_memory_representation::TypedValue::Port(p) => {
+                                output.push(p.clone());
+                            },
+                            _ => (),
+                        }
+                    }
+                    Some(output)
+                },
+                _ => None,
+            };
+            match &mut ports {
+                Some(ps) => all_ports.append(ps),
+                None => (),
+            }
+        }
+
+        return all_ports;
+    }
+}
