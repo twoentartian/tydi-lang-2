@@ -18,6 +18,23 @@ pub enum JsonRepresentation_item_type {
 }
 
 #[derive(Clone, Debug, Serialize)]
+pub struct JsonRepresentation_compile_options {
+    pub top_level_implementation: String,
+    pub package_of_top_level_implementation: String,
+    pub packages_and_source_files: BTreeMap<String, String>,
+}
+
+impl JsonRepresentation_compile_options {
+    pub fn new() -> Self {
+        return Self {
+            top_level_implementation: String::from(""),
+            package_of_top_level_implementation: String::from(""),
+            packages_and_source_files: BTreeMap::new(),
+        };
+    }
+}
+
+#[derive(Clone, Debug, Serialize)]
 pub struct JsonRepresentation {
     #[serde(with = "crate::serde_serialization::arc_rwlock_in_btree_map_value")]
     pub logic_types: BTreeMap<String, Arc<RwLock<LogicType>>>,
@@ -25,6 +42,8 @@ pub struct JsonRepresentation {
     pub streamlets: BTreeMap<String, Arc<RwLock<Streamlet>>>,
     #[serde(with = "crate::serde_serialization::arc_rwlock_in_btree_map_value")]
     pub implementations: BTreeMap<String, Arc<RwLock<Implementation>>>,
+
+    pub compile_options: JsonRepresentation_compile_options,
 }
 
 impl JsonRepresentation {
@@ -33,6 +52,7 @@ impl JsonRepresentation {
             logic_types: BTreeMap::new(),
             streamlets: BTreeMap::new(),
             implementations: BTreeMap::new(),
+            compile_options: JsonRepresentation_compile_options::new(),
         };
     }
 

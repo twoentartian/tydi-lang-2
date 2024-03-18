@@ -35,11 +35,11 @@ impl Project {
         let file_package = crate::tydi_lang_src_to_memory_representation::tydi_lang_src_to_memory_representation(file_content.clone())?;
         {
             let mut file_package_write = file_package.write().unwrap();
-            file_package_write.set_file_path(file_path);
+            file_package_write.set_file_path(file_path.clone());
             file_package_write.set_file_content(file_content.clone());
         }
         let package_name = file_package.read().unwrap().get_name();
-        self.packages.insert(package_name.clone(), file_package);
+        self.packages.insert(package_name.clone(), file_package.clone());
         return Ok(());
     }
 

@@ -138,6 +138,7 @@ pub fn main() {
 
     // sugaring?
     if project_description.properties.sugaring {
+        println!("sugaring");
         let result = tydi_project.sugaring(project_description.properties.top_level_implementation.clone(), project_description.properties.top_level_implementation_package.clone());
         if result.is_err() {
             let err = result.err().unwrap();

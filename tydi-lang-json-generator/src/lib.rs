@@ -23,8 +23,15 @@ pub fn generate_json_representation_from_tydi_project(project: Arc<RwLock<Projec
 }
 
 pub fn generate_json_target_from_tydi_project(project: Arc<RwLock<Project>>, target_name: String, package_name: String) -> Result<json_representation_all::JsonRepresentation, String> {
-    let _project_json = json_representation_all::JsonRepresentation::new();
-    let target_var = project.read().unwrap().get_variable(package_name, target_name)?;
-    let (_top_level_type, result_json_representation) = json_representation_all::translate_from_tydi_project(project, target_var.clone())?;
+    let target_var = project.read().unwrap().get_variable(package_name.clone(), target_name.clone())?;
+    let (_, mut result_json_representation) = json_representation_all::translate_from_tydi_project(project.clone(), target_var.clone())?;
+    result_json_representation.compile_options.top_level_implementation = target_name.clone();
+    result_json_representation.compile_options.package_of_top_level_implementation = package_name.clone();
+
+    let all_packages = project.read().unwrap().get_packages();
+    for (_, package) in all_packages {
+        result_json_representation.compile_options.packages_and_source_files.insert(package.read().unwrap().get_name(), package.read().unwrap().get_file_path());
+    }
+
     return Ok(result_json_representation);
 }
