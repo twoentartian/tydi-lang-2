@@ -15,8 +15,23 @@ use crate::util::generate_init_name;
 #[derive(Clone, Debug, Serialize)]
 pub enum ImplementationType {
     Normal,
-    TemplateInstance(String, BTreeMap<usize, Value>),
+    TemplateInstance(TemplateInstanceData),
     Unknown,
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub struct TemplateInstanceData {
+    template_name: String,
+    instance_args: BTreeMap<usize, Value>,
+}
+
+impl TemplateInstanceData {
+    pub fn new(template_name: String, instance_args: BTreeMap<usize, Value>) -> Self {
+        return Self {
+            template_name: template_name,
+            instance_args: instance_args,
+        };
+    }
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -131,7 +146,7 @@ impl Implementation {
                         output_dependency.append(&mut dependencies);
                         output_template_args.insert(*arg_index, value);
                     }
-                    output_implementation.impl_type = ImplementationType::TemplateInstance(template_impl.read().unwrap().get_name(), output_template_args);
+                    output_implementation.impl_type = ImplementationType::TemplateInstance(TemplateInstanceData::new(template_impl.read().unwrap().get_name(), output_template_args));
                 },
             }
         }
