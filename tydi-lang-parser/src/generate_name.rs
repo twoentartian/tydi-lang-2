@@ -16,7 +16,8 @@ pub fn generate_built_in_variable_name_from_span(src: &Pair<Rule>) -> String {
         GENERATE_COUNTER.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
         counter = GENERATE_COUNTER.load(std::sync::atomic::Ordering::SeqCst);
     }
-    format!("generated_{}_{}_{}_{}", start_pos, end_pos, util::generate_random_str(8), counter)
+    // format!("generated_{}_{}_{}_{}", start_pos, end_pos, util::generate_random_str(8), counter)
+    format!("generated_{}_{}_{}", start_pos, end_pos, counter)
 }
 
 pub fn generate_template_instance_name(template_var: Arc<RwLock<Variable>>, template_exps: &BTreeMap<usize, TypedValue>) -> String {
