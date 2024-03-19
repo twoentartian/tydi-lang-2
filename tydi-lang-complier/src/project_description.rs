@@ -5,7 +5,7 @@ pub struct ProjectProperties {
     pub name: String,
     pub top_level_implementation: String,
     pub top_level_implementation_package: String,
-    pub sugaring: bool,
+    pub sugaring: Option<Vec<String>>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -24,7 +24,7 @@ impl ProjectDescription {
     pub fn generate_default() -> Self {
         return Self {
             properties: ProjectProperties {
-                sugaring: false,
+                sugaring: None,
                 name: format!("sample_tydi_project"),
                 top_level_implementation: format!("sample_target"),
                 top_level_implementation_package: format!("sample_pack"),

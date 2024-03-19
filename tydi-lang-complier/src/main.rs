@@ -1,9 +1,8 @@
-use std::{path::PathBuf, sync::{Arc, RwLock}};
+use std::path::PathBuf;
 
-use clap::{Parser, command, ArgAction, Arg};
+use clap::{Parser, command};
 
 use project::TydiProject;
-use tydi_lang_parser::post_compile::sugaring_auto_insertion_duplicator_voider;
 
 use crate::project_description::ProjectDescription;
 
@@ -42,9 +41,13 @@ struct Args {
     #[arg(short='f', long)]
     source: Vec<String>,
 
-    /// Sugaring the project - auto insertions of duplicators and voiders
-    #[arg(short, long)]
+    /// Sugaring the project - auto insertions of duplicators and voiders.
+    #[arg(short='s', long)]
     sugaring: bool,
+
+    /// Specify the sugaring starting point. Can have multiple values (--sugaring-list pack:impl0 --sugaring-list pack:impl1) or None (start from evaluation starting point)
+    #[arg(long)]
+    sugaring_list: Vec<String>,
 }
 
 pub fn main() {
@@ -57,7 +60,7 @@ pub fn main() {
         None => {
             let default_description = ProjectDescription::generate_default();
             let default_description_file_content = default_description.to_toml();
-            std::fs::write(default_tydi_project_description_file_path.clone(), default_description_file_content).expect("cannot write to default project description file");
+            std::fs::write(default_tydi_project_description_file_path, default_description_file_content).expect("cannot write to default project description file");
             println!("no project description file provided, the tydi-lang complier creates a default description file in {}", default_tydi_project_description_file_path);
         }
         Some(project_description_file_path) => {
@@ -101,8 +104,23 @@ pub fn main() {
             project_description.files.tydi_src.push(src.clone());
         }
     }
+
     if args.sugaring {
-        project_description.properties.sugaring = true;
+        match &mut project_description.properties.sugaring {
+            Some(list) => {
+                for item in &args.sugaring_list {
+                    list.push(item.clone());
+                }
+            },
+            None => {
+                project_description.properties.sugaring = Some(args.sugaring_list.clone());
+            },
+        }
+        project_description.properties.sugaring = Some(args.sugaring_list.clone());
+    }
+    else {
+        //follow project configuration
+
     }
 
     // begin to compile
@@ -137,13 +155,36 @@ pub fn main() {
     std::fs::write(output_folder.join("code_structure.json"), tydi_project.get_pretty_json()).expect("cannot write code_structure.json");
 
     // sugaring?
-    if project_description.properties.sugaring {
-        println!("sugaring");
-        let result = tydi_project.sugaring(project_description.properties.top_level_implementation.clone(), project_description.properties.top_level_implementation_package.clone());
-        if result.is_err() {
-            let err = result.err().unwrap();
-            panic!("fail to sugaring project, error:{}", err);
-        }
+    match project_description.properties.sugaring {
+        Some(sugaring_list) => {
+            if sugaring_list.len() == 0 {
+                let package_name = project_description.properties.top_level_implementation_package.clone();
+                let implementation_name = project_description.properties.top_level_implementation.clone();
+                println!("sugaring: {} in {}", implementation_name, package_name);
+                let result = tydi_project.sugaring(package_name, implementation_name);
+                if result.is_err() {
+                    let err = result.err().unwrap();
+                    panic!("fail to sugaring project, error:{}", err);
+                }
+            }
+            else {
+                for sugaring_item in sugaring_list {
+                    let parts = sugaring_item.split(":");
+                    let parts = parts.collect::<Vec<&str>>();
+                    assert!(parts.len() == 2, "sugaring item must follow format: \"{{PACKAGE_NAME}}:{{IMPLEMENTATION_NAME}}\"");
+                    let package_name = parts[0];
+                    let implementation_name = parts[1];
+            
+                    println!("sugaring: {} in {}", implementation_name, package_name);
+                    let result = tydi_project.sugaring(String::from(package_name), String::from(implementation_name));
+                    if result.is_err() {
+                        let err = result.err().unwrap();
+                        panic!("fail to sugaring project, error:{}", err);
+                    }
+                }
+            }
+        },
+        None => (),
     }
 
     // generate json IR

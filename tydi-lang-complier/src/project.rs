@@ -72,7 +72,7 @@ impl TydiProject {
     }
 
     pub fn sugaring(&self, package_name: String, target_name: String) -> Result<String, String> {
-        let result = sugaring_auto_insertion_duplicator_voider::sugaring_add_duplicator_voider(self.project.clone(), package_name, target_name);
+        let result = sugaring_auto_insertion_duplicator_voider::sugaring_add_duplicator_voider(self.project.clone(), target_name, package_name);
         match result {
             Ok(evaluator) => {
                 return Ok(evaluator.read().unwrap().print_evaluation_record());
