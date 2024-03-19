@@ -42,11 +42,11 @@ struct Args {
     source: Vec<String>,
 
     /// Sugaring the project - auto insertions of duplicators and voiders.
-    #[arg(short='s', long)]
+    #[arg(short='s', long, group = "enable_sugaring")]
     sugaring: bool,
 
     /// Specify the sugaring starting point. Can have multiple values (--sugaring-list pack:impl0 --sugaring-list pack:impl1) or None (start from evaluation starting point)
-    #[arg(long)]
+    #[arg(long, requires = "enable_sugaring")]
     sugaring_list: Vec<String>,
 }
 
