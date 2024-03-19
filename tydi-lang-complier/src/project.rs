@@ -31,15 +31,16 @@ impl TydiProject {
                 return Err(format!("file {} does not exist", src));
             }
         }
-
-        return Ok(Self {
+        let output = Self {
             name: description.properties.name.clone(),
             toplevel_implementation: description.properties.top_level_implementation.clone(),
             top_level_implementaton_package: description.properties.top_level_implementation_package.clone(),
             src_files: src_paths,
             output_path: description.output_path.clone(),
             project: Project::new(description.properties.name.clone()),
-        });
+        };
+
+        return Ok(output);
     }
 
     pub fn parse(&self) -> Result<String, String> {

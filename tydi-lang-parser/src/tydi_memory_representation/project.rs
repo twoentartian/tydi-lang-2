@@ -5,8 +5,23 @@ use serde::{Serialize};
 
 use crate::error::TydiLangError;
 use crate::evaluation::{Evaluator, evaluate_var, EvaluationTrace};
-use crate::generate_get_pub;
+use crate::{generate_get_pub, generate_set_pub, generate_access_pub};
 use crate::tydi_memory_representation::{Package, CodeLocation, GetScope, Scope, ScopeRelationType, Variable};
+
+#[derive(Clone, Debug, Serialize)]
+pub struct ProjectItem {
+    pub item_name: String,
+    pub package_name: String,
+}
+
+impl ProjectItem {
+    pub fn new(item_name: String, package_name: String) -> Self {
+        return Self {
+            item_name: item_name,
+            package_name: package_name,
+        };
+    }
+}
 
 #[derive(Clone, Debug, Serialize)]
 pub struct Project {
@@ -17,6 +32,9 @@ pub struct Project {
 
     #[serde(skip)]
     self_arc: Option<Arc<RwLock<Project>>>,
+
+    #[serde(skip)]
+    sugaring_entry_point: BTreeMap<usize, ProjectItem>,
 }
 
 impl Project {
@@ -25,6 +43,7 @@ impl Project {
             name: name, 
             packages: BTreeMap::new(),
             self_arc: None,
+            sugaring_entry_point: BTreeMap::new(),
         };
         let project_arc = Arc::new(RwLock::new(output));
         project_arc.write().unwrap().self_arc = Some(project_arc.clone());
@@ -88,5 +107,6 @@ impl Project {
 
     generate_get_pub!(packages, BTreeMap<String, Arc<RwLock<Package>>>, get_packages);
     generate_get_pub!(self_arc, Option<Arc<RwLock<Project>>>, get_self_arc);
+    generate_access_pub!(sugaring_entry_point, BTreeMap<usize, ProjectItem>, get_sugaring_entry_point, set_sugaring_entry_point);
 }
 

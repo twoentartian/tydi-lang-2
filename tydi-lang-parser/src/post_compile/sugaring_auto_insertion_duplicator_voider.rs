@@ -2,7 +2,7 @@ use std::sync::{Arc, RwLock, atomic::AtomicUsize};
 use std::collections::BTreeMap;
 
 use crate::error::TydiLangError;
-use crate::tydi_memory_representation::{TypedValue, CodeLocation, EvaluationStatus, GetScope, GlobalIdentifier, Implementation, Instance, Net, Port, PortDirection, PortOwner, Project, Scope, ScopeRelationType, TraitCodeLocationAccess, Variable};
+use crate::tydi_memory_representation::{package, CodeLocation, EvaluationStatus, GetScope, GlobalIdentifier, Implementation, Instance, Net, Port, PortDirection, PortOwner, Project, ProjectItem, Scope, ScopeRelationType, TraitCodeLocationAccess, TypedValue, Variable};
 use crate::evaluation::{Evaluator, evaluate_var, EvaluationTrace};
 use crate::trait_common::GetName;
 
@@ -53,6 +53,13 @@ pub fn sugaring_add_duplicator_voider(project: Arc<RwLock<Project>>, target_name
     sugaring_add_duplicator_voider_for_single_implementation(project.clone(), starting_implementation.clone(), evaluator.clone())?;
 
     evaluator.write().unwrap().add_trace(EvaluationTrace::new_region_end(format!("sugaring - add duplicator and voider")));
+
+    {
+        let mut sugaring_entry_point = project.read().unwrap().get_sugaring_entry_point();
+        let current_index = sugaring_entry_point.len();
+        sugaring_entry_point.insert(current_index, ProjectItem::new(target_name.clone(), package_name.clone()));
+        project.write().unwrap().set_sugaring_entry_point(sugaring_entry_point);
+    }
 
     return Ok(evaluator);
 }

@@ -3,6 +3,7 @@ use std::collections::BTreeMap;
 
 use serde::Serialize;
 
+use tydi_lang_parser::tydi_memory_representation::project::ProjectItem;
 use tydi_lang_parser::tydi_memory_representation::{self, Project};
 
 use crate::json_representation_implementation::Implementation;
@@ -17,11 +18,14 @@ pub enum JsonRepresentation_item_type {
     Implementation(String),
 }
 
+
+
 #[derive(Clone, Debug, Serialize)]
 pub struct JsonRepresentation_compile_options {
     pub top_level_implementation: String,
     pub package_of_top_level_implementation: String,
     pub packages_and_source_files: BTreeMap<String, String>,
+    pub sugaring_list: BTreeMap<usize, ProjectItem>,
 }
 
 impl JsonRepresentation_compile_options {
@@ -30,6 +34,7 @@ impl JsonRepresentation_compile_options {
             top_level_implementation: String::from(""),
             package_of_top_level_implementation: String::from(""),
             packages_and_source_files: BTreeMap::new(),
+            sugaring_list: BTreeMap::new(),
         };
     }
 }

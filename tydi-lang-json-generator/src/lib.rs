@@ -27,6 +27,7 @@ pub fn generate_json_target_from_tydi_project(project: Arc<RwLock<Project>>, tar
     let (_, mut result_json_representation) = json_representation_all::translate_from_tydi_project(project.clone(), target_var.clone())?;
     result_json_representation.compile_options.top_level_implementation = target_name.clone();
     result_json_representation.compile_options.package_of_top_level_implementation = package_name.clone();
+    result_json_representation.compile_options.sugaring_list = project.read().unwrap().get_sugaring_entry_point();
 
     let all_packages = project.read().unwrap().get_packages();
     for (_, package) in all_packages {
