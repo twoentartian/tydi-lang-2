@@ -33,6 +33,10 @@ impl Value {
             TypedValue::LogicTypeValue(_) | TypedValue::RefToVar(_) => {
                 let (output_value, mut dependencies) = LogicType::translate_from_tydi_project_type_value(tydi_project, value, generate_random_str(8))?;
                 output_dependency.logic_types.append(&mut dependencies);
+                if output_value.len() != 1 {
+                    return Err(format!("the output logic type should not be a logic type array"));
+                }
+                let output_value = output_value[0].clone();
                 return Ok((Value::LogicType(output_value), output_dependency));
             }
             _ => unreachable!(),

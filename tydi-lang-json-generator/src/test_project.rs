@@ -740,15 +740,19 @@ fn array_bits_in_group() {
             package pack;
             use std;
             
-            Group d {
+            Union d {
                 for i in range(5) {
-                    d = Bit(1);
+                    d: Bit(i+1);
                 }
+
+                dd: Bit(10);
             }
 
+            stream_d = Stream(d);
+
             streamlet test_ss {
-                in_port: d in;
-                out_port: d out;
+                in_port: stream_d in;
+                out_port: stream_d out;
             }
             
             impl test_ii of test_ss {

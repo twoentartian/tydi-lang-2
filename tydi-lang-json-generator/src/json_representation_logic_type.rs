@@ -55,76 +55,109 @@ impl serde::Serialize for LogicType {
 }
 
 impl LogicType {
-    pub fn translate_from_tydi_project(tydi_project: Arc<RwLock<Project>>, target_var: Arc<RwLock<tydi_memory_representation::Variable>>) -> Result<(LogicType, BTreeMap<String, Arc<RwLock<LogicType>>>), String> {
+    pub fn translate_from_tydi_project(tydi_project: Arc<RwLock<Project>>, target_var: Arc<RwLock<tydi_memory_representation::Variable>>) -> Result<(Vec<LogicType>, BTreeMap<String, Arc<RwLock<LogicType>>>), String> {
         let target_var_name = name_conversion::get_global_variable_name(target_var.clone());
         let var_value = target_var.read().unwrap().get_value();
 
         return Self::translate_from_tydi_project_type_value(tydi_project.clone(), &var_value, target_var_name);
     }
 
-    pub fn translate_from_tydi_project_type_value(tydi_project: Arc<RwLock<Project>>, target_type_value: &tydi_memory_representation::TypedValue, default_var_name: String) -> Result<(LogicType, BTreeMap<String, Arc<RwLock<LogicType>>>), String> {
+    pub fn translate_from_tydi_project_type_value(tydi_project: Arc<RwLock<Project>>, target_type_value: &tydi_memory_representation::TypedValue, default_var_name: String) -> Result<(Vec<LogicType>, BTreeMap<String, Arc<RwLock<LogicType>>>), String> {
         let mut output_dependency = BTreeMap::new();
-        let output_type;
         let mut target_var_name = default_var_name;
         
+        let mut output_types = vec![];
+
         match &target_type_value {
             TypedValue::LogicTypeValue(logical_type) => {
-                let logical_type = logical_type.read().unwrap().clone();
-                match logical_type {
-                    tydi_memory_representation::LogicType::LogicNullType => {
-                        output_type = LogicType::Null;
-                    },
-                    tydi_memory_representation::LogicType::LogicBitType(logic_bit) => {
-                        let bit_width_var = logic_bit.read().unwrap().get_bit_width();
-                        let bit_width = match bit_width_var.read().unwrap().get_value() {
-                            TypedValue::IntValue(i) => i,
-                            _ => unreachable!("error in project evaluation: bit width of {} is not an integer", logic_bit.read().unwrap().get_name()),
-                        };
-                        output_type = LogicType::Bit(bit_width as usize);
-                        output_dependency.insert(target_var_name.clone(), Arc::new(RwLock::new(output_type.clone())));
-                        //we don't update the target_var_name because for logic bit.
-                    },
-                    tydi_memory_representation::LogicType::LogicGroupType(v) => {
-                        let results = LogicGroup::translate_from_tydi_project(tydi_project.clone(), v.clone())?;
-                        let (logic_group, mut dependencies) = results;
-                        output_dependency.append(&mut dependencies);
-                        output_type = LogicType::Group(Arc::new(RwLock::new(logic_group)));
-                        target_var_name = get_global_variable_name_with_parent_scope(v.clone());
-                    },
-                    tydi_memory_representation::LogicType::LogicUnionType(v) => {
-                        let results = LogicUnion::translate_from_tydi_project(tydi_project.clone(), v.clone())?;
-                        let (logic_union, mut dependencies) = results;
-                        output_dependency.append(&mut dependencies);
-                        output_type = LogicType::Union(Arc::new(RwLock::new(logic_union)));
-                        target_var_name = get_global_variable_name_with_parent_scope(v.clone());
-                    },
-                    tydi_memory_representation::LogicType::LogicStreamType(v) => {
-                        let results = LogicStream::translate_from_tydi_project(tydi_project.clone(), v.clone())?;
-                        let (logic_stream, mut dependencies) = results;
-                        output_dependency.append(&mut dependencies);
-                        output_type = LogicType::Stream(Arc::new(RwLock::new(logic_stream)));
-                        target_var_name = get_global_variable_name_with_parent_scope(v.clone());
-                    },
-                }
-
+                let (output_type, mut dependencies) = Self::translate_single_basic_logic_type(tydi_project.clone(), logical_type.clone(), &mut target_var_name)?;
+                output_dependency.append(&mut dependencies);
+                output_dependency.insert(target_var_name.clone(), Arc::new(RwLock::new(output_type.clone())));
+                // output_types.push(output_type.clone());
+                output_types.push(LogicType::Ref(target_var_name.clone()));
             },
             TypedValue::RefToVar(ref_var) => {
                 let results = LogicType::translate_from_tydi_project(tydi_project.clone(), ref_var.clone());
                 if results.is_err() {
                     return Err(results.err().unwrap());
                 }
-                let (logic_ref, mut dependencies) = results.ok().unwrap();
+                let (mut output_type, mut dependencies) = results.ok().unwrap();
                 output_dependency.append(&mut dependencies);
-                // output_type = LogicType::Ref(name_conversion::get_global_variable_name(ref_var.clone()));
-                output_type = logic_ref;
+
+                assert!(output_type.len() > 0);
+                if (output_type.len() == 1) {
+                    output_dependency.insert(target_var_name.clone(), Arc::new(RwLock::new(output_type[0].clone())));
+                }
+                else {
+                    for (index, single_type) in output_type.iter().enumerate() {
+                        output_dependency.insert(format!("{}_for{}", &target_var_name, index), Arc::new(RwLock::new(single_type.clone())));
+                    }
+                }
+
+                output_types.append(&mut output_type);
+            },
+            TypedValue::Array(array) => {
+                for (index, single_value) in array.iter().enumerate() {
+                    match single_value {
+                        TypedValue::LogicTypeValue(single_logic_type) => {
+                            let (output_type, mut dependencies) = Self::translate_single_basic_logic_type(tydi_project.clone(), single_logic_type.clone(), &mut target_var_name)?;
+                            output_dependency.append(&mut dependencies);
+                            let element_var_name = format!("{}_for{}", &target_var_name, index);
+                            output_dependency.insert(element_var_name.clone(), Arc::new(RwLock::new(output_type.clone())));
+                            output_types.push(LogicType::Ref(element_var_name));
+                        },
+                        _ => (),
+                    }
+                }
             },
             _ => unreachable!("{} is not a logic type", target_type_value.get_brief_info()),
         }
 
-        //we should always return a reference to it
-        output_dependency.insert(target_var_name.clone(), Arc::new(RwLock::new(output_type)));
+        return Ok((output_types, output_dependency));
+    }
 
-        return Ok((LogicType::Ref(target_var_name), output_dependency));
+    fn translate_single_basic_logic_type(tydi_project: Arc<RwLock<Project>>, target_type: Arc<RwLock<tydi_memory_representation::LogicType>>, target_var_name: &mut String) -> Result<(LogicType, BTreeMap<String, Arc<RwLock<LogicType>>>), String> {
+        let mut output_dependency = BTreeMap::new();
+        let output_type;
+
+        let logical_type = target_type.read().unwrap().clone();
+        match logical_type {
+            tydi_memory_representation::LogicType::LogicNullType => {
+                output_type = LogicType::Null;
+            },
+            tydi_memory_representation::LogicType::LogicBitType(logic_bit) => {
+                let bit_width_var = logic_bit.read().unwrap().get_bit_width();
+                let bit_width = match bit_width_var.read().unwrap().get_value() {
+                    TypedValue::IntValue(i) => i,
+                    _ => unreachable!("error in project evaluation: bit width of {} is not an integer", logic_bit.read().unwrap().get_name()),
+                };
+                output_type = LogicType::Bit(bit_width as usize);
+                output_dependency.insert(target_var_name.clone(), Arc::new(RwLock::new(output_type.clone())));
+                //we don't update the target_var_name because for logic bit.
+            },
+            tydi_memory_representation::LogicType::LogicGroupType(v) => {
+                let results = LogicGroup::translate_from_tydi_project(tydi_project.clone(), v.clone())?;
+                let (logic_group, mut dependencies) = results;
+                output_dependency.append(&mut dependencies);
+                output_type = LogicType::Group(Arc::new(RwLock::new(logic_group)));
+                *target_var_name = get_global_variable_name_with_parent_scope(v.clone());
+            },
+            tydi_memory_representation::LogicType::LogicUnionType(v) => {
+                let results = LogicUnion::translate_from_tydi_project(tydi_project.clone(), v.clone())?;
+                let (logic_union, mut dependencies) = results;
+                output_dependency.append(&mut dependencies);
+                output_type = LogicType::Union(Arc::new(RwLock::new(logic_union)));
+                *target_var_name = get_global_variable_name_with_parent_scope(v.clone());
+            },
+            tydi_memory_representation::LogicType::LogicStreamType(v) => {
+                let results = LogicStream::translate_from_tydi_project(tydi_project.clone(), v.clone())?;
+                let (logic_stream, mut dependencies) = results;
+                output_dependency.append(&mut dependencies);
+                output_type = LogicType::Stream(Arc::new(RwLock::new(logic_stream)));
+                *target_var_name = get_global_variable_name_with_parent_scope(v.clone());
+            },
+        }
+        return Ok((output_type, output_dependency));
     }
 
 
@@ -154,7 +187,16 @@ impl LogicGroup {
                 }
                 let (logic_type, mut dependencies) = result.ok().unwrap();
                 output_dependency.append(&mut dependencies);
-                output_group.elements.insert(var_name.clone(), logic_type);
+
+                assert!(logic_type.len() > 0);
+                if logic_type.len() == 1 {
+                    output_group.elements.insert(var_name.clone(), logic_type[0].clone());
+                }
+                else {
+                    for (index, i) in logic_type.iter().enumerate() {
+                        output_group.elements.insert(format!("{}_for{}", &var_name, index), logic_type[index].clone());
+                    }
+                }
             }
         }
 
@@ -163,7 +205,7 @@ impl LogicGroup {
 }
 
 #[derive(Clone, Debug, Serialize)]
-pub struct LogicUnion {
+pub struct LogicUnion {    
     elements: BTreeMap<String, LogicType>,
     document: Option<String>,
 }
@@ -186,7 +228,16 @@ impl LogicUnion {
                 }
                 let (logic_type, mut dependencies) = result.ok().unwrap();
                 output_dependency.append(&mut dependencies);
-                output_group.elements.insert(var_name.clone(), logic_type);
+
+                assert!(logic_type.len() > 0);
+                if logic_type.len() == 1 {
+                    output_group.elements.insert(var_name.clone(), logic_type[0].clone());
+                }
+                else {
+                    for (index, i) in logic_type.iter().enumerate() {
+                        output_group.elements.insert(format!("{}_for{}", &var_name, index), logic_type[index].clone());
+                    }
+                }
             }
         }
 
@@ -239,6 +290,8 @@ impl LogicStream {
             }
             let (stream_type, mut dependencies) = result.ok().unwrap();
             output_dependency.append(&mut dependencies);
+            assert!(stream_type.len() == 1, "the type of a stream should be a single logic type, not an array");
+            let stream_type = stream_type[0].clone();
             match stream_type {
                 LogicType::Ref(r) => {
                     output_stream.stream_type = LogicType::Ref(r);
@@ -275,6 +328,8 @@ impl LogicStream {
             }
             let (user_type, mut dependencies) = result.ok().unwrap();
             output_dependency.append(&mut dependencies);
+            assert!(user_type.len() == 1, "the user type of a stream should be a single logic type, not an array");
+            let user_type = user_type[0].clone();
             match user_type {
                 LogicType::Ref(r) => {
                     output_stream.user_type = LogicType::Ref(r);

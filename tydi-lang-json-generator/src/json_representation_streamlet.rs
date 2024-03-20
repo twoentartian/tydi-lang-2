@@ -2,7 +2,7 @@ use std::sync::{Arc, RwLock};
 use std::collections::BTreeMap;
 
 use serde::Serialize;
-use tydi_lang_parser::trait_common::HasDocument;
+use tydi_lang_parser::trait_common::{GetName as ParserGetName, HasDocument};
 
 use crate::json_representation_logic_type::LogicType;
 use crate::json_representation_all::JsonRepresentation;
@@ -53,6 +53,10 @@ impl Port {
         }
         let target_port_logic_type = target_port.read().unwrap().get_logical_type();
         let (result_logic_type, mut dependencies) = LogicType::translate_from_tydi_project(tydi_project.clone(), target_port_logic_type.clone())?;
+        if result_logic_type.len() != 1 {
+            return Err(format!("the type of port ({}) must be a single logic type", target_port.read().unwrap().get_name()));
+        }
+        let result_logic_type = result_logic_type[0].clone();
         output_port.logic_type = result_logic_type;
         output_port.document = target_port.read().unwrap().get_document();
         let mut output_json_representation = JsonRepresentation::new();

@@ -69,6 +69,9 @@ pub fn evaluate_for(for_target: Arc<RwLock<For>>, parent_scope: Arc<RwLock<Scope
             while existing_array.len() < for_evaluation_count {
                 existing_array.push(TypedValue::UnknwonValue);
             }
+            //copy is_property_of_scope
+            outside_var.write().unwrap().set_is_property_of_scope(var.read().unwrap().get_is_property_of_scope());
+
             //rename the new var value, if possible
             match &var_value {
                 TypedValue::UnknwonValue => (),
