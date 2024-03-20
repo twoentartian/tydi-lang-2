@@ -731,6 +731,76 @@ fn stream_template_in_streamlet() {
 }
 
 #[test]
+fn array_bits_in_group() {
+    let project = Project::new(format!("sample_project"));
+    {
+        let mut project_write = project.write().unwrap();
+
+        let src_pack0 = String::from(r#"
+            package pack;
+            use std;
+            
+            Group d {
+                for i in range(5) {
+                    d = Bit(1);
+                }
+            }
+
+            streamlet test_ss {
+                in_port: d in;
+                out_port: d out;
+            }
+            
+            impl test_ii of test_ss {
+                
+            }
+            
+        "#);
+        let src_pack1 = String::from(r#"
+        package std;
+        streamlet void_s<type_in: type> {
+            input_port: type_in in;
+        }
+          
+        impl void_i<type_in: type> of void_s<type_in> @External {
+            
+        }
+
+        streamlet duplicator_s<type_in: type, N: int> {
+            input_port: type_in in;
+            for i in range(N) {
+                output_port: type_in out;
+            }
+        }
+        
+        impl duplicator_i<type_in: type, N: int> of duplicator_s<type_in, N> @External {
+            
+        }
+
+        "#);
+
+        let status = project_write.add_package(format!("./pack0.td"), src_pack0);
+        if status.is_err() {
+            panic!("{}", status.err().unwrap().print());
+        }
+        let status = project_write.add_package(format!("./pack1.td"), src_pack1);
+        if status.is_err() {
+            panic!("{}", status.err().unwrap().print());
+        }
+    }
+    std::fs::write("./code_structure_before_evaluation.json", &project.read().unwrap().get_pretty_json()).unwrap();
+
+    project.read().unwrap().evaluate_target(format!("test_ii"), format!("pack")).expect("fail to evaluate");
+
+    let code_structure = project.read().unwrap().get_pretty_json();
+    std::fs::write("./code_structure.json", &code_structure).unwrap();
+
+    let json_output = generate_json_representation_from_tydi_project(project.clone(), format!("test_ii"), format!("pack")).expect("fail to generate json");
+    std::fs::write("./json_output.json", &json_output).unwrap();
+    println!("{}", json_output);
+}
+
+#[test]
 fn casper_json_example() {
     let project = Project::new(format!("sample_project"));
     {
