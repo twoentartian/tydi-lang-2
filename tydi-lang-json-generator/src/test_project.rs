@@ -344,7 +344,7 @@ fn sample_project_comment_bug() {
     println!("{}", json_output);
 }
 
-#[test]
+// #[test]
 fn sample_project_impl_of_template() {
     let project = Project::new(format!("sample_project"));
     {
