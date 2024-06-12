@@ -265,8 +265,8 @@ mod test {
             instance i0(impl0);
             instance i1(impl0<x,y,1>);
             instance i2(impl0<x,y,external_package.i>);
-            i0.out => i1.in;
-            i1.out => i2.in \"net_name\" @NoTypeCheck @SecondAttr;
+            i0.out_p => i1.in_p;
+            i1.out_p => i2.in_p \"net_name\" @NoTypeCheck @SecondAttr;
         }
         "), Rule::TydiFile, false).ok().unwrap();
     }
@@ -285,9 +285,9 @@ mod test {
             instance i0(impl0);
             instance i1(impl0<x,y,1>);
             instance i2(impl0<x,y,external_package.i>) [10];
-            i0.out => i1.in;
-            i1.out => i2.in \"net_name\" @NoTypeCheck @SecondAttr;
-            i2[0].out => i2[1].in;
+            i0.out_p => i1.in_p;
+            i1.out_p => i2.in_p \"net_name\" @NoTypeCheck @SecondAttr;
+            i2[0].out_p => i2[1].in_p;
         }
         "), Rule::TydiFile, false).ok().unwrap();
     }
@@ -301,7 +301,7 @@ mod test {
             instance i2(impl0<x,y>) [10];
             for i in [0,1,2,3,4] {
                 if (x) {
-                    i2[i].out => i2[i].in;
+                    i2[i].out_p => i2[i].in_p;
                 }
             }
         }

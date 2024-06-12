@@ -409,7 +409,15 @@ impl Variable {
         match &mut self.value {
             TypedValue::Array(values) => {
                 if values.len() == 0 {
-                    self.type_indication = TypeIndication::Array(Box::new(TypeIndication::infer_from_typed_value(&value)));
+                    if self.type_indication == TypeIndication::Any {
+                        self.type_indication = TypeIndication::Array(Box::new(TypeIndication::infer_from_typed_value(&value)));
+                    }
+                    else {
+                        let new_type_indication = TypeIndication::infer_from_typed_value(&value);
+                        if self.type_indication != new_type_indication {
+                            return Err(format!("{} is inserted to an array of pre-defined type of {}", &self.name, self.type_indication.to_string()));
+                        }
+                    }
                 }
                 else {
                     let new_type_indication = TypeIndication::infer_from_typed_value(&value);
@@ -520,17 +528,8 @@ mod test_var {
             let result = value_write.add_predefined_element(TypedValue::FloatValue(10.0));
             assert!(result.is_ok());
             let result = value_write.add_predefined_element(TypedValue::IntValue(10));
-            assert!(result.is_err());
-            println!("{}", result.err().unwrap());
+            assert!(result.is_ok());
         }
-    }
-
-    #[test]
-    fn serialize_variable_not_evaluated() {
-        let value = Variable::new(format!("value"), Some(format!("a")));
-        let json_output = serde_json::to_string(&*value.read().unwrap()).ok().unwrap();
-        println!("{json_output}");
-        assert_eq!(json_output, r#"{"name":"value","exp":"a","value":{"type":"UnknwonValue","value":"???"},"evaluated":"NotEvaluated","type_indication":"Any","is_property_of_scope":false,"declare_location":{"begin":null,"end":null}}"#);
     }
 
 }

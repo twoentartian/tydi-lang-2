@@ -85,7 +85,7 @@ impl LogicType {
                 output_dependency.append(&mut dependencies);
 
                 assert!(output_type.len() > 0);
-                if (output_type.len() == 1) {
+                if output_type.len() == 1 {
                     output_dependency.insert(target_var_name.clone(), Arc::new(RwLock::new(output_type[0].clone())));
                 }
                 else {
