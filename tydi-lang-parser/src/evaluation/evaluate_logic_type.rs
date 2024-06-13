@@ -1,7 +1,7 @@
 use std::sync::{RwLock, Arc};
 use crate::generate_name::generate_init_value;
 use crate::tydi_lang_src_to_memory_representation;
-use crate::tydi_memory_representation::{Scope, TypedValue, TypeIndication, LogicType, LogicStream, LogicUnion, LogicGroup, LogicBit, TraitCodeLocationAccess, GetScope, ScopeType};
+use crate::tydi_memory_representation::{GetScope, LogicBit, LogicGroup, LogicStream, LogicType, LogicUnion, Scope, ScopeType, SrcInfo, TraitCodeLocationAccess, TypeIndication, TypedValue};
 use crate::tydi_parser::*;
 use crate::error::TydiLangError;
 
@@ -16,7 +16,7 @@ pub fn evaluate_LogicalType(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, evaluato
         let rule = element.as_rule();
         match rule {
             Rule::LogicalType_Basic => {
-                let logic_type = tydi_lang_src_to_memory_representation::parse_LogicalType_Basic(element, scope.clone(), Arc::new(generate_init_value()))?;
+                let logic_type = tydi_lang_src_to_memory_representation::parse_LogicalType_Basic(element, scope.clone(), SrcInfo::new_init())?;
                 match &logic_type {
                     TypeIndication::LogicNull => {
                         output = TypedValue::LogicTypeValue(Arc::new(RwLock::new(LogicType::LogicNullType)));

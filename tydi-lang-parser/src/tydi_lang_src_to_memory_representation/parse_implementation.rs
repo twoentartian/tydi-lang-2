@@ -5,13 +5,13 @@ use crate::error::TydiLangError;
 use crate::generate_name::{generate_init_value, generate_built_in_variable_name_from_span};
 use crate::trait_common::HasDocument;
 use crate::tydi_lang_src_to_memory_representation::parse_type::parse_ArraySizeIndicator;
-use crate::tydi_memory_representation::{Scope, GetScope, Variable, TraitCodeLocationAccess, CodeLocation, Implementation, Instance, Net, TypeIndication, ImplementationType, GlobalIdentifier};
+use crate::tydi_memory_representation::{Scope, GetScope, Variable, TraitCodeLocationAccess, CodeLocation, Implementation, Instance, Net, TypeIndication, ImplementationType, GlobalIdentifier, SrcInfo};
 use crate::tydi_parser::*;
 
 use crate::tydi_lang_src_to_memory_representation::{parse_template, parse_miscellaneous, parse_file};
 
 #[allow(non_snake_case)]
-pub fn parse_Implementation(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<String>) -> Result<Arc<RwLock<Variable>>, TydiLangError> {
+pub fn parse_Implementation(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<SrcInfo>) -> Result<Arc<RwLock<Variable>>, TydiLangError> {
     let mut output_implementation = Implementation::new_place_holder();
     let mut document = None;
     let mut name = generate_init_value();
@@ -73,7 +73,7 @@ pub fn parse_Implementation(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src:
 }
 
 #[allow(non_snake_case)]
-pub fn parse_Instance(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<String>) -> Result<Arc<RwLock<Variable>>, TydiLangError> {
+pub fn parse_Instance(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<SrcInfo>) -> Result<Arc<RwLock<Variable>>, TydiLangError> {
     let mut document = None;
     let mut name = generate_init_value();
     let mut attributes = vec![];
@@ -131,7 +131,7 @@ pub fn parse_Instance(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<S
 }
 
 #[allow(non_snake_case)]
-pub fn parse_Net(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<String>) -> Result<Arc<RwLock<Variable>>, TydiLangError> {
+pub fn parse_Net(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<SrcInfo>) -> Result<Arc<RwLock<Variable>>, TydiLangError> {
     let mut document = None;
     let name = generate_built_in_variable_name_from_span(&src);
     let mut net_name = None;
@@ -199,7 +199,7 @@ pub fn parse_Net(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<String
 }
 
 #[allow(non_snake_case)]
-pub fn parse_Netname(src: Pair<Rule>, _scope: Arc<RwLock<Scope>>, raw_src: Arc<String>) -> Result<Option<Arc<RwLock<Variable>>>, TydiLangError> {
+pub fn parse_Netname(src: Pair<Rule>, _scope: Arc<RwLock<Scope>>, raw_src: Arc<SrcInfo>) -> Result<Option<Arc<RwLock<Variable>>>, TydiLangError> {
     for element in src.clone().into_inner().into_iter() {
         let rule = element.as_rule();
         match rule {

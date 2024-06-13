@@ -6,7 +6,7 @@ use serde::{Serialize};
 use crate::error::TydiLangError;
 use crate::evaluation::{Evaluator, evaluate_var, EvaluationTrace};
 use crate::{generate_get_pub, generate_set_pub, generate_access_pub};
-use crate::tydi_memory_representation::{Package, CodeLocation, GetScope, Scope, ScopeRelationType, Variable};
+use crate::tydi_memory_representation::{Package, CodeLocation, GetScope, Scope, ScopeRelationType, Variable, SrcInfo};
 
 #[derive(Clone, Debug, Serialize)]
 pub struct ProjectItem {
@@ -51,7 +51,8 @@ impl Project {
     }
 
     pub fn add_package(&mut self, file_path: String, file_content: String) -> Result<(), TydiLangError> {
-        let file_package = crate::tydi_lang_src_to_memory_representation::tydi_lang_src_to_memory_representation(file_content.clone())?;
+        let src_info = SrcInfo::new(file_path.clone(), file_content.clone());
+        let file_package = crate::tydi_lang_src_to_memory_representation::tydi_lang_src_to_memory_representation(file_content.clone(), src_info)?;
         {
             let mut file_package_write = file_package.write().unwrap();
             file_package_write.set_file_path(file_path.clone());

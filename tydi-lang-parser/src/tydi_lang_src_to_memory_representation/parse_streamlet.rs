@@ -5,13 +5,13 @@ use crate::error::TydiLangError;
 use crate::generate_name::{generate_init_value, generate_built_in_variable_name_from_span};
 use crate::trait_common::HasDocument;
 use crate::tydi_lang_src_to_memory_representation::parse_type::parse_ArraySizeIndicator;
-use crate::tydi_memory_representation::{Scope, Streamlet, GetScope, Variable, TraitCodeLocationAccess, CodeLocation, Port, TypeIndication, PortDirection, GlobalIdentifier};
+use crate::tydi_memory_representation::{Scope, Streamlet, GetScope, Variable, TraitCodeLocationAccess, CodeLocation, Port, TypeIndication, PortDirection, GlobalIdentifier, SrcInfo};
 use crate::tydi_parser::*;
 
 use crate::tydi_lang_src_to_memory_representation::{parse_template, parse_miscellaneous, parse_file};
 
 #[allow(non_snake_case)]
-pub fn parse_StreamLet(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<String>) -> Result<Arc<RwLock<Variable>>, TydiLangError> {
+pub fn parse_StreamLet(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<SrcInfo>) -> Result<Arc<RwLock<Variable>>, TydiLangError> {
     let mut output_streamlet = Streamlet::new_place_holder();
     let mut document = None;
     let mut name = generate_init_value();
@@ -62,7 +62,7 @@ pub fn parse_StreamLet(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<
 }
 
 #[allow(non_snake_case)]
-pub fn parse_Port(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<String>) -> Result<Arc<RwLock<Variable>>, TydiLangError> {
+pub fn parse_Port(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<SrcInfo>) -> Result<Arc<RwLock<Variable>>, TydiLangError> {
     let mut document = None;
     let mut name = generate_init_value();
     let mut attributes = vec![];
@@ -142,7 +142,7 @@ pub fn parse_Port(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<Strin
 }
 
 #[allow(non_snake_case)]
-pub fn parse_PortTimeDomain(src: Pair<Rule>, _scope: Arc<RwLock<Scope>>, _: Arc<String>) -> Result<Option<Arc<RwLock<Variable>>>, TydiLangError> {
+pub fn parse_PortTimeDomain(src: Pair<Rule>, _scope: Arc<RwLock<Scope>>, _: Arc<SrcInfo>) -> Result<Option<Arc<RwLock<Variable>>>, TydiLangError> {
     for element in src.clone().into_inner().into_iter() {
         let rule = element.as_rule();
         match rule {
@@ -157,7 +157,7 @@ pub fn parse_PortTimeDomain(src: Pair<Rule>, _scope: Arc<RwLock<Scope>>, _: Arc<
 }
 
 #[allow(non_snake_case)]
-pub fn parse_PortDirection(src: Pair<Rule>, _scope: Arc<RwLock<Scope>>, _: Arc<String>) -> Result<PortDirection, TydiLangError> {
+pub fn parse_PortDirection(src: Pair<Rule>, _scope: Arc<RwLock<Scope>>, _: Arc<SrcInfo>) -> Result<PortDirection, TydiLangError> {
     for element in src.clone().into_inner().into_iter() {
         let rule = element.as_rule();
         match rule {

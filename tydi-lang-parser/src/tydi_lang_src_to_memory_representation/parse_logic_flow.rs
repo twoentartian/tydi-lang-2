@@ -3,13 +3,13 @@ use std::sync::{Arc, RwLock};
 use crate::error::TydiLangError;
 
 use crate::generate_name::{generate_built_in_variable_name_from_span};
-use crate::tydi_memory_representation::{Scope, GetScope, Variable, TraitCodeLocationAccess, CodeLocation, TypeIndication, If, Elif, TypedValue, Else, For};
+use crate::tydi_memory_representation::{Scope, GetScope, Variable, TraitCodeLocationAccess, CodeLocation, TypeIndication, If, Elif, TypedValue, Else, For, SrcInfo};
 use crate::tydi_parser::*;
 
 use crate::tydi_lang_src_to_memory_representation::{parse_file};
 
 #[allow(non_snake_case)]
-pub fn parse_If(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<String>) -> Result<Arc<RwLock<Variable>>, TydiLangError> {
+pub fn parse_If(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<SrcInfo>) -> Result<Arc<RwLock<Variable>>, TydiLangError> {
     let output_if = If::new(generate_built_in_variable_name_from_span(&src), scope.clone());
     for element in src.clone().into_inner().into_iter() {
         let rule = element.as_rule();
@@ -56,7 +56,7 @@ pub fn parse_If(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<String>
 }
 
 #[allow(non_snake_case)]
-pub fn parse_Elif(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<String>) -> Result<Elif, TydiLangError> {
+pub fn parse_Elif(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<SrcInfo>) -> Result<Elif, TydiLangError> {
     let mut output_elif = Elif::new(generate_built_in_variable_name_from_span(&src), scope.clone());
     for element in src.clone().into_inner().into_iter() {
         let rule = element.as_rule();
@@ -81,7 +81,7 @@ pub fn parse_Elif(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<Strin
 }
 
 #[allow(non_snake_case)]
-pub fn parse_Else(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<String>) -> Result<Else, TydiLangError> {
+pub fn parse_Else(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<SrcInfo>) -> Result<Else, TydiLangError> {
     let mut output_else = Else::new(generate_built_in_variable_name_from_span(&src), scope.clone());
     for element in src.clone().into_inner().into_iter() {
         let rule = element.as_rule();
@@ -98,7 +98,7 @@ pub fn parse_Else(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<Strin
 }
 
 #[allow(non_snake_case)]
-pub fn parse_For(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<String>) -> Result<Arc<RwLock<Variable>>, TydiLangError> {
+pub fn parse_For(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<SrcInfo>) -> Result<Arc<RwLock<Variable>>, TydiLangError> {
     let output_for = For::new(generate_built_in_variable_name_from_span(&src), scope.clone());
     for element in src.clone().into_inner().into_iter() {
         let rule = element.as_rule();

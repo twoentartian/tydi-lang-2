@@ -4,12 +4,34 @@ use serde::Serialize;
 
 use crate::{tydi_parser::*, generate_name::generate_init_value, deep_clone::DeepClone};
 
+#[derive(Clone, Debug)]
+pub struct SrcInfo {
+    pub file_name: String,
+    pub file_content: String,
+}
+
+impl SrcInfo {
+    pub fn new(file_name: String, file_content: String) -> Arc<Self> {
+        return Arc::new(Self{
+            file_name: file_name,
+            file_content: file_content,
+        });
+    }
+
+    pub fn new_init() -> Arc<Self> {
+        return Arc::new(Self{
+            file_name: generate_init_value(),
+            file_content: generate_init_value(),
+        });
+    }
+}
+
 #[derive(Clone, Debug, Serialize)]
 pub struct CodeLocation {
     pub begin: Option<usize>,
     pub end: Option<usize>,
     #[serde(skip)]
-    pub src_file: Arc<String>,
+    pub src_file: Arc<SrcInfo>,
 }
 
 impl DeepClone for CodeLocation {
@@ -23,11 +45,11 @@ impl CodeLocation {
         return Self {
             begin: None,
             end: None,
-            src_file: Arc::new(generate_init_value()),
+            src_file: SrcInfo::new_init(),
         };
     }
 
-    pub fn new(begin:usize, end:usize, src_file: Arc<String>) -> Self {
+    pub fn new(begin:usize, end:usize, src_file: Arc<SrcInfo>) -> Self {
         return Self {
             begin: Some(begin),
             end: Some(end),
@@ -35,7 +57,7 @@ impl CodeLocation {
         };
     }
 
-    pub fn new_only_begin(begin:usize, src_file: Arc<String>) -> Self {
+    pub fn new_only_begin(begin:usize, src_file: Arc<SrcInfo>) -> Self {
         return Self {
             begin: Some(begin),
             end: None,
@@ -43,7 +65,7 @@ impl CodeLocation {
         };
     }
 
-    pub fn new_from_pest_rule(src: &Pair<Rule>, src_file: Arc<String>) -> Self {
+    pub fn new_from_pest_rule(src: &Pair<Rule>, src_file: Arc<SrcInfo>) -> Self {
         return Self {
             begin: Some(src.as_span().start_pos().pos()),
             end: Some(src.as_span().end_pos().pos()),
@@ -97,7 +119,14 @@ impl CodeLocation {
         unreachable!()
     }
 
-    pub fn show(&self, src: Option<Arc<String>>) -> String {
+    pub fn show(&self, src_info: Option<Arc<SrcInfo>>) -> String {
+        let src = match src_info {
+            Some(src_info) => {
+                Some(src_info.file_content.clone())
+            },
+            None => None,
+        };
+
         // is the src empty?
         if src.is_none() {
             return format!("token location: {}~{}", self.begin.unwrap(), self.end.unwrap());

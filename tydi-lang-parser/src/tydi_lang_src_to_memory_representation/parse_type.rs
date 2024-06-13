@@ -1,13 +1,13 @@
 use std::sync::{Arc, RwLock};
 
 use crate::error::TydiLangError;
-use crate::tydi_memory_representation::{Scope, TypeIndication, Variable, CodeLocation, TraitCodeLocationAccess};
+use crate::tydi_memory_representation::{Scope, TypeIndication, Variable, CodeLocation, TraitCodeLocationAccess, SrcInfo};
 use crate::tydi_lang_src_to_memory_representation::parse_logic_type::*;
 use crate::tydi_parser::*;
 use crate::generate_name;
 
 #[allow(non_snake_case)]
-pub fn parse_TypeIndicator(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<String>) -> Result<TypeIndication, TydiLangError> {
+pub fn parse_TypeIndicator(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<SrcInfo>) -> Result<TypeIndication, TydiLangError> {
     let mut type_indicator = TypeIndication::Any;
     for element in src.clone().into_inner().into_iter() {
         let rule = element.as_rule();
@@ -25,7 +25,7 @@ pub fn parse_TypeIndicator(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: 
 }
 
 #[allow(non_snake_case)]
-pub fn parse_TypeIndicator_Array(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<String>) -> Result<TypeIndication, TydiLangError> {
+pub fn parse_TypeIndicator_Array(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<SrcInfo>) -> Result<TypeIndication, TydiLangError> {
     let mut type_indicator = TypeIndication::Any;
     for element in src.clone().into_inner().into_iter() {
         let rule = element.as_rule();
@@ -41,7 +41,7 @@ pub fn parse_TypeIndicator_Array(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw
 
 #[allow(non_snake_case)]
 /// return: ( TypeIndication, a var to indicate the array size of logic type: None = single var, Some= array )
-pub fn parse_TypeIndicator_All(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<String>) -> Result<TypeIndication, TydiLangError> {
+pub fn parse_TypeIndicator_All(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<SrcInfo>) -> Result<TypeIndication, TydiLangError> {
     for element in src.clone().into_inner().into_iter() {
         let rule = element.as_rule();
         match rule {
@@ -65,7 +65,7 @@ pub fn parse_TypeIndicator_All(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_s
 }
 
 #[allow(non_snake_case)]
-pub fn parse_BasicTypeKeyword(src: Pair<Rule>, _scope: Arc<RwLock<Scope>>, _: Arc<String>) -> Result<TypeIndication, TydiLangError> {
+pub fn parse_BasicTypeKeyword(src: Pair<Rule>, _scope: Arc<RwLock<Scope>>, _: Arc<SrcInfo>) -> Result<TypeIndication, TydiLangError> {
     let mut type_indicator = TypeIndication::Any;
     for element in src.clone().into_inner().into_iter() {
         let rule = element.as_rule();
@@ -92,7 +92,7 @@ pub fn parse_BasicTypeKeyword(src: Pair<Rule>, _scope: Arc<RwLock<Scope>>, _: Ar
 }
 
 #[allow(non_snake_case)]
-pub fn parse_BasicTypeKeywordArray(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<String>) -> Result<TypeIndication, TydiLangError> {
+pub fn parse_BasicTypeKeywordArray(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<SrcInfo>) -> Result<TypeIndication, TydiLangError> {
     let mut type_indicator = TypeIndication::Any;
     for element in src.clone().into_inner().into_iter() {
         let rule = element.as_rule();
@@ -107,7 +107,7 @@ pub fn parse_BasicTypeKeywordArray(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, r
 }
 
 #[allow(non_snake_case)]
-pub fn parse_AllTypeKeyword(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<String>) -> Result<(TypeIndication, bool), TydiLangError> {
+pub fn parse_AllTypeKeyword(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<SrcInfo>) -> Result<(TypeIndication, bool), TydiLangError> {
     let mut type_indicator = TypeIndication::Any;
     let mut is_array = false;
     for element in src.clone().into_inner().into_iter() {
@@ -134,7 +134,7 @@ pub fn parse_AllTypeKeyword(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src:
 
 #[allow(non_snake_case)]
 ///return: (type_indication, option<array_variable>)
-pub fn parse_LogicalType(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<String>) -> Result<TypeIndication, TydiLangError> {
+pub fn parse_LogicalType(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<SrcInfo>) -> Result<TypeIndication, TydiLangError> {
     for element in src.clone().into_inner().into_iter() {
         let rule = element.as_rule();
         match rule {
@@ -153,7 +153,7 @@ pub fn parse_LogicalType(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Ar
 }
 
 #[allow(non_snake_case)]
-pub fn parse_LogicalType_Basic(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<String>) -> Result<TypeIndication, TydiLangError> {
+pub fn parse_LogicalType_Basic(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<SrcInfo>) -> Result<TypeIndication, TydiLangError> {
     let mut type_indicator = TypeIndication::Any;
     for element in src.clone().into_inner().into_iter() {
         let rule = element.as_rule();
@@ -182,7 +182,7 @@ pub fn parse_LogicalType_Basic(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_s
 }
 
 #[allow(non_snake_case)]
-pub fn parse_LogicalType_Array(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<String>) -> Result<TypeIndication, TydiLangError> {
+pub fn parse_LogicalType_Array(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<SrcInfo>) -> Result<TypeIndication, TydiLangError> {
     let mut type_indicator = TypeIndication::Any;
     let mut array_size_var_opt = None;
     for element in src.clone().into_inner().into_iter() {
@@ -217,7 +217,7 @@ pub fn parse_LogicalType_Array(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_s
 }
 
 #[allow(non_snake_case)]
-pub fn parse_ArraySizeIndicator(src: Pair<Rule>, _scope: Arc<RwLock<Scope>>, raw_src: Arc<String>) -> Result<Option<Arc<RwLock<Variable>>>, TydiLangError> {
+pub fn parse_ArraySizeIndicator(src: Pair<Rule>, _scope: Arc<RwLock<Scope>>, raw_src: Arc<SrcInfo>) -> Result<Option<Arc<RwLock<Variable>>>, TydiLangError> {
     let mut is_exp_provided = false;
     let mut array_size_var = Variable::new_place_holder();
     for element in src.clone().into_inner().into_iter() {

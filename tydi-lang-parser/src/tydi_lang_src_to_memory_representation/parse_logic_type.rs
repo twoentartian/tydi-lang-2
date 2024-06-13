@@ -1,14 +1,13 @@
 use std::sync::{Arc, RwLock};
 
 use crate::error::TydiLangError;
-use crate::generate_name::generate_init_value;
-use crate::trait_common::HasDocument;
+use crate::trait_common::{HasDocument, GetName};
 use crate::tydi_lang_src_to_memory_representation::{parse_template::parse_TemplateArgs, parse_file::parse_Scope_WithoutBracket};
-use crate::tydi_memory_representation::{Scope, LogicType, LogicBit, Variable, TraitCodeLocationAccess, CodeLocation, GetScope, LogicGroup, LogicUnion, LogicStream, LogicStreamProperty, GlobalIdentifier};
+use crate::tydi_memory_representation::{Scope, SrcInfo, LogicType, LogicBit, Variable, TraitCodeLocationAccess, CodeLocation, GetScope, LogicGroup, LogicUnion, LogicStream, LogicStreamProperty, GlobalIdentifier};
 use crate::{tydi_parser::*, generate_name};
 
 #[allow(non_snake_case)]
-pub fn parse_LogicalBit(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<String>) -> Result<Arc<RwLock<Variable>>, TydiLangError> {
+pub fn parse_LogicalBit(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<SrcInfo>) -> Result<Arc<RwLock<Variable>>, TydiLangError> {
     let mut bit_exp = generate_name::generate_init_value();
     for element in src.clone().into_inner().into_iter() {
         let rule = element.as_rule();
@@ -39,7 +38,7 @@ pub fn parse_LogicalBit(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc
 }
 
 #[allow(non_snake_case)]
-pub fn parse_LogicalGroup(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<String>) -> Result<Arc<RwLock<Variable>>, TydiLangError> {
+pub fn parse_LogicalGroup(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<SrcInfo>) -> Result<Arc<RwLock<Variable>>, TydiLangError> {
     let mut output_logic_group = LogicGroup::new_place_holder();
     let mut document: Option<String> = None;
     let mut group_name = generate_name::generate_init_value();
@@ -85,7 +84,7 @@ pub fn parse_LogicalGroup(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: A
 }
 
 #[allow(non_snake_case)]
-pub fn parse_LogicalUnion(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<String>) -> Result<Arc<RwLock<Variable>>, TydiLangError> {
+pub fn parse_LogicalUnion(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<SrcInfo>) -> Result<Arc<RwLock<Variable>>, TydiLangError> {
     let mut output_logic_union = LogicUnion::new_place_holder();
     let mut document: Option<String> = None;
     let mut union_name = generate_name::generate_init_value();
@@ -131,9 +130,9 @@ pub fn parse_LogicalUnion(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: A
 }
 
 #[allow(non_snake_case)]
-pub fn parse_StreamProperty(src: Pair<Rule>, _scope: Arc<RwLock<Scope>>, raw_src: Arc<String>) -> Result<Arc<RwLock<Variable>>, TydiLangError> {
-    let mut name = generate_init_value();
-    let mut exp = generate_init_value();
+pub fn parse_StreamProperty(src: Pair<Rule>, _scope: Arc<RwLock<Scope>>, raw_src: Arc<SrcInfo>) -> Result<Arc<RwLock<Variable>>, TydiLangError> {
+    let mut name = generate_name::generate_init_value();
+    let mut exp = generate_name::generate_init_value();
     for element in src.clone().into_inner().into_iter() {
         let rule = element.as_rule();
         match rule {
@@ -160,9 +159,9 @@ pub fn parse_StreamProperty(src: Pair<Rule>, _scope: Arc<RwLock<Scope>>, raw_src
 }
 
 #[allow(non_snake_case)]
-pub fn parse_LogicalStream(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<String>) -> Result<Arc<RwLock<Variable>>, TydiLangError> {
+pub fn parse_LogicalStream(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<SrcInfo>) -> Result<Arc<RwLock<Variable>>, TydiLangError> {
     let mut stream_properties = vec![];
-    let mut stream_type_exp: String = generate_init_value();
+    let mut stream_type_exp: String = generate_name::generate_init_value();
     let mut stream_type_location = CodeLocation::new_unknown();
     for element in src.clone().into_inner().into_iter() {
         let rule = element.as_rule();
@@ -179,7 +178,7 @@ pub fn parse_LogicalStream(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: 
         }
     }
     let output_logic_stream = LogicStream::new(generate_name::generate_built_in_variable_name_from_span(&src), Some(stream_type_exp));
-    let logic_stream_var_name = generate_name::generate_built_in_variable_name_from_span(&src);
+    let logic_stream_var_name = output_logic_stream.read().unwrap().get_name();
     // add stream property
     {
         let mut output_logic_stream_write = output_logic_stream.write().unwrap();

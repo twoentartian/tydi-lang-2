@@ -41,18 +41,17 @@ use parse_logic_flow::*;
 use crate::error::TydiLangError;
 use crate::generate_name::generate_init_value;
 use crate::tydi_parser::*;
-use crate::tydi_memory_representation::{CodeLocation, Package, TraitCodeLocationAccess, GetScope};
+use crate::tydi_memory_representation::{CodeLocation, GetScope, Package, SrcInfo, TraitCodeLocationAccess};
 
-pub fn tydi_lang_src_to_memory_representation(src: String) -> Result<Arc<RwLock<Package>>, TydiLangError> {
-    let src_arc = Arc::new(src.clone());
+pub fn tydi_lang_src_to_memory_representation(src: String, src_info: Arc<SrcInfo>) -> Result<Arc<RwLock<Package>>, TydiLangError> {
     let parse_result = TydiLangSrc::parse(Rule::TydiFile,&src);
     if parse_result.is_err() {
         let parse_result = parse_result.err().unwrap();
         match parse_result.variant {
             pest::error::ErrorVariant::ParsingError { positives, negatives } => {
                 let error_location = match parse_result.location {
-                    pest::error::InputLocation::Pos(begin) => CodeLocation::new_only_begin(begin, src_arc),
-                    pest::error::InputLocation::Span((begin, end)) => CodeLocation::new(begin, end, src_arc),
+                    pest::error::InputLocation::Pos(begin) => CodeLocation::new_only_begin(begin, src_info.clone()),
+                    pest::error::InputLocation::Span((begin, end)) => CodeLocation::new(begin, end, src_info.clone()),
                 };
                 let message_from_parser = format!("Expected: {:?}, found: {:?}", positives, negatives);
                 return Err(TydiLangError::new(format!("cannot parse the source code, message from parser: {}", message_from_parser), error_location));
@@ -69,10 +68,10 @@ pub fn tydi_lang_src_to_memory_representation(src: String) -> Result<Arc<RwLock<
     for element in parse_result.clone().into_iter() {
         match element.as_rule() {
             Rule::PackageStatement => {
-                parse_PackageStatement(element, output_package.clone(), src_arc.clone())?;
+                parse_PackageStatement(element, output_package.clone(), src_info.clone())?;
             }
             Rule::Scope_WithoutBracket => {
-                parse_Scope_WithoutBracket(element, output_package.read().unwrap().get_scope(), src_arc.clone())?;
+                parse_Scope_WithoutBracket(element, output_package.read().unwrap().get_scope(), src_info.clone())?;
             }
             Rule::EOI => {
                 //do nothing
@@ -82,7 +81,7 @@ pub fn tydi_lang_src_to_memory_representation(src: String) -> Result<Arc<RwLock<
     }
     {
         let mut output_package_write = output_package.write().unwrap();
-        let loc = CodeLocation::new(0, src.len(), src_arc);
+        let loc = CodeLocation::new(0, src.len(), src_info.clone());
         output_package_write.set_code_location(loc);
     }
 
@@ -107,8 +106,8 @@ mod test_tydi_lang_src_to_memory_representation {
         let src = String::from(r#"
         package test;
         "#);
-        let src_ptr = Some(Arc::new(src.clone()));
-        let result = tydi_lang_src_to_memory_representation(src);
+        let src_ptr = Some(SrcInfo::new(format!("test.td"), src.clone()));
+        let result = tydi_lang_src_to_memory_representation(src, SrcInfo::new_init());
         if result.is_err() {
             let result = result.err().unwrap();
             println!("{}", result.print());
@@ -126,7 +125,7 @@ mod test_tydi_lang_src_to_memory_representation {
         package test;
         i = 10;
         "#);
-        let result = tydi_lang_src_to_memory_representation(src);
+        let result = tydi_lang_src_to_memory_representation(src, SrcInfo::new_init());
         if result.is_err() {
             let result = result.err().unwrap();
             println!("{}", result.print());
@@ -152,7 +151,7 @@ mod test_tydi_lang_src_to_memory_representation {
         package test;
         i:int = 10;
         "#);
-        let result = tydi_lang_src_to_memory_representation(src);
+        let result = tydi_lang_src_to_memory_representation(src, SrcInfo::new_init());
         if result.is_err() {
             let result = result.err().unwrap();
             println!("{}", result.print());
@@ -179,7 +178,7 @@ mod test_tydi_lang_src_to_memory_representation {
         i:[int] = {10, 20, 30};
         i2 = {10, 20, 30};
         "#);
-        let result = tydi_lang_src_to_memory_representation(src);
+        let result = tydi_lang_src_to_memory_representation(src, SrcInfo::new_init());
         if result.is_err() {
             let result = result.err().unwrap();
             println!("{}", result.print());
@@ -212,7 +211,7 @@ mod test_tydi_lang_src_to_memory_representation {
         package test;
         i = {10, 20, 30.0};
         "#);
-        let result = tydi_lang_src_to_memory_representation(src);
+        let result = tydi_lang_src_to_memory_representation(src, SrcInfo::new_init());
         if result.is_err() {
             let result = result.err().unwrap();
             println!("{}", result.print());
@@ -239,7 +238,7 @@ mod test_tydi_lang_src_to_memory_representation {
         i:[int] = {10, 20, 30};
         i0 = i[0] + func(i);
         "#);
-        let result = tydi_lang_src_to_memory_representation(src);
+        let result = tydi_lang_src_to_memory_representation(src, SrcInfo::new_init());
         if result.is_err() {
             let result = result.err().unwrap();
             println!("{}", result.print());
@@ -270,7 +269,7 @@ mod test_tydi_lang_src_to_memory_representation {
         package test;
         type_null: type = Null;
         "#);
-        let result = tydi_lang_src_to_memory_representation(src);
+        let result = tydi_lang_src_to_memory_representation(src, SrcInfo::new_init());
         if result.is_err() {
             let result = result.err().unwrap();
             println!("{}", result.print());
@@ -296,7 +295,7 @@ mod test_tydi_lang_src_to_memory_representation {
         package test;
         type_null: [type] = {Null, Null, Null};
         "#);
-        let result = tydi_lang_src_to_memory_representation(src);
+        let result = tydi_lang_src_to_memory_representation(src, SrcInfo::new_init());
         if result.is_err() {
             let result = result.err().unwrap();
             println!("{}", result.print());
@@ -324,7 +323,7 @@ mod test_tydi_lang_src_to_memory_representation {
         bit_8_type0: Bit(8);
         bit_8_type1: Bit(x);
         "#);
-        let result = tydi_lang_src_to_memory_representation(src);
+        let result = tydi_lang_src_to_memory_representation(src, SrcInfo::new_init());
         if result.is_err() {
             let result = result.err().unwrap();
             println!("{}", result.print());
@@ -363,7 +362,7 @@ mod test_tydi_lang_src_to_memory_representation {
             bit_8_type1: Bit(8);
         }
         "#);
-        let result = tydi_lang_src_to_memory_representation(src);
+        let result = tydi_lang_src_to_memory_representation(src, SrcInfo::new_init());
         if result.is_err() {
             let result = result.err().unwrap();
             println!("{}", result.print());
@@ -395,7 +394,7 @@ mod test_tydi_lang_src_to_memory_representation {
             bit_8_type1: Bit(8);
         }
         "#);
-        let result = tydi_lang_src_to_memory_representation(src);
+        let result = tydi_lang_src_to_memory_representation(src, SrcInfo::new_init());
         if result.is_err() {
             let result = result.err().unwrap();
             println!("{}", result.print());
@@ -425,7 +424,7 @@ mod test_tydi_lang_src_to_memory_representation {
         bit8 = Bit(8);
         bit8_stream : Stream(Bit(8), d=2, throughput=2.0, s="Sync");
         "#);
-        let result = tydi_lang_src_to_memory_representation(src);
+        let result = tydi_lang_src_to_memory_representation(src, SrcInfo::new_init());
         if result.is_err() {
             let result = result.err().unwrap();
             println!("{}", result.print());
@@ -450,7 +449,7 @@ mod test_tydi_lang_src_to_memory_representation {
 
         use test1;
         "#);
-        let result = tydi_lang_src_to_memory_representation(src);
+        let result = tydi_lang_src_to_memory_representation(src, SrcInfo::new_init());
         if result.is_err() {
             let result = result.err().unwrap();
             println!("{}", result.print());
@@ -483,7 +482,7 @@ mod test_tydi_lang_src_to_memory_representation {
             port_1: bit_8_stream out;
         }
         "#);
-        let result = tydi_lang_src_to_memory_representation(src);
+        let result = tydi_lang_src_to_memory_representation(src, SrcInfo::new_init());
         if result.is_err() {
             let result = result.err().unwrap();
             println!("{}", result.print());
@@ -514,7 +513,7 @@ mod test_tydi_lang_src_to_memory_representation {
         }
 
         "#);
-        let result = tydi_lang_src_to_memory_representation(src);
+        let result = tydi_lang_src_to_memory_representation(src, SrcInfo::new_init());
         if result.is_err() {
             let result = result.err().unwrap();
             println!("{}", result.print());
@@ -548,7 +547,7 @@ mod test_tydi_lang_src_to_memory_representation {
             }
         }
         "#);
-        let result = tydi_lang_src_to_memory_representation(src);
+        let result = tydi_lang_src_to_memory_representation(src, SrcInfo::new_init());
         if result.is_err() {
             let result = result.err().unwrap();
             println!("{}", result.print());
@@ -573,7 +572,7 @@ mod test_tydi_lang_src_to_memory_representation {
             }
         }
         "#);
-        let result = tydi_lang_src_to_memory_representation(src);
+        let result = tydi_lang_src_to_memory_representation(src, SrcInfo::new_init());
         if result.is_err() {
             let result = result.err().unwrap();
             println!("{}", result.print());
@@ -597,7 +596,7 @@ mod test_tydi_lang_src_to_memory_representation {
         function(0, Bit(1));
 
         "#);
-        let result = tydi_lang_src_to_memory_representation(src);
+        let result = tydi_lang_src_to_memory_representation(src, SrcInfo::new_init());
         if result.is_err() {
             let result = result.err().unwrap();
             println!("{}", result.print());

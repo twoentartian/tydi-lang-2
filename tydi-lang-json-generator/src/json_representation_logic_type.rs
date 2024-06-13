@@ -18,7 +18,66 @@ pub enum LogicType {
     Group(Arc<RwLock<LogicGroup>>),
     Union(Arc<RwLock<LogicUnion>>),
     Stream(Arc<RwLock<LogicStream>>),
-    Ref(String),
+    Ref(RefInfo),
+}
+
+#[derive(Clone, Debug)]
+pub struct RefInfo {
+    ref_name: String,
+    alias: Vec<AliasInfo>,
+}
+
+#[derive(Clone, Debug)]
+pub struct AliasInfo {
+    alias_name: String,
+    declared_in_scope: Option<String>,
+    location_begin: Option<usize>,
+    location_end: Option<usize>,
+}
+
+impl serde::Serialize for AliasInfo {
+    fn serialize<S>(&self, serializer: S) -> Result<<S as serde::Serializer>::Ok, <S as serde::Serializer>::Error> 
+    where S: serde::Serializer {
+        let mut state = serializer.serialize_struct("AliasInfo", 2)?;
+        
+        state.serialize_field("alias_name", &self.alias_name)?;
+        if self.declared_in_scope.is_some() {
+            state.serialize_field("declared_in_scope", &self.declared_in_scope)?;
+        }
+        if self.location_begin.is_some() {
+            state.serialize_field("location_begin", &self.location_begin)?;
+        }
+        if self.location_end.is_some() {
+            state.serialize_field("location_end", &self.location_end)?;
+        }
+
+        state.end()
+    }
+
+}
+
+impl AliasInfo {
+    pub fn new(alias: String, scope_name: Option<String>, loc_begin: Option<usize>, loc_end: Option<usize>) -> Self {
+        return Self {
+            alias_name: alias,
+            declared_in_scope: scope_name,
+            location_begin: loc_begin,
+            location_end: loc_end,
+        }
+    }
+}
+
+impl RefInfo {
+    pub fn new(ref_name: String) -> Self {
+        return Self {
+            ref_name: ref_name,
+            alias: vec![],
+        };
+    }
+
+    pub fn add_alias(&mut self, alias: String, scope_name: Option<String>, loc_begin: Option<usize>, loc_end: Option<usize>) {
+        self.alias.push(AliasInfo::new(alias, scope_name, loc_begin, loc_end));
+    }
 }
 
 impl serde::Serialize for LogicType {
@@ -45,7 +104,8 @@ impl serde::Serialize for LogicType {
                 state.serialize_field("value", &*v.read().unwrap())?;
             },
             LogicType::Ref(v) => {
-                state.serialize_field("value", v)?;
+                state.serialize_field("value", &v.ref_name)?;
+                state.serialize_field("alias", &v.alias)?;
             },
         };
         
@@ -74,7 +134,8 @@ impl LogicType {
                 output_dependency.append(&mut dependencies);
                 output_dependency.insert(target_var_name.clone(), Arc::new(RwLock::new(output_type.clone())));
                 // output_types.push(output_type.clone());
-                output_types.push(LogicType::Ref(target_var_name.clone()));
+                let ref_info = RefInfo::new(target_var_name.clone());
+                output_types.push(LogicType::Ref(ref_info));
             },
             TypedValue::RefToVar(ref_var) => {
                 let results = LogicType::translate_from_tydi_project(tydi_project.clone(), ref_var.clone());
@@ -104,7 +165,8 @@ impl LogicType {
                             output_dependency.append(&mut dependencies);
                             let element_var_name = format!("{}_for{}", &target_var_name, index);
                             output_dependency.insert(element_var_name.clone(), Arc::new(RwLock::new(output_type.clone())));
-                            output_types.push(LogicType::Ref(element_var_name));
+                            let ref_info = RefInfo::new(element_var_name);
+                            output_types.push(LogicType::Ref(ref_info));
                         },
                         _ => (),
                     }
@@ -133,7 +195,7 @@ impl LogicType {
                 };
                 output_type = LogicType::Bit(bit_width as usize);
                 output_dependency.insert(target_var_name.clone(), Arc::new(RwLock::new(output_type.clone())));
-                //we don't update the target_var_name because for logic bit.
+                //we don't update the target_var_name because we set alias
             },
             tydi_memory_representation::LogicType::LogicGroupType(v) => {
                 let results = LogicGroup::translate_from_tydi_project(tydi_project.clone(), v.clone())?;
@@ -154,7 +216,7 @@ impl LogicType {
                 let (logic_stream, mut dependencies) = results;
                 output_dependency.append(&mut dependencies);
                 output_type = LogicType::Stream(Arc::new(RwLock::new(logic_stream)));
-                *target_var_name = get_global_variable_name_with_parent_scope(v.clone());
+                //we don't update the target_var_name because we set alias
             },
         }
         return Ok((output_type, output_dependency));

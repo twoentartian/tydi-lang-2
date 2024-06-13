@@ -4,10 +4,11 @@ use std::collections::BTreeMap;
 use serde::Serialize;
 
 use tydi_lang_parser::tydi_memory_representation::project::ProjectItem;
-use tydi_lang_parser::tydi_memory_representation::{self, Project};
+use tydi_lang_parser::tydi_memory_representation::{self, Project, scope::GlobalIdentifier, code_location::TraitCodeLocationAccess};
+use tydi_lang_parser::trait_common::GetName;
 
 use crate::json_representation_implementation::Implementation;
-use crate::json_representation_logic_type::LogicType;
+use crate::json_representation_logic_type::{self, LogicType};
 use crate::json_representation_streamlet::Streamlet;
 use crate::name_conversion;
 
@@ -98,7 +99,22 @@ pub fn translate_from_tydi_project(tydi_project: Arc<RwLock<Project>>, target_va
             match var_type {
                 JsonRepresentation_item_type::Unknwon => unreachable!("unknown variable type"),
                 JsonRepresentation_item_type::LogicType(logic_type_name) => {
-                    output_json_representation.logic_types.insert(target_var_name, Arc::new(RwLock::new(LogicType::Ref(logic_type_name))));
+                    let mut ref_info = json_representation_logic_type::RefInfo::new(logic_type_name);
+                    {
+                        let target_var_parent_scope = target_var.read().unwrap().get_parent_scope();
+                        let target_var_parent_scope_name = match target_var_parent_scope {
+                            Some(v) => {
+                                Some(v.read().unwrap().get_name())
+                            },
+                            None => None
+                        };
+                        let target_var_loc = target_var.read().unwrap().get_code_location();
+                        let loc_begin = target_var_loc.begin.clone();
+                        let loc_end = target_var_loc.end.clone();
+                        let raw_name = target_var.read().unwrap().get_name();
+                        ref_info.add_alias(raw_name, target_var_parent_scope_name, loc_begin, loc_end);
+                    }
+                    output_json_representation.logic_types.insert(target_var_name, Arc::new(RwLock::new(LogicType::Ref(ref_info))));
                 },
                 JsonRepresentation_item_type::Streamlet(streamlet_name) => {
                     todo!()

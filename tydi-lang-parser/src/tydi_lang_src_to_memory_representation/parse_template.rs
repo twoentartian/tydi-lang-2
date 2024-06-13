@@ -2,13 +2,13 @@ use std::sync::{Arc, RwLock};
 use std::collections::BTreeMap;
 
 use crate::error::TydiLangError;
-use crate::tydi_memory_representation::{Scope, TemplateArg, TraitCodeLocationAccess, CodeLocation};
+use crate::tydi_memory_representation::{Scope, TemplateArg, TraitCodeLocationAccess, CodeLocation, SrcInfo};
 use crate::tydi_parser::*;
 
 use super::parse_type::parse_AllTypeKeyword;
 
 #[allow(non_snake_case)]
-pub fn parse_TemplateArgs(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<String>) -> Result<Option<BTreeMap<usize, TemplateArg>>, TydiLangError> {
+pub fn parse_TemplateArgs(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<SrcInfo>) -> Result<Option<BTreeMap<usize, TemplateArg>>, TydiLangError> {
     let mut arg_container: BTreeMap<usize, TemplateArg> = BTreeMap::new();
     let mut index = 0;
     for element in src.clone().into_inner().into_iter() {
@@ -32,7 +32,7 @@ pub fn parse_TemplateArgs(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: A
 }
 
 #[allow(non_snake_case)]
-pub fn parse_Arg(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<String>) -> Result<TemplateArg, TydiLangError> {
+pub fn parse_Arg(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<SrcInfo>) -> Result<TemplateArg, TydiLangError> {
     let mut output = TemplateArg::new_place_holder();
     for element in src.clone().into_inner().into_iter() {
         let rule = element.as_rule();
@@ -47,7 +47,7 @@ pub fn parse_Arg(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<String
 }
 
 #[allow(non_snake_case)]
-pub fn parse_Arg_Common(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<String>) -> Result<TemplateArg, TydiLangError> {
+pub fn parse_Arg_Common(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<SrcInfo>) -> Result<TemplateArg, TydiLangError> {
     let mut output_arg = TemplateArg::new_place_holder();
     for element in src.clone().into_inner().into_iter() {
         let rule = element.as_rule();

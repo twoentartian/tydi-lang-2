@@ -1,11 +1,11 @@
 use std::sync::{Arc, RwLock};
 
 use crate::error::TydiLangError;
-use crate::tydi_memory_representation::{Package, Scope, Variable, TypeIndication, TraitCodeLocationAccess, CodeLocation};
+use crate::tydi_memory_representation::{CodeLocation, Package, Scope, SrcInfo, TraitCodeLocationAccess, TypeIndication, Variable};
 use crate::tydi_parser::*;
 
 #[allow(non_snake_case)]
-pub fn parse_PackageStatement(src: Pair<Rule>, package: Arc<RwLock<Package>>, _: Arc<String>) -> Result<Arc<RwLock<Package>>, TydiLangError> {
+pub fn parse_PackageStatement(src: Pair<Rule>, package: Arc<RwLock<Package>>, _: Arc<SrcInfo>) -> Result<Arc<RwLock<Package>>, TydiLangError> {
     for element in src.into_inner().into_iter() {
         match element.as_rule() {
             Rule::ID => {
@@ -18,7 +18,7 @@ pub fn parse_PackageStatement(src: Pair<Rule>, package: Arc<RwLock<Package>>, _:
 }
 
 #[allow(non_snake_case)]
-pub fn parse_Scope_WithoutBracket(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<String>) -> Result<(), TydiLangError> {
+pub fn parse_Scope_WithoutBracket(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<SrcInfo>) -> Result<(), TydiLangError> {
     use crate::tydi_lang_src_to_memory_representation::parse_statement::*;
 
     for element in src.into_inner().into_iter() {
@@ -69,7 +69,7 @@ pub fn parse_Scope_WithoutBracket(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, ra
 }
 
 #[allow(non_snake_case)]
-pub fn parse_StatementUsePackage(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<String>) -> Result<(), TydiLangError> {
+pub fn parse_StatementUsePackage(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<SrcInfo>) -> Result<(), TydiLangError> {
     for element in src.clone().into_inner().into_iter() {
         match element.as_rule() {
             Rule::ID => {

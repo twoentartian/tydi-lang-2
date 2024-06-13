@@ -2,7 +2,7 @@ use std::sync::{Arc, RwLock};
 
 use crate::error::TydiLangError;
 use crate::trait_common::GetName;
-use crate::tydi_memory_representation::{Scope, Variable, TraitCodeLocationAccess, CodeLocation, TypeIndication};
+use crate::tydi_memory_representation::{CodeLocation, Scope, SrcInfo, TraitCodeLocationAccess, TypeIndication, Variable};
 use crate::{tydi_parser::*, generate_name};
 use crate::tydi_lang_src_to_memory_representation::{parse_type, parse_logic_type, parse_streamlet, parse_implementation};
 
@@ -10,7 +10,7 @@ use super::parse_logic_flow::{parse_If, parse_For};
 
 
 #[allow(non_snake_case)]
-pub fn parse_StatementDeclareVariable(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<String>) -> Result<(), TydiLangError> {
+pub fn parse_StatementDeclareVariable(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<SrcInfo>) -> Result<(), TydiLangError> {
     let var = Variable::new_place_holder();
     let mut type_indicator = TypeIndication::Any;
     for element in src.clone().into_inner().into_iter() {
@@ -42,7 +42,7 @@ pub fn parse_StatementDeclareVariable(src: Pair<Rule>, scope: Arc<RwLock<Scope>>
 }
 
 #[allow(non_snake_case)]
-pub fn parse_StatementDeclareType(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<String>) -> Result<(), TydiLangError> {
+pub fn parse_StatementDeclareType(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<SrcInfo>) -> Result<(), TydiLangError> {
     let var = Variable::new_place_holder();
     let mut type_indicator = TypeIndication::Any;
     for element in src.clone().into_inner().into_iter() {
@@ -86,7 +86,7 @@ pub fn parse_StatementDeclareType(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, ra
 }
 
 #[allow(non_snake_case)]
-pub fn parse_StatementDeclareGroup(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<String>) -> Result<(), TydiLangError> {
+pub fn parse_StatementDeclareGroup(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<SrcInfo>) -> Result<(), TydiLangError> {
     for element in src.clone().into_inner().into_iter() {
         let rule = element.as_rule();
         match rule {
@@ -104,7 +104,7 @@ pub fn parse_StatementDeclareGroup(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, r
 }
 
 #[allow(non_snake_case)]
-pub fn parse_StatementDeclareUnion(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<String>) -> Result<(), TydiLangError> {
+pub fn parse_StatementDeclareUnion(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<SrcInfo>) -> Result<(), TydiLangError> {
     for element in src.clone().into_inner().into_iter() {
         let rule = element.as_rule();
         match rule {
@@ -122,7 +122,7 @@ pub fn parse_StatementDeclareUnion(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, r
 }
 
 #[allow(non_snake_case)]
-pub fn parse_StatementDeclareStreamlet(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<String>) -> Result<(), TydiLangError> {
+pub fn parse_StatementDeclareStreamlet(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<SrcInfo>) -> Result<(), TydiLangError> {
     for element in src.clone().into_inner().into_iter() {
         let rule = element.as_rule();
         match rule {
@@ -140,7 +140,7 @@ pub fn parse_StatementDeclareStreamlet(src: Pair<Rule>, scope: Arc<RwLock<Scope>
 }
 
 #[allow(non_snake_case)]
-pub fn parse_StatementDeclarePort(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<String>) -> Result<(), TydiLangError> {
+pub fn parse_StatementDeclarePort(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<SrcInfo>) -> Result<(), TydiLangError> {
     for element in src.clone().into_inner().into_iter() {
         let rule = element.as_rule();
         match rule {
@@ -158,7 +158,7 @@ pub fn parse_StatementDeclarePort(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, ra
 }
 
 #[allow(non_snake_case)]
-pub fn parse_StatementDeclareImplementation(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<String>) -> Result<(), TydiLangError> {
+pub fn parse_StatementDeclareImplementation(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<SrcInfo>) -> Result<(), TydiLangError> {
     for element in src.clone().into_inner().into_iter() {
         let rule = element.as_rule();
         match rule {
@@ -176,7 +176,7 @@ pub fn parse_StatementDeclareImplementation(src: Pair<Rule>, scope: Arc<RwLock<S
 }
 
 #[allow(non_snake_case)]
-pub fn parse_StatementDeclareInstance(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<String>) -> Result<(), TydiLangError> {
+pub fn parse_StatementDeclareInstance(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<SrcInfo>) -> Result<(), TydiLangError> {
     for element in src.clone().into_inner().into_iter() {
         let rule = element.as_rule();
         match rule {
@@ -194,7 +194,7 @@ pub fn parse_StatementDeclareInstance(src: Pair<Rule>, scope: Arc<RwLock<Scope>>
 }
 
 #[allow(non_snake_case)]
-pub fn parse_StatementDeclareNet(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<String>) -> Result<(), TydiLangError> {
+pub fn parse_StatementDeclareNet(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<SrcInfo>) -> Result<(), TydiLangError> {
     for element in src.clone().into_inner().into_iter() {
         let rule = element.as_rule();
         match rule {
@@ -212,7 +212,7 @@ pub fn parse_StatementDeclareNet(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw
 }
 
 #[allow(non_snake_case)]
-pub fn parse_StatementFunction(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<String>) -> Result<(), TydiLangError> {
+pub fn parse_StatementFunction(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<SrcInfo>) -> Result<(), TydiLangError> {
     for element in src.clone().into_inner().into_iter() {
         let rule = element.as_rule();
         match rule {
@@ -233,7 +233,7 @@ pub fn parse_StatementFunction(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_s
 }
 
 #[allow(non_snake_case)]
-pub fn parse_StatementIf(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<String>) -> Result<(), TydiLangError> {
+pub fn parse_StatementIf(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<SrcInfo>) -> Result<(), TydiLangError> {
     for element in src.clone().into_inner().into_iter() {
         let rule = element.as_rule();
         match rule {
@@ -251,7 +251,7 @@ pub fn parse_StatementIf(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Ar
 }
 
 #[allow(non_snake_case)]
-pub fn parse_StatementFor(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<String>) -> Result<(), TydiLangError> {
+pub fn parse_StatementFor(src: Pair<Rule>, scope: Arc<RwLock<Scope>>, raw_src: Arc<SrcInfo>) -> Result<(), TydiLangError> {
     for element in src.clone().into_inner().into_iter() {
         let rule = element.as_rule();
         match rule {
