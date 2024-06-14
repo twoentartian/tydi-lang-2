@@ -685,16 +685,16 @@ fn generated_names_in_tydi_lang() {
                 sum: UInt_64_tttt;
                 max: UInt_64_tttt;
                 min: UInt_64_tttt;
-                aaa: Type3;
+                aaa: type3;
             }
             
             // Define the stream types
             NumberGroup_stream = Stream(NumberGroup, t=1.0, d=1, c=1);
             Stats_stream = Stream(Stats, t=1.0, d=1, c=1);
             
-            Type1 = Bit(2);
-            Type2 = Type1;
-            Type3 = Type2;
+            type1 = Bit(2);
+            type2 = type1;
+            type3 = type2;
         "#);
         let src_pack1 = String::from(r#"
         package std;

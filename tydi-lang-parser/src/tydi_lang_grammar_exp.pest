@@ -26,6 +26,7 @@ STRING = @{ "\"" ~ CHAR* ~ "\"" }
 ID_BLOCK_LIST = { !(("impl" | "streamlet" | "int" | "string" | "bool" | "float" | "instance" | "in" | "out") ~ (!( ASCII_ALPHA | ASCII_DIGIT | "_" )) )}
 ID_BLOCK_CHAR = { !( WHITESPACE ) } //empty ID
 ID = @{ ID_BLOCK_LIST ~ (ID_BLOCK_CHAR ~ ( ASCII_ALPHA | "_" )) ~ (ID_BLOCK_CHAR ~ ( ASCII_ALPHA | ASCII_DIGIT | "_" ))*  ~ !(ASCII_ALPHA | ASCII_DIGIT | "_") }
+EndOfId = _{ !(ASCII_ALPHA | ASCII_DIGIT) }
 
 //// Basic types ////
 IntTypeKeyword = { "int" }
@@ -37,7 +38,7 @@ LogicalTypeKeyword = { "type" }
 StreamletKeyword = { "streamlet" }
 ImplementationKeyword = {"impl" ~ "of" ~ GlobalIdentifier }  //BUG here
 
-BasicTypeKeyword = { IntTypeKeyword | StringTypeKeyword | BoolTypeKeyword | FloatTypeKeyword | ClockDomainTypeKeyword | LogicalTypeKeyword }
+BasicTypeKeyword = { (IntTypeKeyword | StringTypeKeyword | BoolTypeKeyword | FloatTypeKeyword | ClockDomainTypeKeyword | LogicalTypeKeyword) ~ EndOfId }
 BasicTypeKeywordArray = { "[" ~ BasicTypeKeyword ~ "]" }
 AllTypeKeyword = { BasicTypeKeywordArray | BasicTypeKeyword | StreamletKeyword | ImplementationKeyword }
 
