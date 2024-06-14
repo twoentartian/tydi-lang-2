@@ -78,7 +78,7 @@ pub fn translate_from_tydi_project(tydi_project: Arc<RwLock<Project>>, target_va
 
     match &var_value {
         tydi_memory_representation::TypedValue::LogicTypeValue(_) => {
-            let (_, mut type_dependencies, alias_info) = LogicType::translate_from_tydi_project(tydi_project.clone(), target_var.clone())?;
+            let (_, mut type_dependencies) = LogicType::translate_from_tydi_project(tydi_project.clone(), target_var.clone())?;
             output_json_representation.logic_types.append(&mut type_dependencies);
             output_json_representation_item_type = JsonRepresentation_item_type::LogicType(target_var_name);    //dirty way, will it cause bug in the future?
         },

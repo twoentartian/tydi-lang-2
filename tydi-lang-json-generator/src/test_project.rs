@@ -696,6 +696,16 @@ fn rafflaele_generated_names_in_tydi_lang() {
             type2 = type1;
             type3 = type2;
             type4 = type3;
+
+            entry_stream = Stats_stream;
+
+            streamlet entry_streamlet {
+                input_port: Stats_stream in;
+            }
+
+            impl entry_impl of entry_streamlet {
+
+            }
         "#);
         let src_pack1 = String::from(r#"
         package std;
@@ -731,12 +741,12 @@ fn rafflaele_generated_names_in_tydi_lang() {
     }
     std::fs::write("./code_structure_before_evaluation.json", &project.read().unwrap().get_pretty_json()).unwrap();
 
-    project.read().unwrap().evaluate_target(format!("Stats_stream"), format!("pack")).expect("fail to evaluate");
+    project.read().unwrap().evaluate_target(format!("entry_impl"), format!("pack")).expect("fail to evaluate");
 
     let code_structure = project.read().unwrap().get_pretty_json();
     std::fs::write("./code_structure.json", &code_structure).unwrap();
 
-    let json_output = generate_json_representation_from_tydi_project(project.clone(), format!("Stats_stream"), format!("pack")).expect("fail to generate json");
+    let json_output = generate_json_representation_from_tydi_project(project.clone(), format!("entry_impl"), format!("pack")).expect("fail to generate json");
     std::fs::write("./json_output.json", &json_output).unwrap();
     println!("{}", json_output);
 }

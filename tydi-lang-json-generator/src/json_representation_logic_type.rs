@@ -166,17 +166,16 @@ impl serde::Serialize for LogicType {
 }
 
 impl LogicType {
-    pub fn translate_from_tydi_project(tydi_project: Arc<RwLock<Project>>, target_var: Arc<RwLock<tydi_memory_representation::Variable>>) -> Result<(Vec<LogicType>, BTreeMap<String, Arc<RwLock<LogicType>>>, Vec<Info>), String> {
+    pub fn translate_from_tydi_project(tydi_project: Arc<RwLock<Project>>, target_var: Arc<RwLock<tydi_memory_representation::Variable>>) -> Result<(Vec<LogicType>, BTreeMap<String, Arc<RwLock<LogicType>>>), String> {
         let target_var_name = name_conversion::get_global_variable_name(target_var.clone());
         let var_value = target_var.read().unwrap().get_value();
 
         return Self::translate_from_tydi_project_type_value(tydi_project.clone(), &var_value, target_var_name, Some(target_var.clone()));
     }
 
-    pub fn translate_from_tydi_project_type_value(tydi_project: Arc<RwLock<Project>>, target_type_value: &tydi_memory_representation::TypedValue, default_var_name: String, raw_var: Option<Arc<RwLock<tydi_memory_representation::Variable>>>) -> Result<(Vec<LogicType>, BTreeMap<String, Arc<RwLock<LogicType>>>, Vec<Info>), String> {
+    pub fn translate_from_tydi_project_type_value(tydi_project: Arc<RwLock<Project>>, target_type_value: &tydi_memory_representation::TypedValue, default_var_name: String, raw_var: Option<Arc<RwLock<tydi_memory_representation::Variable>>>) -> Result<(Vec<LogicType>, BTreeMap<String, Arc<RwLock<LogicType>>>), String> {
         let mut output_dependency = BTreeMap::new();
         let mut target_var_name = default_var_name;
-        let mut output_info: Vec<Info> = vec![];
 
         let mut output_types = vec![];
 
@@ -195,7 +194,7 @@ impl LogicType {
                 if results.is_err() {
                     return Err(results.err().unwrap());
                 }
-                let (mut output_type, mut dependencies, alias_info) = results.ok().unwrap();
+                let (mut output_type, mut dependencies) = results.ok().unwrap();
                 output_dependency.append(&mut dependencies);
 
                 assert!(output_type.len() > 0);
@@ -238,7 +237,7 @@ impl LogicType {
             _ => unreachable!("{} is not a logic type", target_type_value.get_brief_info()),
         }
 
-        return Ok((output_types, output_dependency, output_info));
+        return Ok((output_types, output_dependency));
     }
 
     fn translate_single_basic_logic_type(tydi_project: Arc<RwLock<Project>>, target_type: Arc<RwLock<tydi_memory_representation::LogicType>>, target_var_name: &mut String) -> Result<(LogicType, BTreeMap<String, Arc<RwLock<LogicType>>>, Option<Info>), String> {
@@ -311,7 +310,7 @@ impl LogicGroup {
                 if result.is_err() {
                     return Err(result.err().unwrap());
                 }
-                let (logic_type, mut dependencies, alias_info) = result.ok().unwrap();
+                let (logic_type, mut dependencies) = result.ok().unwrap();
                 output_dependency.append(&mut dependencies);
 
                 assert!(logic_type.len() > 0);
@@ -352,7 +351,7 @@ impl LogicUnion {
                 if result.is_err() {
                     return Err(result.err().unwrap());
                 }
-                let (logic_type, mut dependencies, alias_info) = result.ok().unwrap();
+                let (logic_type, mut dependencies) = result.ok().unwrap();
                 output_dependency.append(&mut dependencies);
 
                 assert!(logic_type.len() > 0);
@@ -405,22 +404,26 @@ impl LogicStream {
             //stream type should be a reference
             let stream_type = tydi_target.read().unwrap().get_stream_type();
             let stream_type_value = stream_type.read().unwrap().get_value();
-            let stream_type = match stream_type_value.try_get_referenced_variable() {
+            let stream_type_var = match stream_type_value.try_get_referenced_variable() {
                 Some(var) => var,
                 None => stream_type,
             };
 
-            let result = LogicType::translate_from_tydi_project(tydi_project.clone(), stream_type.clone());
+            let result = LogicType::translate_from_tydi_project(tydi_project.clone(), stream_type_var.clone());
             if result.is_err() {
                 return Err(result.err().unwrap());
             }
-            let (stream_type, mut dependencies, alias_info) = result.ok().unwrap();
+            let (stream_type, mut dependencies) = result.ok().unwrap();
             output_dependency.append(&mut dependencies);
             assert!(stream_type.len() == 1, "the type of a stream should be a single logic type, not an array");
-            let stream_type = stream_type[0].clone();
-            match stream_type {
+            let mut stream_type = stream_type[0].clone();
+            match &mut stream_type {
                 LogicType::Ref(r) => {
-                    output_stream.stream_type = LogicType::Ref(r);
+                    let all_alias = stream_type_var.read().unwrap().get_alias();
+                    for a in all_alias {
+                        r.add_alias(a);
+                    }
+                    output_stream.stream_type = LogicType::Ref(r.to_owned());
                 },
                 _ => unreachable!("should be unreachable")
             }
@@ -452,7 +455,7 @@ impl LogicStream {
             if result.is_err() {
                 return Err(result.err().unwrap());
             }
-            let (user_type, mut dependencies, alias_info) = result.ok().unwrap();
+            let (user_type, mut dependencies) = result.ok().unwrap();
             output_dependency.append(&mut dependencies);
             assert!(user_type.len() == 1, "the user type of a stream should be a single logic type, not an array");
             let user_type = user_type[0].clone();
