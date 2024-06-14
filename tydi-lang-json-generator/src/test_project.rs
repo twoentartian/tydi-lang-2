@@ -669,6 +669,8 @@ fn generated_names_in_tydi_lang() {
             package pack;
             UInt_64_t = Bit(64); // UInt<64>: unsigned 64-bit integer
             SInt_64_t = Bit(64); // SInt<64>: signed 64-bit integer
+
+            UInt_64_tttt = UInt_64_t;
             
             #A composite type (like a struct) that contains a value associated with a timestamp#
             Group NumberGroup {
@@ -678,10 +680,10 @@ fn generated_names_in_tydi_lang() {
             
             #A composite type (like a struct) that represents the stats of the implemented algorithm#
             Group Stats {
-                average: UInt_64_t;
-                sum: UInt_64_t;
-                max: UInt_64_t;
-                min: UInt_64_t;
+                average: UInt_64_tttt;
+                sum: UInt_64_tttt;
+                max: UInt_64_tttt;
+                min: UInt_64_tttt;
             }
             
             // Define the stream types

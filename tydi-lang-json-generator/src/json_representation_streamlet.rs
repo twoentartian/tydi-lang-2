@@ -52,7 +52,7 @@ impl Port {
             tydi_memory_representation::PortDirection::Unknown => unreachable!(),
         }
         let target_port_logic_type = target_port.read().unwrap().get_logical_type();
-        let (result_logic_type, mut dependencies) = LogicType::translate_from_tydi_project(tydi_project.clone(), target_port_logic_type.clone())?;
+        let (result_logic_type, mut dependencies, alias_info) = LogicType::translate_from_tydi_project(tydi_project.clone(), target_port_logic_type.clone())?;
         if result_logic_type.len() != 1 {
             return Err(format!("the type of port ({}) must be a single logic type", target_port.read().unwrap().get_name()));
         }

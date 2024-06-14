@@ -95,7 +95,7 @@ pub fn evaluate_BinaryOperation(lhs: &Box<Expression>, op: &Operator, rhs: &Box<
 #[allow(non_snake_case)]
 pub fn perform_AccessInner(lhs: &Box<Expression>, rhs: &Box<Expression>, scope: Arc<RwLock<Scope>>, evaluator: Arc<RwLock<Evaluator>>) -> Result<(TypedValue, Option<Arc<RwLock<Variable>>>), TydiLangError> {
     let lhs_value = lhs.evaluate_TypedValue(scope.clone(), evaluator.clone())?;
-    let mut lhs_value = evaluate_id_in_typed_value(lhs_value, None, ScopeRelationType::resolve_id_default(), scope.clone(), evaluator.clone())?;
+    let mut lhs_value = evaluate_id_in_typed_value(lhs_value, None, ScopeRelationType::resolve_id_default(), None, scope.clone(), evaluator.clone())?;
     let rhs_value = rhs.evaluate_TypedValue(scope.clone(), evaluator.clone())?;
     //get rhs var name
     let rhs_var_id = match rhs_value {
@@ -198,9 +198,9 @@ pub fn perform_AccessInner(lhs: &Box<Expression>, rhs: &Box<Expression>, scope: 
 #[allow(non_snake_case)]
 pub fn perform_Add(lhs: &Box<Expression>, rhs: &Box<Expression>, scope: Arc<RwLock<Scope>>, evaluator: Arc<RwLock<Evaluator>>) -> Result<TypedValue, TydiLangError> {
     let lhs_value = lhs.evaluate_TypedValue(scope.clone(), evaluator.clone())?;
-    let lhs_value = evaluate_id_in_typed_value(lhs_value, None, ScopeRelationType::resolve_id_default(), scope.clone(), evaluator.clone())?;
+    let lhs_value = evaluate_id_in_typed_value(lhs_value, None, ScopeRelationType::resolve_id_default(),  None, scope.clone(), evaluator.clone())?;
     let rhs_value = rhs.evaluate_TypedValue(scope.clone(), evaluator.clone())?;
-    let rhs_value = evaluate_id_in_typed_value(rhs_value, None, ScopeRelationType::resolve_id_default(), scope.clone(), evaluator.clone())?;
+    let rhs_value = evaluate_id_in_typed_value(rhs_value, None, ScopeRelationType::resolve_id_default(),  None, scope.clone(), evaluator.clone())?;
     match (lhs_value, rhs_value) {
         (TypedValue::IntValue(v0), TypedValue::IntValue(v1)) => return Ok(TypedValue::IntValue(v0+v1)),
         (TypedValue::FloatValue(v0), TypedValue::FloatValue(v1)) => return Ok(TypedValue::FloatValue(v0+v1)),
@@ -237,9 +237,9 @@ pub fn perform_Add(lhs: &Box<Expression>, rhs: &Box<Expression>, scope: Arc<RwLo
 #[allow(non_snake_case)]
 pub fn perform_Minus(lhs: &Box<Expression>, rhs: &Box<Expression>, scope: Arc<RwLock<Scope>>, evaluator: Arc<RwLock<Evaluator>>) -> Result<TypedValue, TydiLangError> {
     let lhs_value = lhs.evaluate_TypedValue(scope.clone(), evaluator.clone())?;
-    let lhs_value = evaluate_id_in_typed_value(lhs_value, None, ScopeRelationType::resolve_id_default(), scope.clone(), evaluator.clone())?;
+    let lhs_value = evaluate_id_in_typed_value(lhs_value, None, ScopeRelationType::resolve_id_default(), None, scope.clone(), evaluator.clone())?;
     let rhs_value = rhs.evaluate_TypedValue(scope.clone(), evaluator.clone())?;
-    let rhs_value = evaluate_id_in_typed_value(rhs_value, None, ScopeRelationType::resolve_id_default(), scope.clone(), evaluator.clone())?;
+    let rhs_value = evaluate_id_in_typed_value(rhs_value, None, ScopeRelationType::resolve_id_default(), None, scope.clone(), evaluator.clone())?;
     match (lhs_value, rhs_value) {
         (TypedValue::IntValue(v0), TypedValue::IntValue(v1)) => return Ok(TypedValue::IntValue(v0-v1)),
         (TypedValue::FloatValue(v0), TypedValue::FloatValue(v1)) => return Ok(TypedValue::FloatValue(v0-v1)),
@@ -254,9 +254,9 @@ pub fn perform_Minus(lhs: &Box<Expression>, rhs: &Box<Expression>, scope: Arc<Rw
 #[allow(non_snake_case)]
 pub fn perform_Multiply(lhs: &Box<Expression>, rhs: &Box<Expression>, scope: Arc<RwLock<Scope>>, evaluator: Arc<RwLock<Evaluator>>) -> Result<TypedValue, TydiLangError> {
     let lhs_value = lhs.evaluate_TypedValue(scope.clone(), evaluator.clone())?;
-    let lhs_value = evaluate_id_in_typed_value(lhs_value, None, ScopeRelationType::resolve_id_default(), scope.clone(), evaluator.clone())?;
+    let lhs_value = evaluate_id_in_typed_value(lhs_value, None, ScopeRelationType::resolve_id_default(), None, scope.clone(), evaluator.clone())?;
     let rhs_value = rhs.evaluate_TypedValue(scope.clone(), evaluator.clone())?;
-    let rhs_value = evaluate_id_in_typed_value(rhs_value, None, ScopeRelationType::resolve_id_default(), scope.clone(), evaluator.clone())?;
+    let rhs_value = evaluate_id_in_typed_value(rhs_value, None, ScopeRelationType::resolve_id_default(), None, scope.clone(), evaluator.clone())?;
     match (lhs_value, rhs_value) {
         (TypedValue::IntValue(v0), TypedValue::IntValue(v1)) => return Ok(TypedValue::IntValue(v0*v1)),
         (TypedValue::FloatValue(v0), TypedValue::FloatValue(v1)) => return Ok(TypedValue::FloatValue(v0*v1)),
@@ -271,9 +271,9 @@ pub fn perform_Multiply(lhs: &Box<Expression>, rhs: &Box<Expression>, scope: Arc
 #[allow(non_snake_case)]
 pub fn perform_Divide(lhs: &Box<Expression>, rhs: &Box<Expression>, scope: Arc<RwLock<Scope>>, evaluator: Arc<RwLock<Evaluator>>) -> Result<TypedValue, TydiLangError> {
     let lhs_value = lhs.evaluate_TypedValue(scope.clone(), evaluator.clone())?;
-    let lhs_value = evaluate_id_in_typed_value(lhs_value, None, ScopeRelationType::resolve_id_default(), scope.clone(), evaluator.clone())?;
+    let lhs_value = evaluate_id_in_typed_value(lhs_value, None, ScopeRelationType::resolve_id_default(), None, scope.clone(), evaluator.clone())?;
     let rhs_value = rhs.evaluate_TypedValue(scope.clone(), evaluator.clone())?;
-    let rhs_value = evaluate_id_in_typed_value(rhs_value, None, ScopeRelationType::resolve_id_default(), scope.clone(), evaluator.clone())?;
+    let rhs_value = evaluate_id_in_typed_value(rhs_value, None, ScopeRelationType::resolve_id_default(), None, scope.clone(), evaluator.clone())?;
     match (lhs_value, rhs_value) {
         (TypedValue::IntValue(v0), TypedValue::IntValue(v1)) => {
             if v1 == 0 { return Err(TydiLangError::new(format!("divide by zero: {}/{}", v0 ,v1), CodeLocation::new_unknown())) }
@@ -300,9 +300,9 @@ pub fn perform_Divide(lhs: &Box<Expression>, rhs: &Box<Expression>, scope: Arc<R
 #[allow(non_snake_case)]
 pub fn perform_Mod(lhs: &Box<Expression>, rhs: &Box<Expression>, scope: Arc<RwLock<Scope>>, evaluator: Arc<RwLock<Evaluator>>) -> Result<TypedValue, TydiLangError> {
     let lhs_value = lhs.evaluate_TypedValue(scope.clone(), evaluator.clone())?;
-    let lhs_value = evaluate_id_in_typed_value(lhs_value, None, ScopeRelationType::resolve_id_default(), scope.clone(), evaluator.clone())?;
+    let lhs_value = evaluate_id_in_typed_value(lhs_value, None, ScopeRelationType::resolve_id_default(), None, scope.clone(), evaluator.clone())?;
     let rhs_value = rhs.evaluate_TypedValue(scope.clone(), evaluator.clone())?;
-    let rhs_value = evaluate_id_in_typed_value(rhs_value, None, ScopeRelationType::resolve_id_default(), scope.clone(), evaluator.clone())?;
+    let rhs_value = evaluate_id_in_typed_value(rhs_value, None, ScopeRelationType::resolve_id_default(), None, scope.clone(), evaluator.clone())?;
     match (lhs_value, rhs_value) {
         (TypedValue::IntValue(v0), TypedValue::IntValue(v1)) => {
             if v1 == 0 {
@@ -320,9 +320,9 @@ pub fn perform_Mod(lhs: &Box<Expression>, rhs: &Box<Expression>, scope: Arc<RwLo
 #[allow(non_snake_case)]
 pub fn perform_BitAnd(lhs: &Box<Expression>, rhs: &Box<Expression>, scope: Arc<RwLock<Scope>>, evaluator: Arc<RwLock<Evaluator>>) -> Result<TypedValue, TydiLangError> {
     let lhs_value = lhs.evaluate_TypedValue(scope.clone(), evaluator.clone())?;
-    let lhs_value = evaluate_id_in_typed_value(lhs_value, None, ScopeRelationType::resolve_id_default(), scope.clone(), evaluator.clone())?;
+    let lhs_value = evaluate_id_in_typed_value(lhs_value, None, ScopeRelationType::resolve_id_default(), None, scope.clone(), evaluator.clone())?;
     let rhs_value = rhs.evaluate_TypedValue(scope.clone(), evaluator.clone())?;
-    let rhs_value = evaluate_id_in_typed_value(rhs_value, None, ScopeRelationType::resolve_id_default(), scope.clone(), evaluator.clone())?;
+    let rhs_value = evaluate_id_in_typed_value(rhs_value, None, ScopeRelationType::resolve_id_default(), None, scope.clone(), evaluator.clone())?;
     match (lhs_value, rhs_value) {
         (TypedValue::IntValue(v0), TypedValue::IntValue(v1)) => {
             return Ok(TypedValue::IntValue(v0&v1));
@@ -334,9 +334,9 @@ pub fn perform_BitAnd(lhs: &Box<Expression>, rhs: &Box<Expression>, scope: Arc<R
 #[allow(non_snake_case)]
 pub fn perform_BitOr(lhs: &Box<Expression>, rhs: &Box<Expression>, scope: Arc<RwLock<Scope>>, evaluator: Arc<RwLock<Evaluator>>) -> Result<TypedValue, TydiLangError> {
     let lhs_value = lhs.evaluate_TypedValue(scope.clone(), evaluator.clone())?;
-    let lhs_value = evaluate_id_in_typed_value(lhs_value, None, ScopeRelationType::resolve_id_default(), scope.clone(), evaluator.clone())?;
+    let lhs_value = evaluate_id_in_typed_value(lhs_value, None, ScopeRelationType::resolve_id_default(), None, scope.clone(), evaluator.clone())?;
     let rhs_value = rhs.evaluate_TypedValue(scope.clone(), evaluator.clone())?;
-    let rhs_value = evaluate_id_in_typed_value(rhs_value, None, ScopeRelationType::resolve_id_default(), scope.clone(), evaluator.clone())?;
+    let rhs_value = evaluate_id_in_typed_value(rhs_value, None, ScopeRelationType::resolve_id_default(), None, scope.clone(), evaluator.clone())?;
     match (lhs_value, rhs_value) {
         (TypedValue::IntValue(v0), TypedValue::IntValue(v1)) => {
             return Ok(TypedValue::IntValue(v0|v1));
@@ -348,9 +348,9 @@ pub fn perform_BitOr(lhs: &Box<Expression>, rhs: &Box<Expression>, scope: Arc<Rw
 #[allow(non_snake_case)]
 pub fn perform_BitXor(lhs: &Box<Expression>, rhs: &Box<Expression>, scope: Arc<RwLock<Scope>>, evaluator: Arc<RwLock<Evaluator>>) -> Result<TypedValue, TydiLangError> {
     let lhs_value = lhs.evaluate_TypedValue(scope.clone(), evaluator.clone())?;
-    let lhs_value = evaluate_id_in_typed_value(lhs_value, None, ScopeRelationType::resolve_id_default(), scope.clone(), evaluator.clone())?;
+    let lhs_value = evaluate_id_in_typed_value(lhs_value, None, ScopeRelationType::resolve_id_default(), None, scope.clone(), evaluator.clone())?;
     let rhs_value = rhs.evaluate_TypedValue(scope.clone(), evaluator.clone())?;
-    let rhs_value = evaluate_id_in_typed_value(rhs_value, None, ScopeRelationType::resolve_id_default(), scope.clone(), evaluator.clone())?;
+    let rhs_value = evaluate_id_in_typed_value(rhs_value, None, ScopeRelationType::resolve_id_default(), None, scope.clone(), evaluator.clone())?;
     match (lhs_value, rhs_value) {
         (TypedValue::IntValue(v0), TypedValue::IntValue(v1)) => {
             return Ok(TypedValue::IntValue(v0^v1));
@@ -363,9 +363,9 @@ pub fn perform_BitXor(lhs: &Box<Expression>, rhs: &Box<Expression>, scope: Arc<R
 #[allow(non_snake_case)]
 pub fn perform_LeftShift(lhs: &Box<Expression>, rhs: &Box<Expression>, scope: Arc<RwLock<Scope>>, evaluator: Arc<RwLock<Evaluator>>) -> Result<TypedValue, TydiLangError> {
     let lhs_value = lhs.evaluate_TypedValue(scope.clone(), evaluator.clone())?;
-    let lhs_value = evaluate_id_in_typed_value(lhs_value, None, ScopeRelationType::resolve_id_default(), scope.clone(), evaluator.clone())?;
+    let lhs_value = evaluate_id_in_typed_value(lhs_value, None, ScopeRelationType::resolve_id_default(), None, scope.clone(), evaluator.clone())?;
     let rhs_value = rhs.evaluate_TypedValue(scope.clone(), evaluator.clone())?;
-    let rhs_value = evaluate_id_in_typed_value(rhs_value, None, ScopeRelationType::resolve_id_default(), scope.clone(), evaluator.clone())?;
+    let rhs_value = evaluate_id_in_typed_value(rhs_value, None, ScopeRelationType::resolve_id_default(), None, scope.clone(), evaluator.clone())?;
     match (lhs_value, rhs_value) {
         (TypedValue::IntValue(v0), TypedValue::IntValue(v1)) => {
             return Ok(TypedValue::IntValue(v0 << v1));
@@ -377,9 +377,9 @@ pub fn perform_LeftShift(lhs: &Box<Expression>, rhs: &Box<Expression>, scope: Ar
 #[allow(non_snake_case)]
 pub fn perform_RightShift(lhs: &Box<Expression>, rhs: &Box<Expression>, scope: Arc<RwLock<Scope>>, evaluator: Arc<RwLock<Evaluator>>) -> Result<TypedValue, TydiLangError> {
     let lhs_value = lhs.evaluate_TypedValue(scope.clone(), evaluator.clone())?;
-    let lhs_value = evaluate_id_in_typed_value(lhs_value, None, ScopeRelationType::resolve_id_default(), scope.clone(), evaluator.clone())?;
+    let lhs_value = evaluate_id_in_typed_value(lhs_value, None, ScopeRelationType::resolve_id_default(), None, scope.clone(), evaluator.clone())?;
     let rhs_value = rhs.evaluate_TypedValue(scope.clone(), evaluator.clone())?;
-    let rhs_value = evaluate_id_in_typed_value(rhs_value, None, ScopeRelationType::resolve_id_default(), scope.clone(), evaluator.clone())?;
+    let rhs_value = evaluate_id_in_typed_value(rhs_value, None, ScopeRelationType::resolve_id_default(), None, scope.clone(), evaluator.clone())?;
     match (lhs_value, rhs_value) {
         (TypedValue::IntValue(v0), TypedValue::IntValue(v1)) => {
             return Ok(TypedValue::IntValue(v0 >> v1));
@@ -391,9 +391,9 @@ pub fn perform_RightShift(lhs: &Box<Expression>, rhs: &Box<Expression>, scope: A
 #[allow(non_snake_case)]
 pub fn perform_LogicalAnd(lhs: &Box<Expression>, rhs: &Box<Expression>, scope: Arc<RwLock<Scope>>, evaluator: Arc<RwLock<Evaluator>>) -> Result<TypedValue, TydiLangError> {
     let lhs_value = lhs.evaluate_TypedValue(scope.clone(), evaluator.clone())?;
-    let lhs_value = evaluate_id_in_typed_value(lhs_value, None, ScopeRelationType::resolve_id_default(), scope.clone(), evaluator.clone())?;
+    let lhs_value = evaluate_id_in_typed_value(lhs_value, None, ScopeRelationType::resolve_id_default(), None, scope.clone(), evaluator.clone())?;
     let rhs_value = rhs.evaluate_TypedValue(scope.clone(), evaluator.clone())?;
-    let rhs_value = evaluate_id_in_typed_value(rhs_value, None, ScopeRelationType::resolve_id_default(), scope.clone(), evaluator.clone())?;
+    let rhs_value = evaluate_id_in_typed_value(rhs_value, None, ScopeRelationType::resolve_id_default(), None, scope.clone(), evaluator.clone())?;
     match (lhs_value, rhs_value) {
         (TypedValue::BoolValue(v0), TypedValue::BoolValue(v1)) => {
             return Ok(TypedValue::BoolValue(v0 && v1));
@@ -405,9 +405,9 @@ pub fn perform_LogicalAnd(lhs: &Box<Expression>, rhs: &Box<Expression>, scope: A
 #[allow(non_snake_case)]
 pub fn perform_LogicalOr(lhs: &Box<Expression>, rhs: &Box<Expression>, scope: Arc<RwLock<Scope>>, evaluator: Arc<RwLock<Evaluator>>) -> Result<TypedValue, TydiLangError> {
     let lhs_value = lhs.evaluate_TypedValue(scope.clone(), evaluator.clone())?;
-    let lhs_value = evaluate_id_in_typed_value(lhs_value, None, ScopeRelationType::resolve_id_default(), scope.clone(), evaluator.clone())?;
+    let lhs_value = evaluate_id_in_typed_value(lhs_value, None, ScopeRelationType::resolve_id_default(), None, scope.clone(), evaluator.clone())?;
     let rhs_value = rhs.evaluate_TypedValue(scope.clone(), evaluator.clone())?;
-    let rhs_value = evaluate_id_in_typed_value(rhs_value, None, ScopeRelationType::resolve_id_default(), scope.clone(), evaluator.clone())?;
+    let rhs_value = evaluate_id_in_typed_value(rhs_value, None, ScopeRelationType::resolve_id_default(), None, scope.clone(), evaluator.clone())?;
     match (lhs_value, rhs_value) {
         (TypedValue::BoolValue(v0), TypedValue::BoolValue(v1)) => {
             return Ok(TypedValue::BoolValue(v0 || v1));
@@ -419,9 +419,9 @@ pub fn perform_LogicalOr(lhs: &Box<Expression>, rhs: &Box<Expression>, scope: Ar
 #[allow(non_snake_case)]
 pub fn perform_LogicalEq(lhs: &Box<Expression>, rhs: &Box<Expression>, scope: Arc<RwLock<Scope>>, evaluator: Arc<RwLock<Evaluator>>) -> Result<TypedValue, TydiLangError> {
     let lhs_value = lhs.evaluate_TypedValue(scope.clone(), evaluator.clone())?;
-    let lhs_value = evaluate_id_in_typed_value(lhs_value, None, ScopeRelationType::resolve_id_default(), scope.clone(), evaluator.clone())?;
+    let lhs_value = evaluate_id_in_typed_value(lhs_value, None, ScopeRelationType::resolve_id_default(), None, scope.clone(), evaluator.clone())?;
     let rhs_value = rhs.evaluate_TypedValue(scope.clone(), evaluator.clone())?;
-    let rhs_value = evaluate_id_in_typed_value(rhs_value, None, ScopeRelationType::resolve_id_default(), scope.clone(), evaluator.clone())?;
+    let rhs_value = evaluate_id_in_typed_value(rhs_value, None, ScopeRelationType::resolve_id_default(), None, scope.clone(), evaluator.clone())?;
     match (lhs_value, rhs_value) {
         (TypedValue::BoolValue(v0), TypedValue::BoolValue(v1)) => {
             return Ok(TypedValue::BoolValue(v0 == v1));
@@ -474,9 +474,9 @@ pub fn perform_LogicalNotEq(lhs: &Box<Expression>, rhs: &Box<Expression>, scope:
 #[allow(non_snake_case)]
 pub fn perform_Greater(lhs: &Box<Expression>, rhs: &Box<Expression>, scope: Arc<RwLock<Scope>>, evaluator: Arc<RwLock<Evaluator>>) -> Result<TypedValue, TydiLangError> {
     let lhs_value = lhs.evaluate_TypedValue(scope.clone(), evaluator.clone())?;
-    let lhs_value = evaluate_id_in_typed_value(lhs_value, None, ScopeRelationType::resolve_id_default(), scope.clone(), evaluator.clone())?;
+    let lhs_value = evaluate_id_in_typed_value(lhs_value, None, ScopeRelationType::resolve_id_default(), None, scope.clone(), evaluator.clone())?;
     let rhs_value = rhs.evaluate_TypedValue(scope.clone(), evaluator.clone())?;
-    let rhs_value = evaluate_id_in_typed_value(rhs_value, None, ScopeRelationType::resolve_id_default(), scope.clone(), evaluator.clone())?;
+    let rhs_value = evaluate_id_in_typed_value(rhs_value, None, ScopeRelationType::resolve_id_default(), None, scope.clone(), evaluator.clone())?;
     match (lhs_value, rhs_value) {
         (TypedValue::FloatValue(v0), TypedValue::FloatValue(v1)) => {
             return Ok(TypedValue::BoolValue(v0 > v1));
@@ -492,9 +492,9 @@ pub fn perform_Greater(lhs: &Box<Expression>, rhs: &Box<Expression>, scope: Arc<
 #[allow(non_snake_case)]
 pub fn perform_Less(lhs: &Box<Expression>, rhs: &Box<Expression>, scope: Arc<RwLock<Scope>>, evaluator: Arc<RwLock<Evaluator>>) -> Result<TypedValue, TydiLangError> {
     let lhs_value = lhs.evaluate_TypedValue(scope.clone(), evaluator.clone())?;
-    let lhs_value = evaluate_id_in_typed_value(lhs_value, None, ScopeRelationType::resolve_id_default(), scope.clone(), evaluator.clone())?;
+    let lhs_value = evaluate_id_in_typed_value(lhs_value, None, ScopeRelationType::resolve_id_default(), None, scope.clone(), evaluator.clone())?;
     let rhs_value = rhs.evaluate_TypedValue(scope.clone(), evaluator.clone())?;
-    let rhs_value = evaluate_id_in_typed_value(rhs_value, None, ScopeRelationType::resolve_id_default(), scope.clone(), evaluator.clone())?;
+    let rhs_value = evaluate_id_in_typed_value(rhs_value, None, ScopeRelationType::resolve_id_default(), None, scope.clone(), evaluator.clone())?;
     match (lhs_value, rhs_value) {
         (TypedValue::FloatValue(v0), TypedValue::FloatValue(v1)) => {
             return Ok(TypedValue::BoolValue(v0 < v1));
@@ -510,9 +510,9 @@ pub fn perform_Less(lhs: &Box<Expression>, rhs: &Box<Expression>, scope: Arc<RwL
 #[allow(non_snake_case)]
 pub fn perform_GreaterEq(lhs: &Box<Expression>, rhs: &Box<Expression>, scope: Arc<RwLock<Scope>>, evaluator: Arc<RwLock<Evaluator>>) -> Result<TypedValue, TydiLangError> {
     let lhs_value = lhs.evaluate_TypedValue(scope.clone(), evaluator.clone())?;
-    let lhs_value = evaluate_id_in_typed_value(lhs_value, None, ScopeRelationType::resolve_id_default(), scope.clone(), evaluator.clone())?;
+    let lhs_value = evaluate_id_in_typed_value(lhs_value, None, ScopeRelationType::resolve_id_default(), None, scope.clone(), evaluator.clone())?;
     let rhs_value = rhs.evaluate_TypedValue(scope.clone(), evaluator.clone())?;
-    let rhs_value = evaluate_id_in_typed_value(rhs_value, None, ScopeRelationType::resolve_id_default(), scope.clone(), evaluator.clone())?;
+    let rhs_value = evaluate_id_in_typed_value(rhs_value, None, ScopeRelationType::resolve_id_default(), None, scope.clone(), evaluator.clone())?;
     match (lhs_value, rhs_value) {
         (TypedValue::FloatValue(v0), TypedValue::FloatValue(v1)) => {
             return Ok(TypedValue::BoolValue(v0 >= v1));
@@ -528,9 +528,9 @@ pub fn perform_GreaterEq(lhs: &Box<Expression>, rhs: &Box<Expression>, scope: Ar
 #[allow(non_snake_case)]
 pub fn perform_LessEq(lhs: &Box<Expression>, rhs: &Box<Expression>, scope: Arc<RwLock<Scope>>, evaluator: Arc<RwLock<Evaluator>>) -> Result<TypedValue, TydiLangError> {
     let lhs_value = lhs.evaluate_TypedValue(scope.clone(), evaluator.clone())?;
-    let lhs_value = evaluate_id_in_typed_value(lhs_value, None, ScopeRelationType::resolve_id_default(), scope.clone(), evaluator.clone())?;
+    let lhs_value = evaluate_id_in_typed_value(lhs_value, None, ScopeRelationType::resolve_id_default(), None, scope.clone(), evaluator.clone())?;
     let rhs_value = rhs.evaluate_TypedValue(scope.clone(), evaluator.clone())?;
-    let rhs_value = evaluate_id_in_typed_value(rhs_value, None, ScopeRelationType::resolve_id_default(), scope.clone(), evaluator.clone())?;
+    let rhs_value = evaluate_id_in_typed_value(rhs_value, None, ScopeRelationType::resolve_id_default(), None, scope.clone(), evaluator.clone())?;
     match (lhs_value, rhs_value) {
         (TypedValue::FloatValue(v0), TypedValue::FloatValue(v1)) => {
             return Ok(TypedValue::BoolValue(v0 <= v1));

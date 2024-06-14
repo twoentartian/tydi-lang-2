@@ -30,8 +30,17 @@ impl Value {
             TypedValue::BoolValue(v) => return Ok((Value::Bool(*v), output_dependency)),
             TypedValue::FloatValue(v) => return Ok((Value::Float(*v), output_dependency)),
             TypedValue::ClockDomainValue(v) => return Ok((Value::ClockDomain(v.clone()), output_dependency)),
-            TypedValue::LogicTypeValue(_) | TypedValue::RefToVar(_) => {
-                let (output_value, mut dependencies) = LogicType::translate_from_tydi_project_type_value(tydi_project, value, generate_random_str(8))?;
+            TypedValue::LogicTypeValue(_) => {
+                let (output_value, mut dependencies, alias_info) = LogicType::translate_from_tydi_project_type_value(tydi_project, value, generate_random_str(8), None)?;
+                output_dependency.logic_types.append(&mut dependencies);
+                if output_value.len() != 1 {
+                    return Err(format!("the output logic type should not be a logic type array"));
+                }
+                let output_value = output_value[0].clone();
+                return Ok((Value::LogicType(output_value), output_dependency));
+            },
+            TypedValue::RefToVar(var) => {
+                let (output_value, mut dependencies, alias_info) = LogicType::translate_from_tydi_project_type_value(tydi_project, value, generate_random_str(8), Some(var.clone()))?;
                 output_dependency.logic_types.append(&mut dependencies);
                 if output_value.len() != 1 {
                     return Err(format!("the output logic type should not be a logic type array"));

@@ -78,7 +78,7 @@ pub fn translate_from_tydi_project(tydi_project: Arc<RwLock<Project>>, target_va
 
     match &var_value {
         tydi_memory_representation::TypedValue::LogicTypeValue(_) => {
-            let (_, mut type_dependencies) = LogicType::translate_from_tydi_project(tydi_project.clone(), target_var.clone())?;
+            let (_, mut type_dependencies, alias_info) = LogicType::translate_from_tydi_project(tydi_project.clone(), target_var.clone())?;
             output_json_representation.logic_types.append(&mut type_dependencies);
             output_json_representation_item_type = JsonRepresentation_item_type::LogicType(target_var_name);    //dirty way, will it cause bug in the future?
         },
@@ -101,18 +101,11 @@ pub fn translate_from_tydi_project(tydi_project: Arc<RwLock<Project>>, target_va
                 JsonRepresentation_item_type::LogicType(logic_type_name) => {
                     let mut ref_info = json_representation_logic_type::RefInfo::new(logic_type_name);
                     {
-                        let target_var_parent_scope = target_var.read().unwrap().get_parent_scope();
-                        let target_var_parent_scope_name = match target_var_parent_scope {
-                            Some(v) => {
-                                Some(v.read().unwrap().get_name())
-                            },
-                            None => None
-                        };
-                        let target_var_loc = target_var.read().unwrap().get_code_location();
-                        let loc_begin = target_var_loc.begin.clone();
-                        let loc_end = target_var_loc.end.clone();
-                        let raw_name = target_var.read().unwrap().get_name();
-                        ref_info.add_alias(raw_name, target_var_parent_scope_name, loc_begin, loc_end);
+                        ref_info.set_info_from_var(target_var.clone());
+                        let all_alias = var.read().unwrap().get_alias();
+                        for single_alias in all_alias {
+                            ref_info.add_alias(single_alias);
+                        }
                     }
                     output_json_representation.logic_types.insert(target_var_name, Arc::new(RwLock::new(LogicType::Ref(ref_info))));
                 },

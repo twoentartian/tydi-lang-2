@@ -41,7 +41,7 @@ impl FunctionTrait for FunctionAssert {
         for index in 0 .. function_args.len() {
             let function_arg = function_args.get(&index).expect("wrong function arg index");
             let arg_value = evaluate_expression(function_arg.clone(), Some(function.read().unwrap().get_code_location()), scope.clone(), evaluator.clone())?;
-            let arg_value = evaluate_id_in_typed_value(arg_value, Some(function.read().unwrap().get_code_location()), ScopeRelationType::resolve_id_default(), scope.clone(), evaluator.clone())?;
+            let arg_value = evaluate_id_in_typed_value(arg_value, Some(function.read().unwrap().get_code_location()), ScopeRelationType::resolve_id_default(), None, scope.clone(), evaluator.clone())?;
             function_arg_values.insert(index, arg_value);
         }
         
@@ -93,7 +93,7 @@ impl FunctionTrait for FunctionToString {
         for index in 0 .. function_args.len() {
             let function_arg = function_args.get(&index).expect("wrong function arg index");
             let arg_value = evaluate_expression(function_arg.clone(), Some(function.read().unwrap().get_code_location()), scope.clone(), evaluator.clone())?;
-            let arg_value = evaluate_id_in_typed_value(arg_value, Some(function.read().unwrap().get_code_location()), ScopeRelationType::resolve_id_default(), scope.clone(), evaluator.clone())?;
+            let arg_value = evaluate_id_in_typed_value(arg_value, Some(function.read().unwrap().get_code_location()), ScopeRelationType::resolve_id_default(), None, scope.clone(), evaluator.clone())?;
             function_arg_values.insert(index, arg_value);
         }
         
@@ -133,7 +133,7 @@ impl FunctionTrait for FunctionRange {
         for index in 0 .. function_args.len() {
             let function_arg = function_args.get(&index).expect("wrong function arg index");
             let arg_value = evaluate_expression(function_arg.clone(), Some(function.read().unwrap().get_code_location()), scope.clone(), evaluator.clone())?;
-            let arg_value = evaluate_id_in_typed_value(arg_value, Some(function.read().unwrap().get_code_location()), ScopeRelationType::resolve_id_default(), scope.clone(), evaluator.clone())?;
+            let arg_value = evaluate_id_in_typed_value(arg_value, Some(function.read().unwrap().get_code_location()), ScopeRelationType::resolve_id_default(), None, scope.clone(), evaluator.clone())?;
             function_arg_values.insert(index, arg_value);
         }
         

@@ -104,7 +104,7 @@ pub struct Scope {
     scope_relationships: BTreeMap<String, ScopeRelationship>,
 
     #[serde(with = "crate::serde_serialization::arc_rwlock_in_btree_map_value")]
-    variables: BTreeMap<String, Arc<RwLock<Variable>>>
+    variables: BTreeMap<String, Arc<RwLock<Variable>>>,
 }
 
 impl GetName for Scope {

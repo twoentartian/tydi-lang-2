@@ -1,6 +1,7 @@
 use std::sync::{Arc, RwLock};
 use std::collections::BTreeMap;
 
+use serde::ser::SerializeSeq;
 use serde::{Serialize, Serializer, Deserialize};
 
 use crate::deep_clone::{DeepClone, DeepClone_ArcLock};
@@ -50,6 +51,7 @@ pub struct Variable {
     is_name_user_defined: bool,
     template_args: Option<BTreeMap<usize, String>>,
     template_arg_values: Option<BTreeMap<usize, TypedValue>>,
+    alias: Vec<String>,
 }
 
 impl GetName for Variable {
@@ -74,6 +76,7 @@ impl DeepClone for Variable {
             is_name_user_defined: self.is_name_user_defined.deep_clone(),
             template_args: self.template_args.deep_clone(),
             template_arg_values: self.template_arg_values.deep_clone(),
+            alias: self.alias.deep_clone(),
         };
         return output;
     }
@@ -91,7 +94,10 @@ impl Serialize for Variable {
     {
         use serde::ser::SerializeStruct;
         if self.evaluated == EvaluationStatus::Evaluated || self.evaluated == EvaluationStatus::Predefined {
-            TypedValue::serialize(&self.value, serializer)
+            let mut state = serializer.serialize_struct("Variable", 14)?;
+            state.serialize_field("TypedValue", &self.value)?;
+            state.serialize_field("alias", &self.alias)?;
+            state.end()
 
             // if self.is_array {
             //     let mut seq = serializer.serialize_seq(Some(self.value.len()))?;
@@ -161,6 +167,7 @@ impl Variable {
             is_name_user_defined: false,
             template_args: None,
             template_arg_values: None,
+            alias: vec![],
         };
         return Arc::new(RwLock::new(output));
     }
@@ -180,8 +187,17 @@ impl Variable {
             is_name_user_defined: false,
             template_args: None,
             template_arg_values: None,
+            alias: vec![],
         };
         return Arc::new(RwLock::new(output));
+    }
+
+    pub fn add_alias(&mut self, alias: String) {
+        self.alias.push(alias);
+    }
+    
+    pub fn get_alias(&self) -> Vec<String> {
+        return self.alias.clone();
     }
 
     pub fn new_with_type_indication(name: String, exp: Option<String>, type_indication: TypeIndication) -> Arc<RwLock<Self>> {
@@ -199,6 +215,7 @@ impl Variable {
             is_name_user_defined: false,
             template_args: None,
             template_arg_values: None,
+            alias: vec![],
         };
         return Arc::new(RwLock::new(output));
     }
@@ -218,6 +235,7 @@ impl Variable {
             is_name_user_defined: false,
             template_args: None,
             template_arg_values: None,
+            alias: vec![],
         };
         return Arc::new(RwLock::new(output));
     }
@@ -238,6 +256,7 @@ impl Variable {
             is_name_user_defined: false,
             template_args: None,
             template_arg_values: None,
+            alias: vec![],
         };
         return Arc::new(RwLock::new(output));
     }
@@ -258,6 +277,7 @@ impl Variable {
             is_name_user_defined: false,
             template_args: None,
             template_arg_values: None,
+            alias: vec![],
         };
         return Arc::new(RwLock::new(output));
     }
@@ -278,6 +298,7 @@ impl Variable {
             is_name_user_defined: false,
             template_args: None,
             template_arg_values: None,
+            alias: vec![],
         };
         return Arc::new(RwLock::new(output));
     }
@@ -298,6 +319,7 @@ impl Variable {
             is_name_user_defined: false,
             template_args: None,
             template_arg_values: None,
+            alias: vec![],
         };
         return Arc::new(RwLock::new(output));
     }
@@ -318,6 +340,7 @@ impl Variable {
             is_name_user_defined: false,
             template_args: None,
             template_arg_values: None,
+            alias: vec![],
         };
         return Arc::new(RwLock::new(output));
     }
@@ -338,6 +361,7 @@ impl Variable {
             is_name_user_defined: false,
             template_args: None,
             template_arg_values: None,
+            alias: vec![],
         };
         return Arc::new(RwLock::new(output));
     }
@@ -357,6 +381,7 @@ impl Variable {
             is_name_user_defined: false,
             template_args: None,
             template_arg_values: None,
+            alias: vec![],
         };
         return Arc::new(RwLock::new(output));
     }
@@ -376,6 +401,7 @@ impl Variable {
             is_name_user_defined: false,
             template_args: None,
             template_arg_values: None,
+            alias: vec![],
         };
         return Arc::new(RwLock::new(output));
     }
@@ -395,6 +421,7 @@ impl Variable {
             is_name_user_defined: false,
             template_args: None,
             template_arg_values: None,
+            alias: vec![],
         };
         return Arc::new(RwLock::new(output));
     }
@@ -447,6 +474,7 @@ impl Variable {
             is_name_user_defined: false,
             template_args: None,
             template_arg_values: None,
+            alias: vec![],
         };
         return Arc::new(RwLock::new(output));
     }

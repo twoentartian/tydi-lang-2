@@ -1,14 +1,16 @@
 use std::sync::{Arc, RwLock};
 use std::collections::BTreeMap;
+use std::vec;
 
 use serde::Serialize;
 use serde::ser::SerializeStruct;
 
-use tydi_lang_parser::tydi_memory_representation::{self, Project, TypedValue};
-use tydi_lang_parser::tydi_memory_representation::scope::GetScope;
+use tydi_lang_parser::tydi_memory_representation::Variable;
+use tydi_lang_parser::tydi_memory_representation::{self, code_location::TraitCodeLocationAccess, Project, TypedValue, scope::GetScope, GlobalIdentifier};
 use tydi_lang_parser::trait_common::{GetName, HasDocument};
 
 use crate::name_conversion::{self, get_global_variable_name_with_parent_scope};
+use crate::util::generate_init_name;
 
 #[derive(Clone, Debug, strum::IntoStaticStr)]
 pub enum LogicType {
@@ -24,59 +26,107 @@ pub enum LogicType {
 #[derive(Clone, Debug)]
 pub struct RefInfo {
     ref_name: String,
-    alias: Vec<AliasInfo>,
-}
-
-#[derive(Clone, Debug)]
-pub struct AliasInfo {
-    alias_name: String,
-    declared_in_scope: Option<String>,
-    location_begin: Option<usize>,
-    location_end: Option<usize>,
-}
-
-impl serde::Serialize for AliasInfo {
-    fn serialize<S>(&self, serializer: S) -> Result<<S as serde::Serializer>::Ok, <S as serde::Serializer>::Error> 
-    where S: serde::Serializer {
-        let mut state = serializer.serialize_struct("AliasInfo", 2)?;
-        
-        state.serialize_field("alias_name", &self.alias_name)?;
-        if self.declared_in_scope.is_some() {
-            state.serialize_field("declared_in_scope", &self.declared_in_scope)?;
-        }
-        if self.location_begin.is_some() {
-            state.serialize_field("location_begin", &self.location_begin)?;
-        }
-        if self.location_end.is_some() {
-            state.serialize_field("location_end", &self.location_end)?;
-        }
-
-        state.end()
-    }
-
-}
-
-impl AliasInfo {
-    pub fn new(alias: String, scope_name: Option<String>, loc_begin: Option<usize>, loc_end: Option<usize>) -> Self {
-        return Self {
-            alias_name: alias,
-            declared_in_scope: scope_name,
-            location_begin: loc_begin,
-            location_end: loc_end,
-        }
-    }
+    info: Option<Info>,
+    alias: Vec<String>,
 }
 
 impl RefInfo {
     pub fn new(ref_name: String) -> Self {
         return Self {
             ref_name: ref_name,
+            info: None,
             alias: vec![],
         };
     }
 
-    pub fn add_alias(&mut self, alias: String, scope_name: Option<String>, loc_begin: Option<usize>, loc_end: Option<usize>) {
-        self.alias.push(AliasInfo::new(alias, scope_name, loc_begin, loc_end));
+    pub fn set_info_raw(&mut self, name: String, scope_name: Option<String>, src_file: Option<String>, loc_begin: Option<usize>, loc_end: Option<usize>) {
+        self.info = Some(Info::new(name, scope_name, src_file, loc_begin, loc_end));
+    }
+
+    pub fn set_info_from_var(&mut self, var: Arc<RwLock<Variable>>) {
+        let target_var_parent_scope = var.read().unwrap().get_parent_scope();
+        let target_var_parent_scope_name = match target_var_parent_scope {
+            Some(v) => {
+                Some(v.read().unwrap().get_name())
+            },
+            None => None
+        };
+        let target_var_loc = var.read().unwrap().get_code_location();
+        let loc_begin = target_var_loc.begin.clone();
+        let loc_end = target_var_loc.end.clone();
+        let raw_name = var.read().unwrap().get_name();
+        let src_file = target_var_loc.src_file.file_name.clone();
+        self.set_info_raw(raw_name, target_var_parent_scope_name, Some(src_file), loc_begin, loc_end);
+
+        let alias = var.read().unwrap().get_alias();
+        for a in alias {
+            self.add_alias(a);
+        }
+    }
+
+    pub fn set_info(&mut self, info: Option<Info>) {
+        self.info = info.clone();
+    }
+
+    pub fn add_alias(&mut self, alias: String) {
+        self.alias.push(alias);
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct Info {
+    name: String,
+    declared_in_scope: Option<String>,
+    src_file: Option<String>,
+    location_begin: Option<usize>,
+    location_end: Option<usize>,
+}
+
+impl serde::Serialize for Info {
+    fn serialize<S>(&self, serializer: S) -> Result<<S as serde::Serializer>::Ok, <S as serde::Serializer>::Error> 
+    where S: serde::Serializer {
+        let mut state = serializer.serialize_struct("Info", 4)?;
+        
+        state.serialize_field("name", &self.name)?;
+        if self.declared_in_scope.is_some() {
+            state.serialize_field("declared_in_scope", &self.declared_in_scope)?;
+        }
+        let loc_begin = 
+        if self.location_begin.is_some() { self.location_begin.unwrap().to_string() }
+        else { String::from("?") };
+        let loc_end = 
+        if self.location_end.is_some() { self.location_end.unwrap().to_string() }
+        else { String::from("?") };
+        let src_file_path = 
+        if self.src_file.is_some() { self.src_file.clone().unwrap() }
+        else { String::from("?") };
+
+        state.serialize_field("src_location", &format!("{src_file_path}:{loc_begin}~{loc_end}"))?;
+
+        state.end()
+    }
+
+}
+
+impl Info {
+    pub fn new(name: String, scope_name: Option<String>, src_file: Option<String>, loc_begin: Option<usize>, loc_end: Option<usize>) -> Self {
+        return Self {
+            name: name,
+            declared_in_scope: scope_name,
+            src_file: src_file,
+            location_begin: loc_begin,
+            location_end: loc_end,
+        }
+    }
+
+    pub fn new_init() -> Self {
+        return Self {
+            name: generate_init_name(),
+            declared_in_scope: None,
+            src_file: None,
+            location_begin: None,
+            location_end: None,
+        }
     }
 }
 
@@ -106,6 +156,7 @@ impl serde::Serialize for LogicType {
             LogicType::Ref(v) => {
                 state.serialize_field("value", &v.ref_name)?;
                 state.serialize_field("alias", &v.alias)?;
+                state.serialize_field("info", &v.info)?;
             },
         };
         
@@ -115,26 +166,28 @@ impl serde::Serialize for LogicType {
 }
 
 impl LogicType {
-    pub fn translate_from_tydi_project(tydi_project: Arc<RwLock<Project>>, target_var: Arc<RwLock<tydi_memory_representation::Variable>>) -> Result<(Vec<LogicType>, BTreeMap<String, Arc<RwLock<LogicType>>>), String> {
+    pub fn translate_from_tydi_project(tydi_project: Arc<RwLock<Project>>, target_var: Arc<RwLock<tydi_memory_representation::Variable>>) -> Result<(Vec<LogicType>, BTreeMap<String, Arc<RwLock<LogicType>>>, Vec<Info>), String> {
         let target_var_name = name_conversion::get_global_variable_name(target_var.clone());
         let var_value = target_var.read().unwrap().get_value();
 
-        return Self::translate_from_tydi_project_type_value(tydi_project.clone(), &var_value, target_var_name);
+        return Self::translate_from_tydi_project_type_value(tydi_project.clone(), &var_value, target_var_name, Some(target_var.clone()));
     }
 
-    pub fn translate_from_tydi_project_type_value(tydi_project: Arc<RwLock<Project>>, target_type_value: &tydi_memory_representation::TypedValue, default_var_name: String) -> Result<(Vec<LogicType>, BTreeMap<String, Arc<RwLock<LogicType>>>), String> {
+    pub fn translate_from_tydi_project_type_value(tydi_project: Arc<RwLock<Project>>, target_type_value: &tydi_memory_representation::TypedValue, default_var_name: String, raw_var: Option<Arc<RwLock<tydi_memory_representation::Variable>>>) -> Result<(Vec<LogicType>, BTreeMap<String, Arc<RwLock<LogicType>>>, Vec<Info>), String> {
         let mut output_dependency = BTreeMap::new();
         let mut target_var_name = default_var_name;
-        
+        let mut output_info: Vec<Info> = vec![];
+
         let mut output_types = vec![];
 
         match &target_type_value {
             TypedValue::LogicTypeValue(logical_type) => {
-                let (output_type, mut dependencies) = Self::translate_single_basic_logic_type(tydi_project.clone(), logical_type.clone(), &mut target_var_name)?;
+                let (output_type, mut dependencies, info) = Self::translate_single_basic_logic_type(tydi_project.clone(), logical_type.clone(), &mut target_var_name)?;
                 output_dependency.append(&mut dependencies);
                 output_dependency.insert(target_var_name.clone(), Arc::new(RwLock::new(output_type.clone())));
                 // output_types.push(output_type.clone());
-                let ref_info = RefInfo::new(target_var_name.clone());
+                let mut ref_info = RefInfo::new(target_var_name.clone());
+                ref_info.set_info(info);
                 output_types.push(LogicType::Ref(ref_info));
             },
             TypedValue::RefToVar(ref_var) => {
@@ -142,16 +195,24 @@ impl LogicType {
                 if results.is_err() {
                     return Err(results.err().unwrap());
                 }
-                let (mut output_type, mut dependencies) = results.ok().unwrap();
+                let (mut output_type, mut dependencies, alias_info) = results.ok().unwrap();
                 output_dependency.append(&mut dependencies);
 
                 assert!(output_type.len() > 0);
-                if output_type.len() == 1 {
-                    output_dependency.insert(target_var_name.clone(), Arc::new(RwLock::new(output_type[0].clone())));
-                }
-                else {
-                    for (index, single_type) in output_type.iter().enumerate() {
-                        output_dependency.insert(format!("{}_for{}", &target_var_name, index), Arc::new(RwLock::new(single_type.clone())));
+
+                {
+                    for single_type in &mut output_type {
+                        match single_type {
+                            LogicType::Ref(ref_target) => {
+                                match raw_var.clone() {
+                                    Some(raw_var) => {
+                                        ref_target.set_info_from_var(raw_var.clone());
+                                    },
+                                    None => (),
+                                };
+                            },
+                            _ => (),
+                        }
                     }
                 }
 
@@ -161,11 +222,13 @@ impl LogicType {
                 for (index, single_value) in array.iter().enumerate() {
                     match single_value {
                         TypedValue::LogicTypeValue(single_logic_type) => {
-                            let (output_type, mut dependencies) = Self::translate_single_basic_logic_type(tydi_project.clone(), single_logic_type.clone(), &mut target_var_name)?;
+                            let (output_type, mut dependencies, info) = Self::translate_single_basic_logic_type(tydi_project.clone(), single_logic_type.clone(), &mut target_var_name)?;
                             output_dependency.append(&mut dependencies);
                             let element_var_name = format!("{}_for{}", &target_var_name, index);
                             output_dependency.insert(element_var_name.clone(), Arc::new(RwLock::new(output_type.clone())));
-                            let ref_info = RefInfo::new(element_var_name);
+                            let mut ref_info = RefInfo::new(element_var_name);
+                            
+                            ref_info.set_info(info);
                             output_types.push(LogicType::Ref(ref_info));
                         },
                         _ => (),
@@ -175,12 +238,13 @@ impl LogicType {
             _ => unreachable!("{} is not a logic type", target_type_value.get_brief_info()),
         }
 
-        return Ok((output_types, output_dependency));
+        return Ok((output_types, output_dependency, output_info));
     }
 
-    fn translate_single_basic_logic_type(tydi_project: Arc<RwLock<Project>>, target_type: Arc<RwLock<tydi_memory_representation::LogicType>>, target_var_name: &mut String) -> Result<(LogicType, BTreeMap<String, Arc<RwLock<LogicType>>>), String> {
+    fn translate_single_basic_logic_type(tydi_project: Arc<RwLock<Project>>, target_type: Arc<RwLock<tydi_memory_representation::LogicType>>, target_var_name: &mut String) -> Result<(LogicType, BTreeMap<String, Arc<RwLock<LogicType>>>, Option<Info>), String> {
         let mut output_dependency = BTreeMap::new();
         let output_type;
+        let output_info: Option<Info> = None;
 
         let logical_type = target_type.read().unwrap().clone();
         match logical_type {
@@ -219,7 +283,7 @@ impl LogicType {
                 //we don't update the target_var_name because we set alias
             },
         }
-        return Ok((output_type, output_dependency));
+        return Ok((output_type, output_dependency, output_info));
     }
 
 
@@ -247,7 +311,7 @@ impl LogicGroup {
                 if result.is_err() {
                     return Err(result.err().unwrap());
                 }
-                let (logic_type, mut dependencies) = result.ok().unwrap();
+                let (logic_type, mut dependencies, alias_info) = result.ok().unwrap();
                 output_dependency.append(&mut dependencies);
 
                 assert!(logic_type.len() > 0);
@@ -288,7 +352,7 @@ impl LogicUnion {
                 if result.is_err() {
                     return Err(result.err().unwrap());
                 }
-                let (logic_type, mut dependencies) = result.ok().unwrap();
+                let (logic_type, mut dependencies, alias_info) = result.ok().unwrap();
                 output_dependency.append(&mut dependencies);
 
                 assert!(logic_type.len() > 0);
@@ -350,7 +414,7 @@ impl LogicStream {
             if result.is_err() {
                 return Err(result.err().unwrap());
             }
-            let (stream_type, mut dependencies) = result.ok().unwrap();
+            let (stream_type, mut dependencies, alias_info) = result.ok().unwrap();
             output_dependency.append(&mut dependencies);
             assert!(stream_type.len() == 1, "the type of a stream should be a single logic type, not an array");
             let stream_type = stream_type[0].clone();
@@ -388,7 +452,7 @@ impl LogicStream {
             if result.is_err() {
                 return Err(result.err().unwrap());
             }
-            let (user_type, mut dependencies) = result.ok().unwrap();
+            let (user_type, mut dependencies, alias_info) = result.ok().unwrap();
             output_dependency.append(&mut dependencies);
             assert!(user_type.len() == 1, "the user type of a stream should be a single logic type, not an array");
             let user_type = user_type[0].clone();

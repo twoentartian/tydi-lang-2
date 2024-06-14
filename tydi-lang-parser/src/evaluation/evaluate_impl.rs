@@ -131,7 +131,7 @@ pub fn evaluate_net(target: Arc<RwLock<Net>>, scope: Arc<RwLock<Scope>>, evaluat
         }
         else {
             let port_owner_value = evaluate_expression(port_owner_name.clone(), Some(target.read().unwrap().get_code_location()), scope.clone(), evaluator.clone())?;
-            let port_owner_value = evaluate_id_in_typed_value(port_owner_value, Some(target.read().unwrap().get_code_location()), ScopeRelationType::resolve_id_in_current_scope(), scope.clone(), evaluator.clone())?;
+            let port_owner_value = evaluate_id_in_typed_value(port_owner_value, Some(target.read().unwrap().get_code_location()), ScopeRelationType::resolve_id_in_current_scope(), None, scope.clone(), evaluator.clone())?;
             
             let port_owner_inst = match port_owner_value {
                 TypedValue::Instance(inst) => inst,

@@ -39,8 +39,9 @@ pub fn evaluate_value_with_identifier_type(id_name: &String, id_value: TypedValu
     }
 }
 
-pub fn evaluate_id_in_typed_value(id_in_typed_value: TypedValue, location: Option<CodeLocation>, relationships: HashSet<ScopeRelationType>, scope: Arc<RwLock<Scope>>, evaluator: Arc<RwLock<Evaluator>>) -> Result<TypedValue, TydiLangError> {
+pub fn evaluate_id_in_typed_value(id_in_typed_value: TypedValue, location: Option<CodeLocation>, relationships: HashSet<ScopeRelationType>, original_var: Option<Arc<RwLock<Variable>>>, scope: Arc<RwLock<Scope>>, evaluator: Arc<RwLock<Evaluator>>) -> Result<TypedValue, TydiLangError> {
     let mut output_value = id_in_typed_value.clone();
+
     //if the output_value is an identifier
     match &id_in_typed_value {
         TypedValue::Identifier(id) => {
@@ -72,7 +73,12 @@ pub fn evaluate_id_in_typed_value(id_in_typed_value: TypedValue, location: Optio
                     output_value = evaluate_value_with_identifier_type(&id_name, id_typed_value, id_type, scope.clone(), evaluator.clone())?;
                 },
             }
-
+            match original_var {
+                Some(original_var) => {
+                    original_var.write().unwrap().add_alias(id.read().unwrap().get_id());
+                },
+                None => (),
+            }
         },
         _ => (),
     }
@@ -174,7 +180,7 @@ pub fn evaluate_var(var: Arc<RwLock<Variable>>, scope: Arc<RwLock<Scope>>, evalu
     else if type_indication == TypeIndication::Function {
         let exp = var.read().unwrap().get_exp().unwrap();
         let function = evaluate_expression(exp, Some(var.read().unwrap().get_code_location()), scope.clone(), evaluator.clone())?;
-        let function_return_value = evaluate_id_in_typed_value(function, Some(var.read().unwrap().get_code_location()), ScopeRelationType::resolve_id_default(), scope.clone(), evaluator.clone())?;
+        let function_return_value = evaluate_id_in_typed_value(function, Some(var.read().unwrap().get_code_location()), ScopeRelationType::resolve_id_default(), Some(var.clone()), scope.clone(), evaluator.clone())?;
         output_value = function_return_value;
     }
 
@@ -188,13 +194,18 @@ pub fn evaluate_var(var: Arc<RwLock<Variable>>, scope: Arc<RwLock<Scope>>, evalu
             let template_exps = evaluate_template_exps_of_var(&template_args, scope.clone(), evaluator.clone())?;
             let (logic_type, logic_type_scope) = Scope::resolve_identifier(&id, &template_exps, &CodeLocation::new_unknown(), scope.clone(), scope.clone(), ScopeRelationType::resolve_id_default(), evaluator.clone())?;
             real_logic_type = evaluate_var(logic_type.clone(), logic_type_scope.clone(), evaluator.clone())?;
+            {
+                let mut var_write = var.write().unwrap();
+                let parent_var_alias = logic_type.read().unwrap().get_alias();
+                for a in parent_var_alias {
+                    var_write.add_alias(a);
+                }
+                var_write.add_alias(id);
+                var_write.set_value(real_logic_type.clone());
+                var_write.set_evaluated(EvaluationStatus::Evaluated);
+            }
         }
 
-        {
-            let mut var_write = var.write().unwrap();
-            var_write.set_value(real_logic_type.clone());
-            var_write.set_evaluated(EvaluationStatus::Evaluated);
-        }
         output_value = real_logic_type;
     }
 
@@ -260,7 +271,8 @@ pub fn evaluate_var(var: Arc<RwLock<Variable>>, scope: Arc<RwLock<Scope>>, evalu
             Some(exp) => {  //evaluate the expression
                 output_value = evaluate_expression(exp.clone(), Some(var.read().unwrap().get_code_location()), scope.clone(), evaluator.clone())?;
                 //if the output_value is an identifier
-                output_value = evaluate_id_in_typed_value(output_value, Some(var.read().unwrap().get_code_location()), ScopeRelationType::resolve_id_default(), scope.clone(), evaluator.clone())?;
+                let var_code_location = var.read().unwrap().get_code_location();
+                output_value = evaluate_id_in_typed_value(output_value, Some(var_code_location), ScopeRelationType::resolve_id_default(), Some(var.clone()), scope.clone(), evaluator.clone())?;
                 {
                     let mut var_write = var.write().unwrap();
                     var_write.set_value(output_value.clone());
@@ -309,7 +321,7 @@ pub fn evaluate_var(var: Arc<RwLock<Variable>>, scope: Arc<RwLock<Scope>>, evalu
         }
 
         //if the output_value is an identifier
-        output_value = evaluate_id_in_typed_value(output_value, Some(var.read().unwrap().get_code_location()), ScopeRelationType::resolve_id_default(), scope.clone(), evaluator.clone())?;
+        output_value = evaluate_id_in_typed_value(output_value, Some(var.read().unwrap().get_code_location()), ScopeRelationType::resolve_id_default(), Some(var.clone()), scope.clone(), evaluator.clone())?;
         {
             let mut var_write = var.write().unwrap();
             var_write.set_value(output_value.clone());
@@ -323,7 +335,7 @@ pub fn evaluate_var(var: Arc<RwLock<Variable>>, scope: Arc<RwLock<Scope>>, evalu
             TypedValue::Implementation(target_impl) => {
                 output_value = evaluate_impl(target_impl.clone(), scope.clone(), evaluator.clone())?;
                 //if the output_value is an identifier
-                output_value = evaluate_id_in_typed_value(output_value, Some(var.read().unwrap().get_code_location()), ScopeRelationType::resolve_id_default(), scope.clone(), evaluator.clone())?;
+                output_value = evaluate_id_in_typed_value(output_value, Some(var.read().unwrap().get_code_location()), ScopeRelationType::resolve_id_default(), Some(var.clone()), scope.clone(), evaluator.clone())?;
                 {
                     let mut var_write = var.write().unwrap();
                     var_write.set_value(output_value.clone());
@@ -343,7 +355,7 @@ pub fn evaluate_var(var: Arc<RwLock<Variable>>, scope: Arc<RwLock<Scope>>, evalu
         }
 
         //if the output_value is an identifier
-        output_value = evaluate_id_in_typed_value(output_value, Some(var.read().unwrap().get_code_location()), ScopeRelationType::resolve_id_default(), scope.clone(), evaluator.clone())?;
+        output_value = evaluate_id_in_typed_value(output_value, Some(var.read().unwrap().get_code_location()), ScopeRelationType::resolve_id_default(), Some(var.clone()), scope.clone(), evaluator.clone())?;
         {
             let mut var_write = var.write().unwrap();
             var_write.set_value(output_value.clone());
@@ -357,7 +369,7 @@ pub fn evaluate_var(var: Arc<RwLock<Variable>>, scope: Arc<RwLock<Scope>>, evalu
             TypedValue::Instance(target_inst) => {
                 output_value = evaluate_instance(target_inst.clone(), scope.clone(), evaluator.clone())?;
                 //if the output_value is an identifier
-                output_value = evaluate_id_in_typed_value(output_value, Some(var.read().unwrap().get_code_location()), ScopeRelationType::resolve_id_default(), scope.clone(), evaluator.clone())?;
+                output_value = evaluate_id_in_typed_value(output_value, Some(var.read().unwrap().get_code_location()), ScopeRelationType::resolve_id_default(), Some(var.clone()), scope.clone(), evaluator.clone())?;
                 {
                     let mut var_write = var.write().unwrap();
                     var_write.set_value(output_value.clone());
@@ -378,7 +390,7 @@ pub fn evaluate_var(var: Arc<RwLock<Variable>>, scope: Arc<RwLock<Scope>>, evalu
             None => unreachable!("the parser side should give us the expression")
         };
         output_value = evaluate_expression(net_exp, Some(var.read().unwrap().get_code_location()), scope.clone(), evaluator.clone())?;
-        output_value = evaluate_id_in_typed_value(output_value, Some(var.read().unwrap().get_code_location()), ScopeRelationType::resolve_id_in_parent_streamlet(), scope.clone(), evaluator.clone())?;
+        output_value = evaluate_id_in_typed_value(output_value, Some(var.read().unwrap().get_code_location()), ScopeRelationType::resolve_id_in_parent_streamlet(), Some(var.clone()), scope.clone(), evaluator.clone())?;
         {
             let mut var_write = var.write().unwrap();
             var_write.set_value(output_value.clone());
@@ -393,7 +405,8 @@ pub fn evaluate_var(var: Arc<RwLock<Variable>>, scope: Arc<RwLock<Scope>>, evalu
             Some(exp) => {  //evaluate the expression
                 output_value = evaluate_expression(exp.clone(), Some(var.read().unwrap().get_code_location()), scope.clone(), evaluator.clone())?;
                 //if the output_value is an identifier
-                output_value = evaluate_id_in_typed_value(output_value, Some(var.read().unwrap().get_code_location()), ScopeRelationType::resolve_id_default(), scope.clone(), evaluator.clone())?;
+                let var_code_location = var.read().unwrap().get_code_location();
+                output_value = evaluate_id_in_typed_value(output_value, Some(var_code_location), ScopeRelationType::resolve_id_default(), Some(var.clone()), scope.clone(), evaluator.clone())?;
                 {
                     let mut var_write = var.write().unwrap();
                     var_write.set_value(output_value.clone());
@@ -413,7 +426,7 @@ pub fn evaluate_var(var: Arc<RwLock<Variable>>, scope: Arc<RwLock<Scope>>, evalu
             Some(exp) => {  //evaluate the expression
                 output_value = evaluate_expression(exp.clone(), Some(var.read().unwrap().get_code_location()), scope.clone(), evaluator.clone())?;
                 //if the output_value is an identifier
-                output_value = evaluate_id_in_typed_value(output_value, Some(var.read().unwrap().get_code_location()), ScopeRelationType::resolve_id_default(), scope.clone(), evaluator.clone())?;
+                output_value = evaluate_id_in_typed_value(output_value, Some(var.read().unwrap().get_code_location()), ScopeRelationType::resolve_id_default(), Some(var.clone()), scope.clone(), evaluator.clone())?;
                 {
                     let mut var_write = var.write().unwrap();
                     var_write.set_value(output_value.clone());

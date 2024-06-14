@@ -165,7 +165,7 @@ pub fn evaluate_ArrayExp(exps: Pair<Rule>, scope: Arc<RwLock<Scope>>, evaluator:
             Rule::Exp => {
                 let element_exp = evaluate_expression_pest(element, None, scope.clone(), evaluator.clone())?;
                 let element_typed_value = element_exp.evaluate_TypedValue(scope.clone(), evaluator.clone())?;
-                let element_typed_value = evaluate_id_in_typed_value(element_typed_value, None, ScopeRelationType::resolve_id_default(), scope.clone(), evaluator.clone())?;
+                let element_typed_value = evaluate_id_in_typed_value(element_typed_value, None, ScopeRelationType::resolve_id_default(), None, scope.clone(), evaluator.clone())?;
                 output.push(element_typed_value);
             }
             _ => unreachable!()
