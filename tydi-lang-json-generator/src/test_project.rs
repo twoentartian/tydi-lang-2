@@ -675,7 +675,8 @@ fn generated_names_in_tydi_lang() {
             #A composite type (like a struct) that contains a value associated with a timestamp#
             Group NumberGroup {
                 value: SInt_64_t;
-                time: UInt_64_t; 
+                time: UInt_64_t;
+                other: Bit(32);
             }
             
             #A composite type (like a struct) that represents the stats of the implemented algorithm#
@@ -684,12 +685,16 @@ fn generated_names_in_tydi_lang() {
                 sum: UInt_64_tttt;
                 max: UInt_64_tttt;
                 min: UInt_64_tttt;
+                aaa: Type3;
             }
             
             // Define the stream types
             NumberGroup_stream = Stream(NumberGroup, t=1.0, d=1, c=1);
             Stats_stream = Stream(Stats, t=1.0, d=1, c=1);
             
+            Type1 = Bit(2);
+            Type2 = Type1;
+            Type3 = Type2;
         "#);
         let src_pack1 = String::from(r#"
         package std;
