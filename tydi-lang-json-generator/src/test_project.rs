@@ -660,7 +660,7 @@ fn duplicator_and_voider2() {
 }
 
 #[test]
-fn generated_names_in_tydi_lang() {
+fn rafflaele_generated_names_in_tydi_lang() {
     let project = Project::new(format!("sample_project"));
     {
         let mut project_write = project.write().unwrap();
@@ -685,7 +685,7 @@ fn generated_names_in_tydi_lang() {
                 sum: UInt_64_tttt;
                 max: UInt_64_tttt;
                 min: UInt_64_tttt;
-                aaa: type3;
+                aaa: type4;
             }
             
             // Define the stream types
@@ -695,6 +695,7 @@ fn generated_names_in_tydi_lang() {
             type1 = Bit(2);
             type2 = type1;
             type3 = type2;
+            type4 = type3;
         "#);
         let src_pack1 = String::from(r#"
         package std;

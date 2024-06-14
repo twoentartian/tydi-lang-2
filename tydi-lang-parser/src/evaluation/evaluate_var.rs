@@ -71,15 +71,20 @@ pub fn evaluate_id_in_typed_value(id_in_typed_value: TypedValue, location: Optio
                     let (id_var, id_var_scope) = Scope::resolve_identifier(&id_name, &id_template_arg_exps, &CodeLocation::new_unknown(), scope.clone(), scope.clone(), relationships, evaluator.clone())?;
                     let id_typed_value = evaluate_var(id_var.clone(), id_var_scope.clone(), evaluator.clone())?;
                     output_value = evaluate_value_with_identifier_type(&id_name, id_typed_value, id_type, scope.clone(), evaluator.clone())?;
+                    match original_var.clone() {
+                        Some(original_var) => {
+                            original_var.write().unwrap().add_alias(id.read().unwrap().get_id());
+                            let alias_of_id_var = id_var.read().unwrap().get_alias();
+                            for a in alias_of_id_var {
+                                original_var.write().unwrap().add_alias(a);
+                            }
+                        },
+                        None => (),
+                    }
                 },
-            }
-            match original_var.clone() {
-                Some(original_var) => {
-                    original_var.write().unwrap().add_alias(id.read().unwrap().get_id());
-                },
-                None => (),
             }
         },
+        
         _ => (),
     }
 
@@ -201,10 +206,10 @@ pub fn evaluate_var(var: Arc<RwLock<Variable>>, scope: Arc<RwLock<Scope>>, evalu
             {
                 let mut var_write = var.write().unwrap();
                 let parent_var_alias = logic_type.read().unwrap().get_alias();
+                var_write.add_alias(id);
                 for a in parent_var_alias {
                     var_write.add_alias(a);
                 }
-                var_write.add_alias(id);
                 var_write.set_value(real_logic_type.clone());
                 var_write.set_evaluated(EvaluationStatus::Evaluated);
             }
