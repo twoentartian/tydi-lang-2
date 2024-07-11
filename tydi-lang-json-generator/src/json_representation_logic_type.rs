@@ -402,11 +402,11 @@ impl LogicStream {
         //stream type
         {
             //stream type should be a reference
-            let stream_type = tydi_target.read().unwrap().get_stream_type();
-            let stream_type_value = stream_type.read().unwrap().get_value();
+            let stream_type_raw = tydi_target.read().unwrap().get_stream_type();
+            let stream_type_value = stream_type_raw.read().unwrap().get_value();
             let stream_type_var = match stream_type_value.try_get_referenced_variable() {
                 Some(var) => var,
-                None => stream_type,
+                None => stream_type_raw.clone(),
             };
 
             let result = LogicType::translate_from_tydi_project(tydi_project.clone(), stream_type_var.clone());
@@ -419,7 +419,7 @@ impl LogicStream {
             let mut stream_type = stream_type[0].clone();
             match &mut stream_type {
                 LogicType::Ref(r) => {
-                    let all_alias = stream_type_var.read().unwrap().get_alias();
+                    let all_alias = stream_type_raw.read().unwrap().get_alias();
                     for a in all_alias {
                         r.add_alias(a);
                     }
