@@ -3,7 +3,8 @@ use std::sync::{RwLock, Arc};
 use pest::pratt_parser::PrattParser;
 
 use crate::evaluation::evaluate_LogicalType;
-use crate::tydi_memory_representation::{Scope, TypedValue, CodeLocation};
+use crate::trait_common::GetName;
+use crate::tydi_memory_representation::{CodeLocation, Scope, TypedValue, Variable};
 use crate::tydi_parser::*;
 use crate::error::TydiLangError;
 
@@ -22,12 +23,12 @@ pub enum Expression {
 
 impl Expression {
     #[allow(non_snake_case)]
-    pub fn evaluate_TypedValue(&self, scope: Arc<RwLock<Scope>>, evaluator: Arc<RwLock<Evaluator>>) -> Result<TypedValue, TydiLangError> {
+    pub fn evaluate_TypedValue(&self, scope: Arc<RwLock<Scope>>, evaluator: Arc<RwLock<Evaluator>>, var_of_exp: Option<Arc<RwLock<Variable>>>) -> Result<TypedValue, TydiLangError> {
         match self {
             Expression::Error(err) => return Err(err.clone()),
             Expression::Term(v) => return Ok(v.clone()),
             Expression::BinOp { lhs, op, rhs } => {
-                let (value, ref_var) = evaluate_BinaryOperation(lhs, op, rhs, scope.clone(), evaluator.clone())?;
+                let (value, ref_var) = evaluate_BinaryOperation(lhs, op, rhs, scope.clone(), evaluator.clone(), var_of_exp.clone())?;
                 match &value {
                     TypedValue::LogicTypeValue(_) => {
                         if ref_var.is_some() {
@@ -104,11 +105,15 @@ lazy_static::lazy_static! {
     };
 }
 
-pub fn evaluate_expression_pest(exp: Pair<Rule>, location: Option<CodeLocation>, scope: Arc<RwLock<Scope>>, evaluator: Arc<RwLock<Evaluator>>) -> Result<Expression, TydiLangError> {
+pub fn evaluate_expression_pest(exp: Pair<Rule>, location: Option<CodeLocation>, scope: Arc<RwLock<Scope>>, evaluator: Arc<RwLock<Evaluator>>, var_of_exp: Option<Arc<RwLock<Variable>>>) -> Result<Expression, TydiLangError> {
     let result = PRATT_PARSER
     .map_primary(|primary| match primary.as_rule() {
         Rule::Term => {
-            let result = evaluate_Term(primary.clone(), scope.clone(), evaluator.clone());
+            let var_name = match var_of_exp.clone() {
+                Some(var) => var.read().unwrap().get_name(),
+                None => String::from(""),
+            };
+            let result = evaluate_Term(primary.clone(), scope.clone(), evaluator.clone(), var_of_exp.clone());
             if result.is_err() {
                 return Expression::Error(result.err().unwrap());
             }
@@ -116,7 +121,7 @@ pub fn evaluate_expression_pest(exp: Pair<Rule>, location: Option<CodeLocation>,
             return Expression::Term(result);
         },
         Rule::InfixOp => {
-            let result = evaluate_expression_pest(primary, location.clone(), scope.clone(), evaluator.clone());
+            let result = evaluate_expression_pest(primary, location.clone(), scope.clone(), evaluator.clone(), var_of_exp.clone());
             return result.ok().unwrap()
         },
         Rule::LogicalType => {
@@ -166,14 +171,14 @@ pub fn evaluate_expression_pest(exp: Pair<Rule>, location: Option<CodeLocation>,
     return Ok(result);
 }
 
-pub fn evaluate_expression(exp: String, location: Option<CodeLocation>, scope: Arc<RwLock<Scope>>, evaluator: Arc<RwLock<Evaluator>>) -> Result<TypedValue, TydiLangError> {
+pub fn evaluate_expression(exp: String, location: Option<CodeLocation>, scope: Arc<RwLock<Scope>>, evaluator: Arc<RwLock<Evaluator>>, var_of_exp: Option<Arc<RwLock<Variable>>>) -> Result<TypedValue, TydiLangError> {
     let parse_result = TydiLangSrc::parse(Rule::Exp,&exp);
     if parse_result.is_err() {
         unreachable!("because the exp should have already been parsed before, we should never reach here");
     }
     let mut parse_result = parse_result.ok().unwrap();
-    let expresssion = evaluate_expression_pest(parse_result.next().unwrap(), location, scope.clone(), evaluator.clone())?;
-    return expresssion.evaluate_TypedValue(scope.clone(), evaluator.clone());
+    let expresssion = evaluate_expression_pest(parse_result.next().unwrap(), location, scope.clone(), evaluator.clone(), var_of_exp.clone())?;
+    return expresssion.evaluate_TypedValue(scope.clone(), evaluator.clone(), var_of_exp.clone());
 }
 
 

@@ -13,7 +13,7 @@ pub fn evaluate_value_with_identifier_type(id_name: &String, id_value: TypedValu
         IdentifierType::FunctionExp(_) => unreachable!(),  //function expression should be evaluated before this point
         IdentifierType::IndexExp(index_exp) => {
             if let TypedValue::Array(array) = id_value {  //get array value
-                let value = evaluate_expression(index_exp.clone(), None, scope.clone(), evaluator.clone())?;
+                let value = evaluate_expression(index_exp.clone(), None, scope.clone(), evaluator.clone(), None)?;
                 if let TypedValue::IntValue(index_int) = value {    //get index value
                     if index_int < 0 {
                         return Err(TydiLangError::new(format!("array index expression {{{}}} is less than 0, array name: {}", index_exp, id_name), crate::tydi_memory_representation::CodeLocation::new_unknown()));
@@ -98,7 +98,7 @@ pub fn evaluate_template_exps_of_var(var_template_expression: &BTreeMap<usize, S
     }
     let mut template_values = BTreeMap::new();
     for (arg_index, template_exp) in template_exps {
-        let template_exp_value = evaluate_expression(template_exp, None, scope.clone(), evaluator.clone())?;
+        let template_exp_value = evaluate_expression(template_exp, None, scope.clone(), evaluator.clone(), None)?;
         template_values.insert(arg_index, template_exp_value);
     }
     return Ok(Some(template_values));
@@ -144,7 +144,7 @@ pub fn evaluate_var(var: Arc<RwLock<Variable>>, scope: Arc<RwLock<Scope>>, evalu
                 let mut template_arg_values = BTreeMap::new();
                 for (arg_index, arg_exp) in template_args {
                     let var_code_location = var.read().unwrap().get_code_location();
-                    let value = evaluate_expression(arg_exp, Some(var_code_location), scope.clone(), evaluator.clone())?;
+                    let value = evaluate_expression(arg_exp, Some(var_code_location), scope.clone(), evaluator.clone(), Some(var.clone()))?;
                     template_arg_values.insert(arg_index, value);
                 }
                 var.write().unwrap().set_template_arg_values(Some(template_arg_values));
@@ -186,7 +186,7 @@ pub fn evaluate_var(var: Arc<RwLock<Variable>>, scope: Arc<RwLock<Scope>>, evalu
     else if type_indication == TypeIndication::Function {
         let exp = var.read().unwrap().get_exp().unwrap();
         let var_code_location = var.read().unwrap().get_code_location();
-        let function = evaluate_expression(exp, Some(var_code_location), scope.clone(), evaluator.clone())?;
+        let function = evaluate_expression(exp, Some(var_code_location), scope.clone(), evaluator.clone(), Some(var.clone()))?;
         let var_code_location = var.read().unwrap().get_code_location();
         let function_return_value = evaluate_id_in_typed_value(function, Some(var_code_location), ScopeRelationType::resolve_id_default(), Some(var.clone()), scope.clone(), evaluator.clone())?;
         output_value = function_return_value;
@@ -195,7 +195,7 @@ pub fn evaluate_var(var: Arc<RwLock<Variable>>, scope: Arc<RwLock<Scope>>, evalu
     //if this is a logic type reference
     else if let TypeIndication::LogicTypeRef(logic_ref) = type_indication {
         let var_code_location = var.read().unwrap().get_code_location();
-        let mut real_logic_type = evaluate_expression(logic_ref, Some(var_code_location), scope.clone(), evaluator.clone())?;
+        let mut real_logic_type = evaluate_expression(logic_ref, Some(var_code_location), scope.clone(), evaluator.clone(), Some(var.clone()))?;
         //real_logic_type could be evaluated to an identifier
         if let TypedValue::Identifier(identifier) = real_logic_type {
             let id: String = identifier.read().unwrap().get_id();
@@ -279,7 +279,20 @@ pub fn evaluate_var(var: Arc<RwLock<Variable>>, scope: Arc<RwLock<Scope>>, evalu
         match var_exp {
             Some(exp) => {  //evaluate the expression
                 let var_code_location = var.read().unwrap().get_code_location();
-                output_value = evaluate_expression(exp.clone(), Some(var_code_location), scope.clone(), evaluator.clone())?;
+                /////////////////DEBUG
+                ////////////////////DEBUG
+                ////////////////////DEBUG
+                ////////////////////DEBUG
+                ////////////////////DEBUG
+                ////////////////////DEBUG
+                ////////////////////DEBUG
+                ////////////////////DEBUG
+                ////////////////////DEBUG
+                ////////////////////DEBUG
+                ////////////////////DEBUG
+
+                
+                output_value = evaluate_expression(exp.clone(), Some(var_code_location), scope.clone(), evaluator.clone(), Some(var.clone()))?;
                 //if the output_value is an identifier
                 let var_code_location = var.read().unwrap().get_code_location();
                 output_value = evaluate_id_in_typed_value(output_value, Some(var_code_location), ScopeRelationType::resolve_id_default(), Some(var.clone()), scope.clone(), evaluator.clone())?;
@@ -323,7 +336,7 @@ pub fn evaluate_var(var: Arc<RwLock<Variable>>, scope: Arc<RwLock<Scope>>, evalu
                 match streamlet_exp {
                     Some(streamlet_exp) => {
                         let var_code_location = var.read().unwrap().get_code_location();
-                        output_value = evaluate_expression(streamlet_exp, Some(var_code_location), scope.clone(), evaluator.clone())?;
+                        output_value = evaluate_expression(streamlet_exp, Some(var_code_location), scope.clone(), evaluator.clone(), Some(var.clone()))?;
                     },
                     None => unreachable!(),
                 }
@@ -360,7 +373,7 @@ pub fn evaluate_var(var: Arc<RwLock<Variable>>, scope: Arc<RwLock<Scope>>, evalu
                 match impl_exp {
                     Some(impl_exp) => {
                         let var_code_location = var.read().unwrap().get_code_location();
-                        output_value = evaluate_expression(impl_exp, Some(var_code_location), scope.clone(), evaluator.clone())?;
+                        output_value = evaluate_expression(impl_exp, Some(var_code_location), scope.clone(), evaluator.clone(), Some(var.clone()))?;
                     },
                     None => unreachable!(),
                 }
@@ -406,7 +419,7 @@ pub fn evaluate_var(var: Arc<RwLock<Variable>>, scope: Arc<RwLock<Scope>>, evalu
             None => unreachable!("the parser side should give us the expression")
         };
         let var_code_location = var.read().unwrap().get_code_location();
-        output_value = evaluate_expression(net_exp, Some(var_code_location.clone()), scope.clone(), evaluator.clone())?;
+        output_value = evaluate_expression(net_exp, Some(var_code_location.clone()), scope.clone(), evaluator.clone(), Some(var.clone()))?;
         output_value = evaluate_id_in_typed_value(output_value, Some(var_code_location), ScopeRelationType::resolve_id_in_parent_streamlet(), Some(var.clone()), scope.clone(), evaluator.clone())?;
         {
             let mut var_write = var.write().unwrap();
@@ -421,7 +434,7 @@ pub fn evaluate_var(var: Arc<RwLock<Variable>>, scope: Arc<RwLock<Scope>>, evalu
         match var_exp {
             Some(exp) => {  //evaluate the expression
                 let var_code_location = var.read().unwrap().get_code_location();
-                output_value = evaluate_expression(exp.clone(), Some(var_code_location), scope.clone(), evaluator.clone())?;
+                output_value = evaluate_expression(exp.clone(), Some(var_code_location), scope.clone(), evaluator.clone(), Some(var.clone()))?;
                 //if the output_value is an identifier
                 let var_code_location = var.read().unwrap().get_code_location();
                 output_value = evaluate_id_in_typed_value(output_value, Some(var_code_location), ScopeRelationType::resolve_id_default(), Some(var.clone()), scope.clone(), evaluator.clone())?;
@@ -443,7 +456,7 @@ pub fn evaluate_var(var: Arc<RwLock<Variable>>, scope: Arc<RwLock<Scope>>, evalu
         match var_exp {
             Some(exp) => {  //evaluate the expression
                 let var_code_location = var.read().unwrap().get_code_location();
-                output_value = evaluate_expression(exp.clone(), Some(var_code_location.clone()), scope.clone(), evaluator.clone())?;
+                output_value = evaluate_expression(exp.clone(), Some(var_code_location.clone()), scope.clone(), evaluator.clone(), Some(var.clone()))?;
                 //if the output_value is an identifier
                 output_value = evaluate_id_in_typed_value(output_value, Some(var_code_location), ScopeRelationType::resolve_id_default(), Some(var.clone()), scope.clone(), evaluator.clone())?;
                 {

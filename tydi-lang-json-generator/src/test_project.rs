@@ -1569,3 +1569,59 @@ fn casper_bit_in_stream_not_exported() {
     std::fs::write("./json_output.json", &json_output).unwrap();
     println!("{}", json_output);
 }
+
+#[test]
+fn casper_alias_not_exported_for_multi_src_files() {
+    let project = Project::new(format!("sample_project"));
+    {
+        let mut project_write = project.write().unwrap();
+
+        let src_pack0 = String::from(r#"
+            package pack0;
+            use pack0;
+            
+            NumberGroup = Bit(8);
+            NumberGroup_stream = Stream(NumberGroup, t=1.0, d=1, c=1);
+        
+            streamlet NonNegativeFilter_interface {
+                std_out : pack0.NumberGroup_stream out;
+                std_in : pack0.NumberGroup_stream in;
+            }
+
+            streamlet NonNegativeFilter_interface2 {
+                std_out : NumberGroup_stream out;
+                std_in : NumberGroup_stream in;
+            }
+
+            impl NonNegativeFilter of NonNegativeFilter_interface {
+
+            }
+        
+        "#);
+        let src_pack1 = String::from(r#"
+            package pack1;
+            use pack0;
+
+
+        "#);
+
+        let status = project_write.add_package(format!("./pack0.td"), src_pack0);
+        if status.is_err() {
+            panic!("{}", status.err().unwrap().print());
+        }
+        let status = project_write.add_package(format!("./pack1.td"), src_pack1);
+        if status.is_err() {
+            panic!("{}", status.err().unwrap().print());
+        }
+    }
+    std::fs::write("./code_structure_before_evaluation.json", &project.read().unwrap().get_pretty_json()).unwrap();
+
+    project.read().unwrap().evaluate_target(format!("NonNegativeFilter"), format!("pack0")).expect("fail to evaluate");
+
+    let code_structure = project.read().unwrap().get_pretty_json();
+    std::fs::write("./code_structure.json", &code_structure).unwrap();
+
+    let json_output = generate_json_representation_from_tydi_project(project.clone(), format!("NonNegativeFilter"), format!("pack0")).expect("fail to generate json");
+    std::fs::write("./json_output.json", &json_output).unwrap();
+    println!("{}", json_output);
+}

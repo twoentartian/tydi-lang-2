@@ -5,19 +5,19 @@ use crate::generate_name::generate_init_value;
 use crate::tydi_parser::*;
 use crate::error::TydiLangError;
 
-use crate::tydi_memory_representation::{Scope, TypedValue, CodeLocation, Identifier, IdentifierType, ScopeRelationType};
+use crate::tydi_memory_representation::{CodeLocation, Identifier, IdentifierType, Scope, ScopeRelationType, TypedValue, Variable};
 
 use super::{Evaluator, evaluate_expression_pest, evaluate_id_in_typed_value, UnaryOperator};
 
 #[allow(non_snake_case)]
-pub fn evaluate_Term(term: Pair<Rule>, scope: Arc<RwLock<Scope>>, evaluator: Arc<RwLock<Evaluator>>) -> Result<TypedValue, TydiLangError> {
+pub fn evaluate_Term(term: Pair<Rule>, scope: Arc<RwLock<Scope>>, evaluator: Arc<RwLock<Evaluator>>, var_of_exp: Option<Arc<RwLock<Variable>>>) -> Result<TypedValue, TydiLangError> {
     let output_value = TypedValue::UnknwonValue;
     for element in term.clone().into_inner().into_iter() {
         let rule = element.as_rule();
         match rule {
             Rule::Exp => {
-                let exp = evaluate_expression_pest(element, None, scope.clone(), evaluator.clone())?;
-                let exp_typed_value = exp.evaluate_TypedValue(scope.clone(), evaluator.clone())?;
+                let exp = evaluate_expression_pest(element, None, scope.clone(), evaluator.clone(), None)?;
+                let exp_typed_value = exp.evaluate_TypedValue(scope.clone(), evaluator.clone(), var_of_exp.clone())?;
                 return Ok(exp_typed_value);
             }
             Rule::ArrayExp => {
@@ -163,8 +163,8 @@ pub fn evaluate_ArrayExp(exps: Pair<Rule>, scope: Arc<RwLock<Scope>>, evaluator:
         let rule = element.as_rule();
         match rule {
             Rule::Exp => {
-                let element_exp = evaluate_expression_pest(element, None, scope.clone(), evaluator.clone())?;
-                let element_typed_value = element_exp.evaluate_TypedValue(scope.clone(), evaluator.clone())?;
+                let element_exp = evaluate_expression_pest(element, None, scope.clone(), evaluator.clone(), None)?;
+                let element_typed_value = element_exp.evaluate_TypedValue(scope.clone(), evaluator.clone(), None)?;
                 let element_typed_value = evaluate_id_in_typed_value(element_typed_value, None, ScopeRelationType::resolve_id_default(), None, scope.clone(), evaluator.clone())?;
                 output.push(element_typed_value);
             }
@@ -182,7 +182,7 @@ pub fn evaluate_UnaryExp(exp: Pair<Rule>, scope: Arc<RwLock<Scope>>, evaluator: 
         let rule = element.as_rule();
         match rule {
             Rule::Term => {
-                exp_typed_value = evaluate_Term(element, scope.clone(), evaluator.clone())?;
+                exp_typed_value = evaluate_Term(element, scope.clone(), evaluator.clone(), None)?;
             }
             Rule::OP_UnaryMinus => {
                 unary_operator = UnaryOperator::OP_UnaryMinus;

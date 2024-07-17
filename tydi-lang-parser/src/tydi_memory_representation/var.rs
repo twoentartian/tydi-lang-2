@@ -195,6 +195,10 @@ impl Variable {
     pub fn add_alias(&mut self, alias: String) {
         self.alias.push(alias);
     }
+
+    pub fn clear_alias(&mut self) {
+        self.alias.clear();
+    }
     
     pub fn get_alias(&self) -> Vec<String> {
         return self.alias.clone();
