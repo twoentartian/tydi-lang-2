@@ -187,8 +187,11 @@ pub fn perform_AccessInner(lhs: &Box<Expression>, rhs: &Box<Expression>, scope: 
     //add alias of rhs var to var_of_exp
     if var_of_exp.is_some() {
         let var_of_exp = var_of_exp.unwrap();
-        var_of_exp.write().unwrap().clear_alias();
         var_of_exp.write().unwrap().add_alias(rhs_var_name);
+        let alias = rhs_var.read().unwrap().get_alias();
+        for a in alias {
+            var_of_exp.write().unwrap().add_alias(a);
+        }
     }
 
     match iden_type {

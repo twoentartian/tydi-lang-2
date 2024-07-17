@@ -1581,7 +1581,9 @@ fn casper_alias_not_exported_for_multi_src_files() {
             use pack0;
             
             NumberGroup = Bit(8);
-            NumberGroup_stream = Stream(NumberGroup, t=1.0, d=1, c=1);
+            s = Stream(NumberGroup, t=1.0, d=1, c=1);
+            a = s;
+            NumberGroup_stream = a;
         
             streamlet NonNegativeFilter_interface {
                 std_out : pack0.NumberGroup_stream out;
